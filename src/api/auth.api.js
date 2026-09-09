@@ -42,4 +42,17 @@ export const authApi = {
     });
     return res.data;
   },
+
+  // Get current user profile
+  getProfile: async () => {
+    const res = await client.get('/user/me');
+    return res.data;
+  },
+
+  // Update user personal profile (Full name, phone)
+  updateProfile: async ({ full_name, phone }) => {
+    const res = await client.put('/user/profile', { full_name, phone });
+    return res.data;
+  },
 };
+

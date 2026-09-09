@@ -1,11 +1,13 @@
 /**
  * Customer Explore & Marketplace Screen
  * 
- * Features ported from Flutter APK (QuickPick):
+ * Features:
  * - GPS Auto-detect & Radius Selector (1km, 3km, 5km, 10km, All)
  * - Open Now filter & Live OPEN/CLOSED shop badges
  * - Distance calculation in km/m based on device GPS
- * - In-stock product search & price comparison ("Below MRP")
+ * - Nearby In-stock product discovery via /products/nearby
+ * - "Bhav-Taav" Deal exploration & 1-Click Pickup Reservation
+ * - Responsive Multi-Column Grid (Mobile 1-2 cols, Tablet 2-3 cols, Desktop 3-5 cols)
  * - 1-Click Call Shop & GPS Directions
  * - "Pick" AI Shopping Co-Pilot widget
  */
@@ -28,6 +30,7 @@ import {
   CheckCircle,
   Eye,
   ArrowRight,
+  Zap,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -84,7 +87,7 @@ export const ExploreShopsScreen = () => {
 
   useEffect(() => {
     loadData();
-  }, [selectedCategory, radiusKm]);
+  }, [selectedCategory, radiusKm, openNowOnly, searchMode]);
 
   const loadData = async () => {
     try {
@@ -98,16 +101,29 @@ export const ExploreShopsScreen = () => {
         params.category = selectedCategory;
       }
 
+      // If user wants nearby products specifically and GPS is available, use /products/nearby
+      const prodPromise = (coords?.lat && coords?.lng)
+        ? productApi.findNearbyProducts({
+            lat: coords.lat,
+            lng: coords.lng,
+            radius_km: radiusKm < 999 ? radiusKm : 15,
+            category: selectedCategory !== 'All' ? selectedCategory : undefined,
+            open_now: openNowOnly,
+            q: searchTerm || undefined,
+            limit: 40,
+          }).catch(() => productApi.listProducts({ limit: 40 }))
+        : productApi.listProducts({ limit: 40 });
+
       const [shopData, prodData] = await Promise.allSettled([
         shopApi.listPublicShops(params),
-        productApi.listProducts({ limit: 50 }),
+        prodPromise,
       ]);
 
       let shopList = shopData.status === 'fulfilled'
         ? Array.isArray(shopData.value?.shops) ? shopData.value.shops : (Array.isArray(shopData.value) ? shopData.value : [])
         : [];
 
-      // If strict radius returned 0 shops, fallback to all shops so customer never sees an empty screen
+      // Fallback if strict radius returned 0 shops
       if (shopList.length === 0 && params.radius_km) {
         try {
           const fallbackShops = await shopApi.listPublicShops({
@@ -122,9 +138,10 @@ export const ExploreShopsScreen = () => {
       }
       setShops(shopList);
 
-      const prodList = prodData.status === 'fulfilled'
-        ? Array.isArray(prodData.value?.products) ? prodData.value.products : []
-        : [];
+      const prodRaw = prodData.status === 'fulfilled' ? prodData.value : null;
+      const prodList = Array.isArray(prodRaw?.products)
+        ? prodRaw.products
+        : (Array.isArray(prodRaw?.data) ? prodRaw.data : (Array.isArray(prodRaw) ? prodRaw : []));
       setProducts(prodList);
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
@@ -150,7 +167,8 @@ export const ExploreShopsScreen = () => {
     const matchesSearch =
       (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (p.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.category_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (p.category_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const prodStock = Number(p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? 0);
     const matchesStock = inStockOnly ? prodStock > 0 : true;
@@ -159,24 +177,38 @@ export const ExploreShopsScreen = () => {
 
   return (
     <AppLayout title="QuickPick Local" subtitle="Find In-Stock Products Around You">
-      {/* Location Bar & GPS Button */}
+      {/* Top GPS Header Bar */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--bg-card)',
-          padding: '10px 14px',
-          borderRadius: '12px',
-          marginBottom: '12px',
+          background: 'var(--bg-surface)',
+          padding: '12px 16px',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '14px',
           border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <MapPin size={16} color="var(--color-primary)" style={{ flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-primary-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <MapPin size={18} color="var(--color-primary)" />
+          </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Location</div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Aapki Current Location</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
               {locationName}
             </div>
           </div>
@@ -185,37 +217,34 @@ export const ExploreShopsScreen = () => {
         <button
           onClick={detectLocation}
           disabled={isDetecting}
+          className="btn btn-secondary btn-sm"
           style={{
-            background: 'rgba(37, 99, 235, 0.1)',
-            color: 'var(--color-primary)',
-            border: 'none',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            cursor: 'pointer',
+            fontWeight: 700,
+            fontSize: '0.78rem',
+            padding: '6px 12px',
           }}
         >
-          <Crosshair size={13} className={isDetecting ? 'spin' : ''} />
-          {isDetecting ? 'Detecting...' : 'Detect GPS'}
+          <Crosshair size={14} className={isDetecting ? 'spin' : ''} />
+          {isDetecting ? 'Detecting...' : 'Live GPS'}
         </button>
       </div>
 
-      {/* Radius Filter Chips */}
+      {/* Radius Filter & Live Open Pills */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          marginBottom: '12px',
+          marginBottom: '14px',
           overflowX: 'auto',
+          paddingBottom: '2px',
           scrollbarWidth: 'none',
         }}
       >
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, whiteSpace: 'nowrap' }}>
           Radius:
         </span>
         {RADIUS_OPTIONS.map((opt) => (
@@ -223,90 +252,103 @@ export const ExploreShopsScreen = () => {
             key={opt.value}
             onClick={() => setRadiusKm(opt.value)}
             style={{
-              padding: '4px 10px',
-              borderRadius: '16px',
+              padding: '5px 12px',
+              borderRadius: 'var(--radius-full)',
               border: 'none',
               fontSize: '0.75rem',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              background: radiusKm === opt.value ? 'var(--color-primary)' : 'var(--bg-card)',
-              color: radiusKm === opt.value ? '#fff' : 'var(--text-secondary)',
-              border: '1px solid var(--border-subtle)',
+              background: radiusKm === opt.value ? 'var(--color-primary)' : 'var(--bg-surface)',
+              color: radiusKm === opt.value ? '#ffffff' : 'var(--text-secondary)',
+              border: radiusKm === opt.value ? '1px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+              transition: 'all 0.15s ease',
             }}
           >
             {opt.label}
           </button>
         ))}
 
-        <label
+        {/* Open Now Toggle Pill */}
+        <button
+          type="button"
+          onClick={() => setOpenNowOnly(!openNowOnly)}
           style={{
+            marginLeft: 'auto',
+            padding: '5px 12px',
+            borderRadius: 'var(--radius-full)',
+            border: openNowOnly ? '1.5px solid #10b981' : '1px solid var(--border-subtle)',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            fontSize: '0.75rem',
-            color: openNowOnly ? 'var(--color-primary)' : 'var(--text-secondary)',
-            marginLeft: 'auto',
-            whiteSpace: 'nowrap',
-            cursor: 'pointer',
-            fontWeight: 600,
+            gap: '6px',
+            background: openNowOnly ? '#ecfdf5' : 'var(--bg-surface)',
+            color: openNowOnly ? '#065f46' : 'var(--text-secondary)',
           }}
         >
-          <input
-            type="checkbox"
-            checked={openNowOnly}
-            onChange={(e) => setOpenNowOnly(e.target.checked)}
-            style={{ cursor: 'pointer' }}
-          />
-          Open Now
-        </label>
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: openNowOnly ? '#10b981' : '#94a3b8' }} />
+          Abhi Khuli Dukanien (Open)
+        </button>
       </div>
 
       {/* Search Bar & Switcher */}
-      <div style={{ marginBottom: '12px' }}>
-        <div className="search-box" style={{ marginBottom: '8px' }}>
-          <Search size={18} />
+      <div style={{ marginBottom: '14px' }}>
+        <div className="search-box" style={{ marginBottom: '10px' }}>
+          <Search size={18} color="var(--text-muted)" />
           <input
             type="text"
-            placeholder={searchMode === 'shops' ? "Search shop name, area, or category..." : "Search products in local stock..."}
+            placeholder={searchMode === 'shops' ? "Search dukan name, category, ya locality..." : "Search product name, brand, in-stock items..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        {/* Search Mode Toggle (Shops vs Products) */}
-        <div style={{ display: 'flex', gap: '6px' }}>
+        {/* View Mode Switcher (Shops vs Products) */}
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={() => setSearchMode('shops')}
             style={{
               flex: 1,
-              padding: '6px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: '0.78rem',
-              fontWeight: 600,
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: searchMode === 'shops' ? '1.5px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+              fontSize: '0.82rem',
+              fontWeight: 800,
               cursor: 'pointer',
-              background: searchMode === 'shops' ? 'var(--color-primary)' : 'var(--bg-card)',
-              color: searchMode === 'shops' ? '#fff' : 'var(--text-secondary)',
+              background: searchMode === 'shops' ? 'var(--color-primary-light)' : 'var(--bg-surface)',
+              color: searchMode === 'shops' ? 'var(--color-primary)' : 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
             }}
           >
-            Dukaanein ({filteredShops.length})
+            <Store size={16} />
+            <span>Nazdeeki Dukaanein ({filteredShops.length})</span>
           </button>
           <button
             onClick={() => setSearchMode('products')}
             style={{
               flex: 1,
-              padding: '6px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: '0.78rem',
-              fontWeight: 600,
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: searchMode === 'products' ? '1.5px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+              fontSize: '0.82rem',
+              fontWeight: 800,
               cursor: 'pointer',
-              background: searchMode === 'products' ? 'var(--color-primary)' : 'var(--bg-card)',
-              color: searchMode === 'products' ? '#fff' : 'var(--text-secondary)',
+              background: searchMode === 'products' ? 'var(--color-primary-light)' : 'var(--bg-surface)',
+              color: searchMode === 'products' ? 'var(--color-primary)' : 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
             }}
           >
-            Products Nearby ({filteredProducts.length})
+            <Package size={16} />
+            <span>Products In-Stock ({filteredProducts.length})</span>
           </button>
         </div>
       </div>
@@ -318,7 +360,7 @@ export const ExploreShopsScreen = () => {
           gap: '8px',
           overflowX: 'auto',
           paddingBottom: '6px',
-          marginBottom: '14px',
+          marginBottom: '16px',
           scrollbarWidth: 'none',
         }}
       >
@@ -327,39 +369,62 @@ export const ExploreShopsScreen = () => {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             style={{
-              padding: '5px 12px',
-              borderRadius: '16px',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-full)',
               border: 'none',
-              fontSize: '0.75rem',
-              fontWeight: 600,
+              fontSize: '0.78rem',
+              fontWeight: 700,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              background: selectedCategory === cat ? 'var(--color-primary)' : 'var(--bg-card)',
-              color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
+              background: selectedCategory === cat ? 'var(--color-primary)' : 'var(--bg-surface)',
+              color: selectedCategory === cat ? '#ffffff' : 'var(--text-secondary)',
+              border: selectedCategory === cat ? '1px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+              boxShadow: selectedCategory === cat ? 'var(--shadow-sm)' : 'none',
             }}
           >
             {cat}
           </button>
         ))}
+
+        {searchMode === 'products' && (
+          <button
+            type="button"
+            onClick={() => setInStockOnly(!inStockOnly)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              background: inStockOnly ? 'var(--color-primary-light)' : 'var(--bg-surface)',
+              color: inStockOnly ? 'var(--color-primary)' : 'var(--text-secondary)',
+              border: inStockOnly ? '1.5px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+            }}
+          >
+            ⚡ Sirf In-Stock
+          </button>
+        )}
       </div>
 
       {/* Content Feed */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Aas-paas ki physical dukaanein load ho rahi hain...
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: '1.8rem', marginBottom: '10px' }}>🧭</div>
+          <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Aas-paas ki live dukaanein aur maal khoja jaa raha hai...</div>
         </div>
       ) : searchMode === 'shops' ? (
-        /* SHOPS LIST */
+        /* SHOPS RESPONSIVE GRID */
         filteredShops.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: '36px', borderRadius: '16px' }}>
-            <Store size={44} color="var(--text-muted)" style={{ margin: '0 auto 10px auto', opacity: 0.6 }} />
-            <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>Koi Nazdeeki Dukan Nahi Mili</div>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Upar diye gaye Radius ko badhayein ya "All" chunein.
+          <div className="card" style={{ textAlign: 'center', padding: '40px 20px', borderRadius: 'var(--radius-lg)' }}>
+            <Store size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.6 }} />
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>Koi Nazdeeki Dukan Nahi Mili</div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+              Upar diye gaye Radius ko badhayein (e.g. 5km ya 10km) ya category filter hata kar dekhein.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="customer-shop-grid">
             {filteredShops.map((s) => {
               const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
               const saved = isShopSaved(s.id);
@@ -372,22 +437,22 @@ export const ExploreShopsScreen = () => {
                   onClick={() => setInspectedShop(s)}
                   style={{
                     margin: 0,
-                    padding: '18px',
-                    borderRadius: '18px',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
                     border: '1.5px solid var(--border-subtle)',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                    boxShadow: 'var(--shadow-sm)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '14px',
-                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    justifyContent: 'space-between',
+                    gap: '12px',
                     overflow: 'hidden',
                   }}
                 >
-                  {/* Optional Banner Image Preview if Shop has banner */}
+                  {/* Shop Banner Preview */}
                   {hasBanner && (
                     <div
                       style={{
-                        margin: '-18px -18px 0 -18px',
+                        margin: '-16px -16px 0 -16px',
                         height: '110px',
                         overflow: 'hidden',
                         position: 'relative',
@@ -399,23 +464,16 @@ export const ExploreShopsScreen = () => {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
                       />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%)',
-                        }}
-                      />
                     </div>
                   )}
 
-                  {/* Top Row: Shop Logo, Name, Verified Badges */}
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                  {/* Shop Identity Row */}
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                     <div
                       style={{
-                        width: '74px',
-                        height: '74px',
-                        borderRadius: '16px',
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: 'var(--radius-md)',
                         backgroundColor: 'var(--color-primary-light)',
                         color: 'var(--color-primary)',
                         display: 'flex',
@@ -423,8 +481,7 @@ export const ExploreShopsScreen = () => {
                         justifyContent: 'center',
                         flexShrink: 0,
                         overflow: 'hidden',
-                        border: '1.5px solid var(--border-subtle)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        border: '1px solid var(--border-subtle)',
                       }}
                     >
                       {s.logo_url ? (
@@ -435,22 +492,22 @@ export const ExploreShopsScreen = () => {
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       ) : (
-                        <Store size={36} />
+                        <Store size={32} />
                       )}
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                         <div>
-                          <h3 style={{ fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                          <h3 style={{ fontWeight: 800, fontSize: '1.1rem', margin: 0, color: 'var(--text-primary)', lineHeight: 1.25 }}>
                             {s.name}
                           </h3>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-app)', padding: '2px 8px', borderRadius: '6px' }}>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--bg-surface-subtle)', padding: '2px 8px', borderRadius: '6px' }}>
                               🏪 {s.category || 'General Store'}
                             </span>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563eb', background: 'rgba(37, 99, 235, 0.1)', padding: '2px 8px', borderRadius: '6px' }}>
-                              🛡️ Verified Partner
+                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-primary)', background: 'var(--color-primary-light)', padding: '2px 7px', borderRadius: '6px' }}>
+                              ✓ Verified
                             </span>
                           </div>
                         </div>
@@ -461,19 +518,20 @@ export const ExploreShopsScreen = () => {
                             toggleSaveShop(s);
                           }}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0 }}
-                          title="Favorite shop"
+                          title="Bookmark shop"
                         >
-                          <Heart size={22} color={saved ? '#ef4444' : 'var(--text-muted)'} fill={saved ? '#ef4444' : 'none'} />
+                          <Heart size={20} color={saved ? '#ef4444' : 'var(--text-muted)'} fill={saved ? '#ef4444' : 'none'} />
                         </button>
                       </div>
 
+                      {/* Status & Timing */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
                         <span
                           style={{
-                            fontSize: '0.74rem',
+                            fontSize: '0.72rem',
                             fontWeight: 700,
-                            padding: '3px 9px',
-                            borderRadius: '6px',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--radius-full)',
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '5px',
@@ -481,20 +539,21 @@ export const ExploreShopsScreen = () => {
                             color: s.is_active ? '#065f46' : '#991b1b',
                           }}
                         >
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: s.is_active ? '#10b981' : '#ef4444' }} />
-                          {s.is_active ? 'OPEN NOW' : 'CURRENTLY CLOSED'}
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.is_active ? '#10b981' : '#ef4444' }} />
+                          {s.is_active ? 'OPEN NOW' : 'CLOSED'}
                         </span>
 
-                        <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={13} color="var(--text-muted)" />
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} color="var(--text-muted)" />
                           {s.opening_time || '09:00'} - {s.closing_time || '21:00'}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '6px' }}>
-                        <MapPin size={14} color="var(--color-primary)" style={{ flexShrink: 0 }} />
+                      {/* Location & GPS distance */}
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
+                        <MapPin size={13} color="var(--color-primary)" style={{ flexShrink: 0 }} />
                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {[s.address, s.city].filter(Boolean).join(', ') || 'Local Store Location'}
+                          {[s.address, s.city].filter(Boolean).join(', ') || 'Local Store'}
                         </span>
                         {distKm != null && (
                           <span style={{ fontWeight: 800, color: 'var(--color-primary)', flexShrink: 0 }}>
@@ -505,80 +564,57 @@ export const ExploreShopsScreen = () => {
                     </div>
                   </div>
 
-                  {/* Feature Highlights Bar */}
+                  {/* Highlights */}
                   <div
                     style={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      background: 'var(--bg-app)',
-                      borderRadius: '10px',
-                      fontSize: '0.75rem',
+                      gap: '6px',
+                      padding: '6px 10px',
+                      background: 'var(--bg-surface-subtle)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.72rem',
                       color: 'var(--text-secondary)',
                       alignItems: 'center',
                     }}
                   >
-                    <span>⚡ Counter Pickup in 30 Mins</span>
+                    <span>⚡ 30-Min Counter Pickup</span>
                     <span>•</span>
-                    <span>✓ Realtime Stock</span>
+                    <span>✓ Live Stock</span>
                     {s.phone && (
                       <>
                         <span>•</span>
-                        <span>💬 WhatsApp Support</span>
+                        <span>💬 WhatsApp</span>
                       </>
                     )}
                   </div>
 
-                  {/* Action Buttons */}
+                  {/* Actions */}
                   <div
                     style={{
                       display: 'flex',
                       gap: '8px',
-                      paddingTop: '10px',
+                      paddingTop: '8px',
                       borderTop: '1px solid var(--border-subtle)',
-                      flexWrap: 'wrap',
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <button
-                      onClick={() => setInspectedShop(s)}
-                      className="btn btn-secondary btn-sm"
-                      style={{
-                        flex: 1,
-                        minWidth: '110px',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '5px',
-                        padding: '9px 10px',
-                        borderRadius: '10px',
-                      }}
-                    >
-                      <Eye size={14} /> Dukan Details
-                    </button>
-
                     {s.phone && (
                       <a
                         href={`tel:${s.phone}`}
                         className="btn btn-secondary btn-sm"
                         style={{
                           flex: 0.8,
-                          minWidth: '85px',
-                          fontSize: '0.8rem',
+                          fontSize: '0.78rem',
                           fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '5px',
                           textDecoration: 'none',
-                          padding: '9px 10px',
-                          borderRadius: '10px',
                         }}
                       >
-                        <Phone size={14} /> Call
+                        <Phone size={13} /> Call
                       </a>
                     )}
 
@@ -586,20 +622,17 @@ export const ExploreShopsScreen = () => {
                       onClick={() => navigate(`/shop/${s.slug}`)}
                       className="btn btn-primary btn-sm"
                       style={{
-                        flex: 1.4,
-                        minWidth: '140px',
-                        fontSize: '0.84rem',
+                        flex: 1.2,
+                        fontSize: '0.82rem',
                         fontWeight: 700,
-                        padding: '9px 12px',
-                        borderRadius: '10px',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '6px',
                       }}
                     >
-                      <span>Storefront & Items</span>
-                      <ArrowRight size={15} />
+                      <span>Storefront</span>
+                      <ArrowRight size={14} />
                     </button>
                   </div>
                 </div>
@@ -608,17 +641,17 @@ export const ExploreShopsScreen = () => {
           </div>
         )
       ) : (
-        /* PRODUCTS LIST (PRICE COMPARISON & STOCK) */
+        /* PRODUCTS RESPONSIVE GRID (MULTICOLUMN CARDS) */
         filteredProducts.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: '36px', borderRadius: '16px' }}>
-            <Package size={44} color="var(--text-muted)" style={{ margin: '0 auto 10px auto', opacity: 0.6 }} />
-            <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>Koi Product Nahi Mila</div>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Dusre product name ya category se search karein.
+          <div className="card" style={{ textAlign: 'center', padding: '40px 20px', borderRadius: 'var(--radius-lg)' }}>
+            <Package size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.6 }} />
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>Koi Product Nahi Mila</div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+              Dusre product name ya category filter se search karein.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="customer-product-grid">
             {filteredProducts.map((p) => {
               const saved = isProductSaved(p.id);
               const stock = Number(p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? 0);
@@ -626,6 +659,7 @@ export const ExploreShopsScreen = () => {
               const hasDiscount = p.compare_price && p.compare_price > p.price;
               const discountPct = hasDiscount ? Math.round(((p.compare_price - p.price) / p.compare_price) * 100) : 0;
               const brand = p.attributes?.brand || p.attributes?.company;
+              const allowBargain = p.allow_bargain !== false;
 
               return (
                 <div
@@ -634,164 +668,165 @@ export const ExploreShopsScreen = () => {
                   onClick={() => setInspectedProduct(p)}
                   style={{
                     margin: 0,
-                    padding: '18px',
-                    borderRadius: '18px',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-md)',
                     border: '1.5px solid var(--border-subtle)',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                    boxShadow: 'var(--shadow-sm)',
                     display: 'flex',
-                    gap: '18px',
-                    alignItems: 'center',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                     cursor: 'pointer',
-                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    transition: 'all 0.15s ease',
+                    position: 'relative',
                   }}
                 >
-                  {/* Big High-Res Product Image with Overlay Status */}
+                  {/* Top Image Box */}
                   <div
                     style={{
-                      width: '116px',
-                      height: '116px',
-                      borderRadius: '16px',
-                      backgroundColor: '#ffffff',
+                      width: '100%',
+                      height: '160px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-surface-subtle)',
                       overflow: 'hidden',
-                      flexShrink: 0,
+                      position: 'relative',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: '1.5px solid var(--border-subtle)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                      position: 'relative',
+                      marginBottom: '10px',
                     }}
                   >
                     {p.images && p.images[0] ? (
                       <img
                         src={getImageUrl(p.images[0])}
                         alt={p.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }}
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
                     ) : (
-                      <Package size={40} color="var(--text-muted)" style={{ opacity: 0.4 }} />
+                      <Package size={44} color="var(--text-muted)" style={{ opacity: 0.35 }} />
                     )}
 
-                    {/* Stock Pill on image */}
+                    {/* Stock Status Badge */}
                     <span
                       style={{
                         position: 'absolute',
-                        bottom: '5px',
-                        left: '5px',
-                        right: '5px',
-                        textAlign: 'center',
-                        fontSize: '0.64rem',
+                        top: '8px',
+                        left: '8px',
+                        fontSize: '0.66rem',
                         fontWeight: 800,
-                        padding: '2px 4px',
-                        borderRadius: '6px',
-                        backgroundColor: inStock ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+                        padding: '2px 7px',
+                        borderRadius: 'var(--radius-full)',
+                        backgroundColor: inStock ? 'rgba(16, 185, 129, 0.92)' : 'rgba(239, 68, 68, 0.92)',
                         color: '#ffffff',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
                       }}
                     >
                       {inStock ? `${stock} in stock` : 'Out of stock'}
                     </span>
+
+                    {/* Bookmark heart */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSaveProduct(p);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '6px',
+                        right: '6px',
+                        background: 'rgba(255,255,255,0.85)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                      }}
+                      title="Save product"
+                    >
+                      <Heart size={16} color={saved ? '#ef4444' : '#64748b'} fill={saved ? '#ef4444' : 'none'} />
+                    </button>
                   </div>
 
-                  {/* Middle: Details */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <h4 style={{ fontWeight: 800, fontSize: '1.12rem', margin: 0, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                        {p.name}
-                      </h4>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleSaveProduct(p);
-                        }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', flexShrink: 0 }}
-                        title="Save product"
-                      >
-                        <Heart size={20} color={saved ? '#ef4444' : 'var(--text-muted)'} fill={saved ? '#ef4444' : 'none'} />
-                      </button>
+                  {/* Product Metadata */}
+                  <div>
+                    {brand && (
+                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>
+                        {brand}
+                      </div>
+                    )}
+                    <h4
+                      style={{
+                        fontWeight: 800,
+                        fontSize: '0.92rem',
+                        margin: 0,
+                        color: 'var(--text-primary)',
+                        lineHeight: 1.25,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        minHeight: '2.4em',
+                      }}
+                    >
+                      {p.name}
+                    </h4>
+
+                    {/* Shop Name */}
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
+                      <Store size={12} color="var(--text-muted)" />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.shop_name || 'Verified Store'}
+                      </span>
                     </div>
 
-                    {/* Category & Brand & Attribute Chips Upfront */}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginTop: '6px' }}>
-                      {brand && (
-                        <span style={{ fontSize: '0.74rem', background: 'rgba(37, 99, 235, 0.09)', color: '#2563eb', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
-                          {brand}
-                        </span>
-                      )}
-                      {p.category_name && (
-                        <span style={{ fontSize: '0.74rem', background: 'var(--bg-app)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>
-                          {p.category_name}
-                        </span>
-                      )}
-                      {p.attributes?.size && (
-                        <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                          Size: {p.attributes.size}
-                        </span>
-                      )}
-                      {p.attributes?.weight && (
-                        <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                          {p.attributes.weight}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Pricing & Discount Upfront */}
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '8px' }}>
-                      <span style={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '1.25rem' }}>
+                    {/* Price & Savings */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '1.15rem' }}>
                         ₹{p.price}
                       </span>
                       {hasDiscount && (
-                        <>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                            ₹{p.compare_price}
-                          </span>
-                          <span style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 800, background: '#dcfce7', padding: '2px 7px', borderRadius: '6px' }}>
-                            Save ₹{p.compare_price - p.price} ({discountPct}% OFF)
-                          </span>
-                        </>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                          ₹{p.compare_price}
+                        </span>
                       )}
-                    </div>
-
-                    {/* Seller Shop info & Stock */}
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                      <Store size={14} color="var(--color-primary)" />
-                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{p.shop_name || 'Verified Shop'}</span>
-                      {p.shop_city && <span>• {p.shop_city}</span>}
-                      {inStock && (
-                        <span style={{ color: '#10b981', fontWeight: 700 }}>
-                          • Counter pickup ready
+                      {hasDiscount && (
+                        <span style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 800, background: '#dcfce7', padding: '1px 5px', borderRadius: '4px' }}>
+                          {discountPct}% OFF
                         </span>
                       )}
                     </div>
+                  </div>
 
-                    {/* Action buttons */}
-                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }} onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => setInspectedProduct(p)}
-                        className="btn btn-primary btn-sm"
-                        style={{
-                          fontSize: '0.8rem',
-                          padding: '7px 14px',
-                          borderRadius: '8px',
-                          fontWeight: 700,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <Eye size={14} /> View Details & Hold
-                      </button>
-                      {p.shop_slug && (
-                        <button
-                          onClick={() => navigate(`/shop/${p.shop_slug}`)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ fontSize: '0.78rem', padding: '7px 12px', borderRadius: '8px', fontWeight: 600 }}
-                        >
-                          Visit Storefront →
-                        </button>
+                  {/* Actions & Bhav-Taav indicator */}
+                  <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => setInspectedProduct(p)}
+                      className="btn btn-primary btn-sm"
+                      style={{
+                        flex: 1,
+                        fontSize: '0.76rem',
+                        padding: '6px 10px',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      {allowBargain && inStock ? (
+                        <>
+                          <Sparkles size={13} />
+                          <span>Bhav-Taav</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye size={13} />
+                          <span>Hold / View</span>
+                        </>
                       )}
-                    </div>
+                    </button>
                   </div>
                 </div>
               );
@@ -800,7 +835,7 @@ export const ExploreShopsScreen = () => {
         )
       )}
 
-      {/* Product Detail Modal */}
+      {/* Product Detail Modal (With Bhav-Taav Negotiation & Notify Me) */}
       {inspectedProduct && (
         <ProductDetailModal
           product={inspectedProduct}
@@ -824,8 +859,8 @@ export const ExploreShopsScreen = () => {
           position: 'fixed',
           bottom: '80px',
           right: '20px',
-          background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-          color: '#fff',
+          background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
+          color: '#ffffff',
           border: 'none',
           borderRadius: '30px',
           padding: '10px 18px',
@@ -835,7 +870,7 @@ export const ExploreShopsScreen = () => {
           fontSize: '0.88rem',
           fontWeight: 700,
           cursor: 'pointer',
-          boxShadow: '0 6px 20px rgba(37, 99, 235, 0.45)',
+          boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
           zIndex: 90,
           transition: 'transform 0.2s',
         }}

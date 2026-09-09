@@ -2,11 +2,13 @@
  * ProductDetailModal Component
  * 
  * Hinglish Hint:
- * Kisi bhi product par tap karne par ek modern native-app style bottom sheet khulti hai:
- * - High-resolution image gallery (multiple images swipe/preview)
+ * Kisi bhi product par tap karne par ek modern responsive bottom-sheet / modal khulti hai:
+ * - High-resolution image gallery (multiple images preview)
  * - Complete product specifications & flexible attributes (Brand, Size, Color, etc.)
  * - SKU, Price, Stock indicator
- * - Customer ke liye instant "Hold / Reserve" action
+ * - 🤝 Bhav-Taav Karein (Real-time algorithmic bargaining with instant acceptance or sweet-spot counter-offer)
+ * - 🔔 Notify Me (Out-of-stock notification registration for automatic WhatsApp alerts)
+ * - Customer ke liye instant "Hold / Reserve" for in-store counter pickup
  * - Merchant ke liye "Adjust Stock" action
  */
 
@@ -27,9 +29,16 @@ import {
   MapPin,
   Phone,
   Navigation,
+  Sparkles,
+  MessageSquare,
+  Send,
+  Bell,
+  ArrowRight,
 } from 'lucide-react';
 import { getCategoryEmoji } from '../../utils/categoryMeta';
 import { getImageUrl } from '../../utils/imageUrl';
+import { productApi } from '../../api/product.api';
+import { useAuth } from '../../context/AuthContext';
 
 export const ProductDetailModal = ({
   product,
@@ -40,6 +49,7 @@ export const ProductDetailModal = ({
 }) => {
   if (!product) return null;
 
+  const { user } = useAuth();
   const images = product.images && product.images.length > 0 ? product.images : [];
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [copiedSKU, setCopiedSKU] = useState(false);
@@ -50,6 +60,23 @@ export const ProductDetailModal = ({
   const [reserveNotes, setReserveNotes] = useState('');
   const [reserving, setReserving] = useState(false);
 
+  // 🤝 Bhav-Taav (Bargaining) State
+  const [showBargainBox, setShowBargainBox] = useState(false);
+  const [offerPrice, setOfferPrice] = useState(Math.round(product.price * 0.9));
+  const [offerQty, setOfferQty] = useState(1);
+  const [offerPhone, setOfferPhone] = useState(user?.phone || '');
+  const [offerName, setOfferName] = useState(user?.name || user?.full_name || '');
+  const [submittingOffer, setSubmittingOffer] = useState(false);
+  const [offerResult, setOfferResult] = useState(null);
+  const [offerError, setOfferError] = useState(null);
+
+  // 🔔 Notify Me (Out of Stock Alert) State
+  const [alertPhone, setAlertPhone] = useState(user?.phone || '');
+  const [alertName, setAlertName] = useState(user?.name || user?.full_name || '');
+  const [subscribingAlert, setSubscribingAlert] = useState(false);
+  const [alertSuccess, setAlertSuccess] = useState(false);
+  const [alertError, setAlertError] = useState(null);
+
   const currentStock = Number(
     product.stock_quantity ??
     product.inventory?.available_quantity ??
@@ -57,6 +84,7 @@ export const ProductDetailModal = ({
     0
   );
   const inStock = currentStock > 0;
+  const allowBargain = product.allow_bargain !== false;
 
   const handleCopySKU = () => {
     if (product.sku) {
@@ -83,15 +111,65 @@ export const ProductDetailModal = ({
     }
   };
 
-  const hasAttributes = product.attributes && Object.keys(product.attributes).length > 0;
+  // Submit Bhav-Taav proposal
+  const handleBargainSubmit = async (e) => {
+    e.preventDefault();
+    setOfferError(null);
+    if (!offerPhone || offerPhone.trim().length < 10) {
+      setOfferError('Kripya valid 10-digit mobile number dalein taaki dukan par token dikha sakein.');
+      return;
+    }
+    if (Number(offerPrice) <= 0) {
+      setOfferError('Offer price 0 se jyada hona chahiye.');
+      return;
+    }
+
+    setSubmittingOffer(true);
+    try {
+      const res = await productApi.makeOffer(product.id, {
+        offered_price: Number(offerPrice),
+        quantity: Number(offerQty) || 1,
+        customer_phone: offerPhone.trim(),
+        customer_name: offerName.trim() || undefined,
+      });
+      const data = res.data || res;
+      setOfferResult(data);
+    } catch (err) {
+      setOfferError(err.response?.data?.message || err.message || 'Bhav submit karne me dikkat aayi.');
+    } finally {
+      setSubmittingOffer(false);
+    }
+  };
+
+  // Submit Out-of-Stock Notify Me
+  const handleStockAlertSubmit = async (e) => {
+    e.preventDefault();
+    setAlertError(null);
+    if (!alertPhone || alertPhone.trim().length < 10) {
+      setAlertError('Kripya valid 10-digit mobile number dalein.');
+      return;
+    }
+
+    setSubscribingAlert(true);
+    try {
+      await productApi.subscribeStockAlert(product.id, {
+        customer_phone: alertPhone.trim(),
+        customer_name: alertName.trim() || undefined,
+      });
+      setAlertSuccess(true);
+    } catch (err) {
+      setAlertError(err.response?.data?.message || err.message || 'Alert register nahi ho paya.');
+    } finally {
+      setSubscribingAlert(false);
+    }
+  };
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 120 }}>
+    <div className="modal-overlay modal-backdrop" onClick={onClose} style={{ zIndex: 120 }}>
       <div
-        className="bottom-sheet"
+        className="modal-dialog-responsive bottom-sheet"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
           padding: 0,
@@ -101,19 +179,22 @@ export const ProductDetailModal = ({
         {/* Modal Handle & Close Button */}
         <div
           style={{
-            padding: '12px 16px',
+            padding: '12px 18px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             borderBottom: '1px solid var(--border-subtle)',
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--bg-surface)',
           }}
         >
           <div className="sheet-handle" style={{ margin: 0 }} />
+          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+            Product Details
+          </div>
           <button
             onClick={onClose}
             style={{
-              background: '#f1f5f9',
+              background: 'var(--bg-surface-subtle)',
               border: 'none',
               borderRadius: '50%',
               width: '32px',
@@ -139,14 +220,13 @@ export const ProductDetailModal = ({
                 width: '100%',
                 height: '240px',
                 borderRadius: 'var(--radius-lg)',
-                backgroundColor: '#f8fafc',
+                backgroundColor: 'var(--bg-surface-subtle)',
                 overflow: 'hidden',
                 position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '1px solid var(--border-subtle)',
-                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.03)',
               }}
             >
               {images.length > 0 ? (
@@ -189,7 +269,7 @@ export const ProductDetailModal = ({
                       boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                     }}
                   >
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={18} color="#0f172a" />
                   </button>
                   <button
                     onClick={() => setSelectedImageIdx((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
@@ -210,7 +290,7 @@ export const ProductDetailModal = ({
                       boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                     }}
                   >
-                    <ChevronRight size={18} />
+                    <ChevronRight size={18} color="#0f172a" />
                   </button>
                 </>
               )}
@@ -257,7 +337,7 @@ export const ProductDetailModal = ({
                       style={{
                         fontSize: '0.78rem',
                         fontWeight: 700,
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        backgroundColor: 'var(--color-primary-light)',
                         color: 'var(--color-primary)',
                         padding: '2px 8px',
                         borderRadius: '6px',
@@ -272,7 +352,7 @@ export const ProductDetailModal = ({
                       style={{
                         fontSize: '0.78rem',
                         fontWeight: 600,
-                        backgroundColor: '#f1f5f9',
+                        backgroundColor: 'var(--bg-surface-subtle)',
                         color: 'var(--text-secondary)',
                         padding: '2px 8px',
                         borderRadius: '6px',
@@ -366,7 +446,7 @@ export const ProductDetailModal = ({
                     borderRadius: 'var(--radius-full)',
                     fontSize: '0.75rem',
                     fontWeight: 600,
-                    backgroundColor: '#f1f5f9',
+                    backgroundColor: 'var(--bg-surface-subtle)',
                     color: 'var(--text-secondary)',
                     border: 'none',
                     cursor: 'pointer',
@@ -380,6 +460,316 @@ export const ProductDetailModal = ({
               )}
             </div>
           </div>
+
+          {/* 🤝 Customer Feature: Bhav-Taav Negotiation (Make Offer) */}
+          {!isMerchant && inStock && allowBargain && (
+            <div
+              style={{
+                backgroundColor: 'var(--bg-surface-subtle)',
+                border: '1.5px dashed var(--color-primary)',
+                borderRadius: 'var(--radius-md)',
+                padding: '14px',
+                marginBottom: '16px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={16} color="var(--color-primary)" />
+                    🤝 Bhav-Taav Karein (Make Offer)
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Apna rate propose karein — hamara smart engine turant best discount calculate karega!
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBargainBox(!showBargainBox)}
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: showBargainBox ? 'var(--bg-surface)' : 'var(--color-primary)',
+                    color: showBargainBox ? 'var(--text-primary)' : '#ffffff',
+                    border: showBargainBox ? '1px solid var(--border-subtle)' : 'none',
+                    fontWeight: 700,
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-full)',
+                  }}
+                >
+                  {showBargainBox ? 'Hide' : 'Rate Lagayein'}
+                </button>
+              </div>
+
+              {showBargainBox && (
+                <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
+                  {!offerResult ? (
+                    <form onSubmit={handleBargainSubmit}>
+                      {/* Quick percentage discount pills */}
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+                        {[5, 10, 15, 20].map((pct) => {
+                          const discounted = Math.round(product.price * (1 - pct / 100));
+                          const isActive = offerPrice === discounted;
+                          return (
+                            <button
+                              key={pct}
+                              type="button"
+                              onClick={() => setOfferPrice(discounted)}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                border: isActive ? '1.5px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+                                backgroundColor: isActive ? 'var(--color-primary-light)' : 'var(--bg-surface)',
+                                color: isActive ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              -{pct}% (₹{discounted})
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '10px' }}>
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '3px' }}>
+                            Aapka Proposed Rate (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max={product.price}
+                            required
+                            className="form-input"
+                            style={{ fontSize: '0.88rem', fontWeight: 800 }}
+                            value={offerPrice}
+                            onChange={(e) => setOfferPrice(Number(e.target.value))}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '3px' }}>
+                            Quantity (Kitne Pieces)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max={currentStock}
+                            required
+                            className="form-input"
+                            style={{ fontSize: '0.88rem', fontWeight: 700 }}
+                            value={offerQty}
+                            onChange={(e) => setOfferQty(Number(e.target.value))}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ marginBottom: '12px' }}>
+                        <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '3px' }}>
+                          Aapka Mobile Number (10-Digit WhatsApp)
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="e.g. 9876543210"
+                          required
+                          className="form-input"
+                          value={offerPhone}
+                          onChange={(e) => setOfferPhone(e.target.value)}
+                        />
+                      </div>
+
+                      {offerError && (
+                        <div style={{ color: '#b91c1c', fontSize: '0.78rem', marginBottom: '10px', fontWeight: 600 }}>
+                          ⚠️ {offerError}
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={submittingOffer}
+                        className="btn btn-primary btn-block"
+                        style={{ fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                      >
+                        <Send size={16} />
+                        <span>{submittingOffer ? 'Calculating Deal...' : `Bhav Submit Karein (₹${offerPrice * offerQty})`}</span>
+                      </button>
+                    </form>
+                  ) : (
+                    /* Offer Result Display */
+                    <div>
+                      {offerResult.status === 'DEAL_ACCEPTED' && (
+                        <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 'var(--radius-md)', padding: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 900, fontSize: '0.92rem' }}>
+                            <CheckCircle size={20} color="#10b981" />
+                            🎉 Deal Accepted! Rate Manzoor Hai!
+                          </div>
+                          <p style={{ fontSize: '0.8rem', color: '#047857', marginTop: '6px', lineHeight: 1.4 }}>
+                            {offerResult.message || `Aapko yeh item ₹${offerResult.agreed_price} me diya jaa raha hai!`}
+                          </p>
+
+                          <div style={{ backgroundColor: '#ffffff', border: '1px dashed #10b981', borderRadius: 'var(--radius-sm)', padding: '10px', margin: '10px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>EXCLUSIVE DEAL CODE</div>
+                              <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '1px' }}>
+                                {offerResult.deal_code}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>VALID FOR</div>
+                              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c' }}>30 Minutes</div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {offerResult.whatsapp_order_url && (
+                              <a
+                                href={offerResult.whatsapp_order_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn-sm"
+                                style={{ flex: 1, backgroundColor: '#25D366', color: '#ffffff', fontWeight: 800, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
+                              >
+                                <MessageSquare size={16} /> WhatsApp Order Karein
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setOfferResult(null)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontWeight: 600 }}
+                            >
+                              Reset
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {offerResult.status === 'COUNTER_OFFER' && (
+                        <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius-md)', padding: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontWeight: 900, fontSize: '0.92rem' }}>
+                            <Sparkles size={18} color="#d97706" />
+                            🤝 Dukan Ka Counter Offer: ₹{offerResult.agreed_price}
+                          </div>
+                          <p style={{ fontSize: '0.8rem', color: '#78350f', marginTop: '6px', lineHeight: 1.4 }}>
+                            {offerResult.message}
+                          </p>
+
+                          {/* Bundle Volume Upsell (Science of bargaining) */}
+                          {offerResult.bundle_upsell && (
+                            <div style={{ backgroundColor: '#ffffff', border: '1.5px solid #6366f1', borderRadius: 'var(--radius-sm)', padding: '10px', margin: '10px 0' }}>
+                              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#4f46e5', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                🔥 VOLUME BUNDLE BACHAT OFFER
+                              </div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '3px' }}>
+                                {offerResult.bundle_upsell.description}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 700, marginTop: '2px' }}>
+                                Total Savings: ₹{offerResult.bundle_upsell.total_savings} (Sirf ₹{offerResult.bundle_upsell.unit_price}/piece)
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                            {offerResult.whatsapp_order_url && (
+                              <a
+                                href={offerResult.whatsapp_order_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn-sm"
+                                style={{ flex: 1, backgroundColor: '#25D366', color: '#ffffff', fontWeight: 800, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
+                              >
+                                <MessageSquare size={16} /> Deal Lock Karein (WhatsApp)
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setOfferResult(null)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontWeight: 600 }}
+                            >
+                              Doosra Bhav Try Karein
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {offerResult.status === 'BARGAIN_DISABLED' && (
+                        <div style={{ backgroundColor: 'var(--bg-surface-subtle)', borderRadius: 'var(--radius-md)', padding: '12px', textAlign: 'center' }}>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
+                            {offerResult.message || 'Is product par fixed price hai, bhav-taav uplabdh nahi hai.'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setOfferResult(null)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ marginTop: '8px' }}
+                          >
+                            Theek Hai
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 🔔 Customer Feature: Out-of-Stock Notification Subscription */}
+          {!isMerchant && !inStock && (
+            <div
+              style={{
+                backgroundColor: 'var(--color-danger-light)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: 'var(--radius-md)',
+                padding: '16px',
+                marginBottom: '16px',
+                textAlign: 'center',
+              }}
+            >
+              <Bell size={26} color="#ef4444" style={{ margin: '0 auto 6px auto' }} />
+              <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.92rem' }}>
+                Filhal Out of Stock Hai
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', marginBottom: '12px' }}>
+                Jaise hi dukan me naya stock aayega, hum aapko WhatsApp ya SMS par turant notify kar denge!
+              </p>
+
+              {alertSuccess ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#15803d', fontWeight: 800, fontSize: '0.85rem' }}>
+                  <CheckCircle size={18} color="#15803d" />
+                  Alert lag gaya hai! Restock hote hi aapko message aayega.
+                </div>
+              ) : (
+                <form onSubmit={handleStockAlertSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '360px', margin: '0 auto' }}>
+                  <input
+                    type="tel"
+                    placeholder="WhatsApp Mobile Number (10-Digit)"
+                    required
+                    value={alertPhone}
+                    onChange={(e) => setAlertPhone(e.target.value)}
+                    className="form-input"
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                  {alertError && (
+                    <div style={{ color: '#b91c1c', fontSize: '0.74rem', fontWeight: 600 }}>
+                      ⚠️ {alertError}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={subscribingAlert}
+                    className="btn btn-primary btn-block btn-sm"
+                    style={{ fontWeight: 700 }}
+                  >
+                    {subscribingAlert ? 'Saving...' : '🔔 Notify Me (Jab Stock Aaye)'}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
 
           {/* Flexible Specifications & Attributes Card */}
           {(() => {
@@ -397,7 +787,7 @@ export const ProductDetailModal = ({
             return (
               <div
                 style={{
-                  backgroundColor: '#f8fafc',
+                  backgroundColor: 'var(--bg-surface-subtle)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-md)',
                   padding: '14px',
@@ -411,7 +801,7 @@ export const ProductDetailModal = ({
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {product.weight > 0 && (
-                    <div style={{ backgroundColor: '#ffffff', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid #e2e8f0' }}>
+                    <div style={{ backgroundColor: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                         WEIGHT / NET QTY
                       </div>
@@ -423,7 +813,7 @@ export const ProductDetailModal = ({
                   {safeEntries.map(([key, val]) => {
                     const label = key.replace(/_/g, ' ').toUpperCase();
                     return (
-                      <div key={key} style={{ backgroundColor: '#ffffff', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid #e2e8f0' }}>
+                      <div key={key} style={{ backgroundColor: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                         <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                           {label}
                         </div>
@@ -442,7 +832,7 @@ export const ProductDetailModal = ({
           {product.description && (
             <div
               style={{
-                backgroundColor: '#f8fafc',
+                backgroundColor: 'var(--bg-surface-subtle)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '12px 14px',
@@ -462,12 +852,12 @@ export const ProductDetailModal = ({
           {!isMerchant && (product.shop_name || product.shop?.name) && (
             <div
               style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--bg-surface)',
                 border: '1.5px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '14px',
                 marginBottom: '16px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -527,67 +917,62 @@ export const ProductDetailModal = ({
           )}
 
           {/* Customer Action: Reserve / Hold Item */}
-          {!isMerchant && (
+          {!isMerchant && inStock && (
             <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '10px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>
                 🛍️ DUKAN SE PICKUP KE LIYE HOLD / RESERVE KAREIN
               </div>
 
-              {!inStock ? (
-                <div style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', textAlign: 'center', fontWeight: 600 }}>
-                  Yeh product abhi out of stock hai.
-                </div>
-              ) : (
-                <form onSubmit={handleReserveSubmit}>
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Kitne Pieces (Qty)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max={currentStock}
-                        required
-                        className="form-input"
-                        value={reserveQty}
-                        onChange={(e) => setReserveQty(e.target.value)}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Hold Time (Hours)</label>
-                      <select
-                        className="form-input"
-                        value={reserveHours}
-                        onChange={(e) => setReserveHours(e.target.value)}
-                      >
-                        <option value="2">2 Ghante</option>
-                        <option value="4">4 Ghante</option>
-                        <option value="8">8 Ghante</option>
-                        <option value="24">24 Ghante</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Koi Special Note (Optional)</label>
+              <form onSubmit={handleReserveSubmit}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Kitne Pieces (Qty)</label>
                     <input
-                      type="text"
+                      type="number"
+                      min="1"
+                      max={currentStock}
+                      required
                       className="form-input"
-                      placeholder="e.g. Mai 2 baje counter par aaunga"
-                      value={reserveNotes}
-                      onChange={(e) => setReserveNotes(e.target.value)}
+                      value={reserveQty}
+                      onChange={(e) => setReserveQty(e.target.value)}
                     />
                   </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Hold Time (Hours)</label>
+                    <select
+                      className="form-input"
+                      value={reserveHours}
+                      onChange={(e) => setReserveHours(e.target.value)}
+                    >
+                      <option value="2">2 Ghante</option>
+                      <option value="4">4 Ghante</option>
+                      <option value="8">8 Ghante</option>
+                      <option value="24">24 Ghante</option>
+                    </select>
+                  </div>
+                </div>
 
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-block btn-lg"
-                    disabled={reserving}
-                  >
-                    <ShoppingBag size={18} />
-                    <span>{reserving ? 'Hold Ho Raha Hai...' : `Item Hold Karein (₹${product.price * reserveQty})`}</span>
-                  </button>
-                </form>
-              )}
+                <div style={{ marginBottom: '12px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Koi Special Note (Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Mai 2 baje counter par aaunga"
+                    value={reserveNotes}
+                    onChange={(e) => setReserveNotes(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-block btn-lg"
+                  disabled={reserving}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <ShoppingBag size={18} />
+                  <span>{reserving ? 'Hold Ho Raha Hai...' : `Item Hold Karein (₹${product.price * reserveQty})`}</span>
+                </button>
+              </form>
             </div>
           )}
 
