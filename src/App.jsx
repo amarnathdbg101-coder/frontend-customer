@@ -23,6 +23,7 @@ import { LanguageProvider } from './context/LanguageContext';
 // Auth Pages
 import { LoginScreen } from './pages/auth/LoginScreen';
 import { RegisterScreen } from './pages/auth/RegisterScreen';
+import { ResetPasswordScreen } from './pages/auth/ResetPasswordScreen';
 
 // Customer Pages
 import { ExploreShopsScreen } from './pages/customer/ExploreShopsScreen';
@@ -82,6 +83,7 @@ function App() {
                   {/* Auth Routes */}
                   <Route path="/login" element={<LoginScreen />} />
                   <Route path="/register" element={<RegisterScreen />} />
+                  <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
                   {/* Fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />
