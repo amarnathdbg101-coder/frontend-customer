@@ -21,7 +21,7 @@ export const BottomNav = () => {
   const totalSaved = savedProducts.length + savedShops.length;
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
       <NavLink
         to="/"
         end

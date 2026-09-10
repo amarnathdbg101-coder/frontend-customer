@@ -1,0 +1,86 @@
+/* ==========================================================================
+   ShopMe Skeleton Loader Styles
+   ========================================================================== */
+
+.skeleton-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-subtle) 25%,
+    rgba(255, 255, 255, 0.3) 50%,
+    var(--bg-surface-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+[data-theme="dark"] .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-subtle) 25%,
+    rgba(255, 255, 255, 0.06) 50%,
+    var(--bg-surface-subtle) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* ==========================================================================
+   Error Boundary Fallback
+   ========================================================================== */
+
+.error-boundary-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.error-boundary-icon {
+  color: var(--color-warning);
+  margin-bottom: 16px;
+}
+
+.error-boundary-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.error-boundary-message {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.error-boundary-details {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--bg-surface-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-align: left;
+  max-width: 500px;
+  width: 100%;
+}
+
+.error-boundary-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.error-boundary-details pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+}

@@ -304,11 +304,6 @@
   animation: fadeIn 0.15s ease-out;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .bottom-sheet {
   background-color: var(--bg-surface);
   width: 100%;
@@ -319,11 +314,6 @@
   overflow-y: auto;
   box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
   animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
 }
 
 .sheet-handle {

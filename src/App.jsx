@@ -10,39 +10,45 @@
  * - '/profile'      -> Grahak ka profile aur account settings
  * - '/login'        -> Customer Login
  * - '/register'     -> Customer Signup
+ * 
+ * Performance: All page components are lazy-loaded with React.lazy() for
+ * code splitting. Each route loads only when navigated to.
  */
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LocationProvider } from './context/LocationContext';
 import { SavedProvider } from './context/SavedContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
 
-// Auth Pages
-import { LoginScreen } from './pages/auth/LoginScreen';
-import { RegisterScreen } from './pages/auth/RegisterScreen';
-import { ResetPasswordScreen } from './pages/auth/ResetPasswordScreen';
+// Lazy-loaded Auth Pages
+const LoginScreen = lazy(() => import('./pages/auth/LoginScreen').then(m => ({ default: m.LoginScreen })));
+const RegisterScreen = lazy(() => import('./pages/auth/RegisterScreen').then(m => ({ default: m.RegisterScreen })));
+const ResetPasswordScreen = lazy(() => import('./pages/auth/ResetPasswordScreen').then(m => ({ default: m.ResetPasswordScreen })));
 
-// Customer Pages
-import { ExploreShopsScreen } from './pages/customer/ExploreShopsScreen';
-import { DealsScreen } from './pages/customer/DealsScreen';
-import { SavedScreen } from './pages/customer/SavedScreen';
-import { StorefrontScreen } from './pages/customer/StorefrontScreen';
-import { ReservationsScreen } from './pages/customer/ReservationsScreen';
-import { CustomerProfileScreen } from './pages/customer/CustomerProfileScreen';
+// Lazy-loaded Customer Pages
+const ExploreShopsScreen = lazy(() => import('./pages/customer/ExploreShopsScreen').then(m => ({ default: m.ExploreShopsScreen })));
+const DealsScreen = lazy(() => import('./pages/customer/DealsScreen').then(m => ({ default: m.DealsScreen })));
+const SavedScreen = lazy(() => import('./pages/customer/SavedScreen').then(m => ({ default: m.SavedScreen })));
+const StorefrontScreen = lazy(() => import('./pages/customer/StorefrontScreen').then(m => ({ default: m.StorefrontScreen })));
+const ReservationsScreen = lazy(() => import('./pages/customer/ReservationsScreen').then(m => ({ default: m.ReservationsScreen })));
+const CustomerProfileScreen = lazy(() => import('./pages/customer/CustomerProfileScreen').then(m => ({ default: m.CustomerProfileScreen })));
+
+// Suspense fallback for route loading
+const RouteFallback = () => (
+  <LoadingSpinner message="Page load ho raha hai..." fullScreen />
+);
 
 // Protected Route Guard for Customer Profile / Orders
 const ProtectedCustomerRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>
-        Loading...
-      </div>
-    );
+    return <LoadingSpinner message="Session verify ho raha hai..." fullScreen />;
   }
 
   if (!isAuthenticated) {
@@ -54,46 +60,50 @@ const ProtectedCustomerRoute = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <LocationProvider>
-            <SavedProvider>
-              <BrowserRouter>
-                <Routes>
-                  {/* Public Store Discovery, Deals & Shopping */}
-                  <Route path="/" element={<ExploreShopsScreen />} />
-                  <Route path="/deals" element={<DealsScreen />} />
-                  <Route path="/saved" element={<SavedScreen />} />
-                  <Route path="/shop/:slug" element={<StorefrontScreen />} />
+    <ErrorBoundary>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <LocationProvider>
+              <SavedProvider>
+                <BrowserRouter>
+                  <Suspense fallback={<RouteFallback />}>
+                    <Routes>
+                      {/* Public Store Discovery, Deals & Shopping */}
+                      <Route path="/" element={<ExploreShopsScreen />} />
+                      <Route path="/deals" element={<DealsScreen />} />
+                      <Route path="/saved" element={<SavedScreen />} />
+                      <Route path="/shop/:slug" element={<StorefrontScreen />} />
 
-                  {/* Customer Pickups & Orders */}
-                  <Route path="/reservations" element={<ReservationsScreen />} />
+                      {/* Customer Pickups & Orders */}
+                      <Route path="/reservations" element={<ReservationsScreen />} />
 
-                  {/* Customer Profile */}
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedCustomerRoute>
-                        <CustomerProfileScreen />
-                      </ProtectedCustomerRoute>
-                    }
-                  />
+                      {/* Customer Profile */}
+                      <Route
+                        path="/profile"
+                        element={
+                          <ProtectedCustomerRoute>
+                            <CustomerProfileScreen />
+                          </ProtectedCustomerRoute>
+                        }
+                      />
 
-                  {/* Auth Routes */}
-                  <Route path="/login" element={<LoginScreen />} />
-                  <Route path="/register" element={<RegisterScreen />} />
-                  <Route path="/reset-password" element={<ResetPasswordScreen />} />
+                      {/* Auth Routes */}
+                      <Route path="/login" element={<LoginScreen />} />
+                      <Route path="/register" element={<RegisterScreen />} />
+                      <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
-                  {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </BrowserRouter>
-            </SavedProvider>
-          </LocationProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+                      {/* Fallback */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                </BrowserRouter>
+              </SavedProvider>
+            </LocationProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -34,12 +34,12 @@ export const DesktopNavbar = () => {
   const { user, isAuthenticated } = useAuth();
   const { locationName, detectLocation, isDetecting } = useLocation();
   const { isDark, toggleTheme } = useTheme();
-  const { savedItemIds } = useSaved();
+  const { savedProducts, savedShops } = useSaved();
 
-  const savedCount = savedItemIds ? Object.keys(savedItemIds).length : 0;
+  const savedCount = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
   return (
-    <header className="desktop-navbar">
+    <header className="desktop-navbar" role="banner">
       <div className="desktop-navbar-inner">
         {/* Brand Logo */}
         <div
