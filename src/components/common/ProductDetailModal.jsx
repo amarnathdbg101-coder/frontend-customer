@@ -78,9 +78,11 @@ export const ProductDetailModal = ({
   const [alertError, setAlertError] = useState(null);
 
   const currentStock = Number(
+    product.available_quantity ??
     product.stock_quantity ??
     product.inventory?.available_quantity ??
     product.inventory?.quantity ??
+    product.stock ??
     0
   );
   const inStock = currentStock > 0;

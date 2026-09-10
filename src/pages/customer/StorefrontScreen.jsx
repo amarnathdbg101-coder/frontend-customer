@@ -274,7 +274,14 @@ export const StorefrontScreen = () => {
       {/* Products Grid (Spacious Professional E-commerce Cards) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
         {filteredProducts.map((p) => {
-          const stock = Number(p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? 0);
+          const stock = Number(
+            p.available_quantity ??
+            p.stock_quantity ??
+            p.inventory?.available_quantity ??
+            p.inventory?.quantity ??
+            p.stock ??
+            0
+          );
           const inStock = stock > 0;
           const hasDiscount = p.compare_price && p.compare_price > p.price;
           const discountPct = hasDiscount ? Math.round(((p.compare_price - p.price) / p.compare_price) * 100) : 0;

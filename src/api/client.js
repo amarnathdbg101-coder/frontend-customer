@@ -12,14 +12,14 @@ import axios from 'axios';
 
 // Backend server URL (Cleaned, supports production environment variables)
 const rawUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
-export const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : 'http://localhost:8080';
+export const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : 'https://shop-me-t48p.onrender.com';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 45000,
 });
 
 // Request Interceptor: Attach JWT Token automatically if user is logged in

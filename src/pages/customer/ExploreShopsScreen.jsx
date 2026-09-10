@@ -133,7 +133,23 @@ export const ExploreShopsScreen = () => {
       const prodList = Array.isArray(prodRaw?.products)
         ? prodRaw.products
         : (Array.isArray(prodRaw?.data) ? prodRaw.data : (Array.isArray(prodRaw) ? prodRaw : []));
-      setProducts(prodList);
+      const normalizedProds = prodList.map((p) => {
+        const qty = Number(
+          p.available_quantity ??
+          p.stock_quantity ??
+          p.inventory?.available_quantity ??
+          p.inventory?.quantity ??
+          p.stock ??
+          0
+        );
+        return {
+          ...p,
+          id: p.id || p.product_id,
+          stock_quantity: qty,
+          available_quantity: qty,
+        };
+      });
+      setProducts(normalizedProds);
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
     } finally {
@@ -163,7 +179,14 @@ export const ExploreShopsScreen = () => {
         (p.description || '').toLowerCase().includes(term) ||
         (p.category_name || '').toLowerCase().includes(term) ||
         (p.category?.name || '').toLowerCase().includes(term);
-      const prodStock = Number(p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? 0);
+      const prodStock = Number(
+        p.available_quantity ??
+        p.stock_quantity ??
+        p.inventory?.available_quantity ??
+        p.inventory?.quantity ??
+        p.stock ??
+        0
+      );
       const matchesStock = inStockOnly ? prodStock > 0 : true;
       return matchesSearch && matchesStock;
     });

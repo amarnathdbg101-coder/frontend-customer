@@ -254,7 +254,7 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
                           </div>
 
                           {(() => {
-                            const inStock = Number(p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? 0) > 0;
+                            const inStock = Number(p.available_quantity ?? p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? p.stock ?? 0) > 0;
                             return (
                               <span
                                 style={{
