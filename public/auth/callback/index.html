@@ -96,7 +96,13 @@
     (function() {
       var fullSearch = window.location.search || '';
       var fullHash = window.location.hash || '';
-      var deepLink = 'shopsilo://auth/callback' + fullSearch + fullHash;
+      var query = fullSearch;
+      if (!query && fullHash) {
+        query = '?' + fullHash.replace(/^#/, '');
+      } else if (fullHash) {
+        query = query + '&' + fullHash.replace(/^#/, '');
+      }
+      var deepLink = 'shopsilo://auth/callback' + query;
 
       // Auto redirect to native app deep link
       window.location.href = deepLink;
@@ -113,3 +119,4 @@
   </script>
 </body>
 </html>
+
