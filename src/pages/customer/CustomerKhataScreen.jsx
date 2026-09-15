@@ -192,10 +192,18 @@ export const CustomerKhataScreen = () => {
 
   const totalOutstanding = summary?.total_outstanding ?? summary?.total_balance ?? 0;
 
-  // Generate UPI URI for selected shop
+  // Generate UPI URI for selected shop using real shop upi_id
   const getShopUpiUri = () => {
     if (!selectedKhata) return '';
-    const shopVpa = selectedKhata.shop_vpa || selectedKhata.shop?.vpa || selectedKhata.shop_upi || 'paytmqr2810050501011@paytm';
+    const shopVpa = (
+      selectedKhata.shop_upi_id ||
+      selectedKhata.shop?.upi_id ||
+      selectedKhata.shop_vpa ||
+      selectedKhata.shop?.vpa ||
+      selectedKhata.shop_upi ||
+      ''
+    ).trim();
+    if (!shopVpa) return '';
     const shopName = selectedKhata.shop_name || selectedKhata.shop?.name || 'Shop';
     const amt = upiAmount || selectedKhata.current_balance || 0;
     return `upi://pay?pa=${encodeURIComponent(shopVpa)}&pn=${encodeURIComponent(shopName)}&am=${amt}&cu=INR&tn=${encodeURIComponent(`Khata_${user?.phone || 'Payment'}`)}`;
@@ -711,32 +719,81 @@ export const CustomerKhataScreen = () => {
                 marginBottom: '16px',
               }}
             >
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
-                SCAN WITH ANY UPI APP (GPay / PhonePe / Paytm)
-              </div>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(getShopUpiUri())}&size=180x180&margin=4`}
-                alt="Shop UPI QR"
-                style={{
-                  width: '180px',
-                  height: '180px',
-                  borderRadius: '10px',
-                  border: '4px solid #ffffff',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  margin: '0 auto',
-                  display: 'block',
-                }}
-              />
+              {(() => {
+                const shopVpa = (
+                  selectedKhata.shop_upi_id ||
+                  selectedKhata.shop?.upi_id ||
+                  selectedKhata.shop_vpa ||
+                  selectedKhata.shop?.vpa ||
+                  selectedKhata.shop_upi ||
+                  ''
+                ).trim();
+                const upiUri = getShopUpiUri();
 
-              {/* Direct UPI App Intent Trigger on Mobile */}
-              <a
-                href={getShopUpiUri()}
-                className="btn btn-success btn-block"
-                style={{ marginTop: '12px', gap: '6px', fontWeight: 800, textDecoration: 'none' }}
-              >
-                <ExternalLink size={16} />
-                <span>Open in UPI App (GPay/PhonePe/Paytm)</span>
-              </a>
+                if (!shopVpa) {
+                  return (
+                    <div style={{ padding: '14px', backgroundColor: '#fffbeb', borderRadius: '10px', border: '1px solid #fde68a', color: '#92400e', fontSize: '0.82rem', textAlign: 'left' }}>
+                      <div style={{ fontWeight: 800, marginBottom: '4px' }}>⚠️ Dukaandaar ne direct UPI ID set nahi ki hai</div>
+                      <div>Dukan par direct payment karne ke baad, payment screenshot se 12-digit UTR Ref Number niche daal kar proof submit karein.</div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
+                      SCAN WITH ANY UPI APP (GPay / PhonePe / Paytm / BHIM)
+                    </div>
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(upiUri)}&size=180x180&margin=4`}
+                      alt="Shop UPI QR"
+                      style={{
+                        width: '180px',
+                        height: '180px',
+                        borderRadius: '10px',
+                        border: '4px solid #ffffff',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        margin: '0 auto',
+                        display: 'block',
+                      }}
+                    />
+
+                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>UPI ID:</span>
+                      <strong style={{ fontSize: '0.85rem', color: 'var(--color-primary)' }}>{shopVpa}</strong>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(shopVpa);
+                          alert(`UPI ID copy ho gayi: ${shopVpa}`);
+                        }}
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.1)',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '2px 8px',
+                          fontSize: '0.72rem',
+                          color: 'var(--color-primary)',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Copy
+                      </button>
+                    </div>
+
+                    {/* Direct UPI App Intent Trigger on Mobile */}
+                    <a
+                      href={upiUri}
+                      className="btn btn-success btn-block"
+                      style={{ marginTop: '12px', gap: '6px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <ExternalLink size={16} />
+                      <span>Open in UPI App (GPay/PhonePe/Paytm)</span>
+                    </a>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Submit UTR / Reference Form */}

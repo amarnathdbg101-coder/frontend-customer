@@ -175,12 +175,18 @@
   width: 100%;
   padding: 11px 14px;
   font-size: 0.95rem;
+  font-weight: 500;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border-strong);
   background-color: var(--bg-surface);
-  color: var(--text-primary);
+  color: var(--text-primary) !important;
   outline: none;
   transition: all 0.2s ease;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-muted);
 }
 
 .form-input:focus,
@@ -188,7 +194,7 @@
 .form-textarea:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
 }
 
 .form-hint {
@@ -203,12 +209,14 @@
   display: flex;
   align-items: center;
   margin-bottom: var(--space-md);
+  width: 100%;
 }
 
 .search-box svg {
   position: absolute;
   left: 14px;
   color: var(--text-muted);
+  pointer-events: none;
 }
 
 .search-box input {
@@ -217,16 +225,24 @@
   border-radius: var(--radius-full);
   border: 1.5px solid var(--border-subtle);
   background-color: var(--bg-surface);
+  color: var(--text-primary) !important;
   font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
   outline: none;
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
 
+.search-box input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
 .search-box input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  background-color: var(--bg-surface);
 }
 
 /* Stat Metrics Grid (Shopify / Square Style) */
