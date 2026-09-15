@@ -1,22 +1,23 @@
-/**
+﻿/**
  * Login Screen
  * 
  * Hinglish Hint:
- * Dukaandar aur Customer dono ke liye fast mobile login page:
- * - Email & Password validation
- * - Successful login ke baad Merchant ko seedhe Dashboard par bhejta hai
+ * Customer ke liye fast mobile & desktop login page:
+ * - Email / Mobile & Password validation
+ * - 1-Click Google Sign-In via Google Identity Services
  */
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Store, Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2 } from 'lucide-react';
+import { Store, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../api/auth.api';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
 
 export const LoginScreen = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +45,16 @@ export const LoginScreen = () => {
       setError(err.message || 'Login asafal raha, kripya check karein');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (idToken) => {
+    setError('');
+    try {
+      await loginWithGoogle(idToken);
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Google login asafal raha, kripya dobara koshish karein.');
     }
   };
 
@@ -196,6 +207,20 @@ export const LoginScreen = () => {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
+        </div>
+
+        {/* Google Sign-In Button */}
+        <GoogleLoginButton
+          text="continue_with"
+          onSuccess={handleGoogleSuccess}
+          onError={(err) => setError(err.message || 'Google login asafal raha')}
+        />
 
         {/* Switch to Register */}
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.85rem' }}>

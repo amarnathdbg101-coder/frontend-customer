@@ -1,10 +1,10 @@
-/**
- * Register Screen
+﻿/**
+ * Register Screen (Customer Portal)
  * 
  * Hinglish Hint:
- * Naye Dukaandar ya Grahak ke registration ke liye form:
+ * Naye Grahak ke registration ke liye form:
  * - Full Name, Phone, Email aur Password
- * - Success hone par auto login aur dashboard redirect
+ * - 1-Click Google Sign-Up via Google Identity Services
  */
 
 import React, { useState } from 'react';
@@ -12,10 +12,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
 
 export const RegisterScreen = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -47,6 +48,16 @@ export const RegisterScreen = () => {
     }
   };
 
+  const handleGoogleSuccess = async (idToken) => {
+    setError('');
+    try {
+      await loginWithGoogle(idToken);
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Google signup asafal raha, kripya dobara koshish karein.');
+    }
+  };
+
   return (
     <AppLayout title="ShopMe" subtitle="Naya Khata Banayein" hideNav={true} showBack={true}>
       <div style={{ paddingTop: '10px' }}>
@@ -68,7 +79,7 @@ export const RegisterScreen = () => {
           </div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Account Banayein</h1>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            Apni dukan ko digital banayein 2 minute me
+            ShopMe par shopping shuru karein 2 minute me
           </p>
         </div>
 
@@ -125,7 +136,7 @@ export const RegisterScreen = () => {
               name="email"
               required
               className="form-input"
-              placeholder="ramesh@dukaan.com"
+              placeholder="ramesh@gmail.com"
               value={formData.email}
               onChange={handleChange}
             />
@@ -158,6 +169,20 @@ export const RegisterScreen = () => {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
+        </div>
+
+        {/* Google Sign-Up Button */}
+        <GoogleLoginButton
+          text="signup_with"
+          onSuccess={handleGoogleSuccess}
+          onError={(err) => setError(err.message || 'Google signup asafal raha')}
+        />
 
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.85rem' }}>
           <span style={{ color: 'var(--text-secondary)' }}>Pehle se account hai? </span>

@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Authentication API Service
  * 
  * Hinglish Hint:
  * Backend ke /auth routes se baat karta hai:
  * - Login (Dukaandar ya Customer)
  * - Register (Naya account banana)
+ * - Google Login
  * - Forgot/Reset Password
  */
 
@@ -15,6 +16,15 @@ export const authApi = {
   login: async (email, password) => {
     const res = await client.post('/auth/login', { email, password });
     return res.data; // { access_token, token_type, expires_in, user }
+  },
+
+  // Google OAuth Login
+  googleLogin: async (idToken, role = 'customer') => {
+    const res = await client.post('/auth/google', {
+      id_token: idToken,
+      role: role,
+    });
+    return res.data; // { access_token, user, token_type, expires_in }
   },
 
   // New user registration
@@ -55,4 +65,3 @@ export const authApi = {
     return res.data;
   },
 };
-
