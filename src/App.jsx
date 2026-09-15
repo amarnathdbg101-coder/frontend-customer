@@ -7,6 +7,7 @@
  * - '/saved'        -> Saved items & favorite shops
  * - '/shop/:slug'   -> Dukan ka storefront, live items aur pickup booking
  * - '/reservations' -> Grahak ke hold kiye huye item pickup codes (OTP)
+ * - '/khata'        -> Grahak Digital Khata Passbook, Udhar & UPI Payments
  * - '/profile'      -> Grahak ka profile aur account settings
  * - '/login'        -> Customer Login
  * - '/register'     -> Customer Signup
@@ -36,6 +37,7 @@ const DealsScreen = lazy(() => import('./pages/customer/DealsScreen').then(m => 
 const SavedScreen = lazy(() => import('./pages/customer/SavedScreen').then(m => ({ default: m.SavedScreen })));
 const StorefrontScreen = lazy(() => import('./pages/customer/StorefrontScreen').then(m => ({ default: m.StorefrontScreen })));
 const ReservationsScreen = lazy(() => import('./pages/customer/ReservationsScreen').then(m => ({ default: m.ReservationsScreen })));
+const CustomerKhataScreen = lazy(() => import('./pages/customer/CustomerKhataScreen').then(m => ({ default: m.CustomerKhataScreen })));
 const CustomerProfileScreen = lazy(() => import('./pages/customer/CustomerProfileScreen').then(m => ({ default: m.CustomerProfileScreen })));
 
 // Suspense fallback for route loading
@@ -43,7 +45,7 @@ const RouteFallback = () => (
   <LoadingSpinner message="Page load ho raha hai..." fullScreen />
 );
 
-// Protected Route Guard for Customer Profile / Orders
+// Protected Route Guard for Customer Profile / Orders / Khata
 const ProtectedCustomerRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -77,6 +79,16 @@ function App() {
 
                       {/* Customer Pickups & Orders */}
                       <Route path="/reservations" element={<ReservationsScreen />} />
+
+                      {/* Customer Khata Passbook & Udhar */}
+                      <Route
+                        path="/khata"
+                        element={
+                          <ProtectedCustomerRoute>
+                            <CustomerKhataScreen />
+                          </ProtectedCustomerRoute>
+                        }
+                      />
 
                       {/* Customer Profile */}
                       <Route

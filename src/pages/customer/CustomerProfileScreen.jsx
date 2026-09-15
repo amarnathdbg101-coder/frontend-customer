@@ -4,6 +4,7 @@
  * Hinglish Hint:
  * Grahak (Customer) ka personal account page:
  * - Profile details (Naam, Phone, Email, Photo upload)
+ * - Mera Khata (Digital Passbook & Udhar payment)
  * - Meri Pickups & Holds ka quick link
  * - Direct Logout button
  */
@@ -16,6 +17,7 @@ import {
   Mail,
   ShoppingBag,
   Store,
+  BookOpen,
   LogOut,
   Camera,
   ChevronRight,
@@ -67,13 +69,13 @@ export const CustomerProfileScreen = () => {
       <div className="profile-container" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         
         {/* User Card */}
-        <div className="card profile-user-card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '1.25rem', background: '#1e293b', borderRadius: '16px' }}>
+        <div className="card profile-user-card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '1.25rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
           <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 1rem auto' }}>
             <div style={{
               width: '90px',
               height: '90px',
               borderRadius: '50%',
-              backgroundColor: '#3b82f6',
+              backgroundColor: 'var(--color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -131,7 +133,7 @@ export const CustomerProfileScreen = () => {
             <p style={{ fontSize: '0.8rem', color: '#60a5fa', marginBottom: '0.5rem' }}>Photo upload ho rahi hai...</p>
           )}
 
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f8fafc', margin: '0 0 0.25rem 0' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
             {user?.name || 'Grahak'}
           </h2>
           <span style={{ 
@@ -147,12 +149,12 @@ export const CustomerProfileScreen = () => {
             Grahak (Buyer)
           </span>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left', background: 'rgba(15, 23, 42, 0.6)', padding: '0.85rem', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#cbd5e1', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left', background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-subtle)', padding: '0.85rem', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
               <Phone size={16} style={{ color: '#3b82f6' }} />
               <span>{user?.phone || 'Phone number joda nahi'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#cbd5e1', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
               <Mail size={16} style={{ color: '#3b82f6' }} />
               <span>{user?.email || 'Email missing'}</span>
             </div>
@@ -163,16 +165,41 @@ export const CustomerProfileScreen = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
           
           <div 
+            onClick={() => navigate('/khata')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1rem',
+              background: 'var(--bg-surface)',
+              borderRadius: '14px',
+              cursor: 'pointer',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ background: 'rgba(217, 119, 6, 0.15)', color: '#d97706', padding: '8px', borderRadius: '10px' }}>
+                <BookOpen size={20} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 700 }}>Mera Khata (Passbook & Udhar)</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dukano ka udhar hisaab, UPI proof & My QR</p>
+              </div>
+            </div>
+            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
+          </div>
+
+          <div 
             onClick={() => navigate('/reservations')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '1rem',
-              background: '#1e293b',
+              background: 'var(--bg-surface)',
               borderRadius: '14px',
               cursor: 'pointer',
-              border: '1px solid rgba(255, 255, 255, 0.05)'
+              border: '1px solid var(--border-subtle)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -180,11 +207,11 @@ export const CustomerProfileScreen = () => {
                 <ShoppingBag size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#f8fafc', fontWeight: 600 }}>Meri Bookings & Pickups</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Dukaan par pickup ke liye hold kiye gaye items</p>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Meri Bookings & Pickups</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dukaan par pickup ke liye hold kiye gaye items</p>
               </div>
             </div>
-            <ChevronRight size={18} style={{ color: '#64748b' }} />
+            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
           </div>
 
           <div 
@@ -194,10 +221,10 @@ export const CustomerProfileScreen = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '1rem',
-              background: '#1e293b',
+              background: 'var(--bg-surface)',
               borderRadius: '14px',
               cursor: 'pointer',
-              border: '1px solid rgba(255, 255, 255, 0.05)'
+              border: '1px solid var(--border-subtle)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -205,11 +232,11 @@ export const CustomerProfileScreen = () => {
                 <Store size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#f8fafc', fontWeight: 600 }}>Aas-paas ki Dukaanein</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Apne ilaqe ki certified dukaano se khareedari karein</p>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Aas-paas ki Dukaanein</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Apne ilaqe ki certified dukaano se khareedari karein</p>
               </div>
             </div>
-            <ChevronRight size={18} style={{ color: '#64748b' }} />
+            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
           </div>
 
         </div>

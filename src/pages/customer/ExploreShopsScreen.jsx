@@ -10,15 +10,21 @@
  * - Responsive Multi-Column Grid (Mobile 1-2 cols, Tablet 2-3 cols, Desktop 3-5 cols)
  * - 1-Click Call Shop & GPS Directions
  * - "Pick" AI Shopping Co-Pilot widget
- * 
- * REFACTORED: Decomposed from 892 lines → ~290 lines by extracting
- * ShopCard, ProductCard, Skeleton loaders, EmptyState into reusable components.
+ * - AI Smart Natural Language Search Modal
+ * - Visual Camera & Barcode/SKU Scanner Modal
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Store, Search, MapPin, Crosshair, Bot, Package,
+  Store,
+  Search,
+  MapPin,
+  Crosshair,
+  Bot,
+  Package,
+  Sparkles,
+  Camera,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -34,6 +40,8 @@ import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skele
 import { CustomerCopilotModal } from '../../components/common/CustomerCopilotModal';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
+import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
+import { ProductScannerModal } from '../../components/customer/ProductScannerModal';
 
 const CATEGORIES = ['All', 'Electronics', 'Kirana & Grocery', 'Pharmacy', 'Fashion', 'Home & Kitchen'];
 const RADIUS_OPTIONS = [
@@ -58,6 +66,8 @@ export const ExploreShopsScreen = () => {
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [inspectedShop, setInspectedShop] = useState(null);
 
@@ -157,7 +167,7 @@ export const ExploreShopsScreen = () => {
     }
   };
 
-  // Memoized filtered lists — only recompute when deps change
+  // Memoized filtered lists
   const filteredShops = useMemo(() => {
     return shops.filter((s) => {
       const term = debouncedSearch.toLowerCase();
@@ -244,16 +254,46 @@ export const ExploreShopsScreen = () => {
 
       {/* Search Bar & Mode Switcher */}
       <div style={{ marginBottom: '14px' }}>
-        <div className="search-box" style={{ marginBottom: '10px' }}>
-          <Search size={18} color="var(--text-muted)" aria-hidden="true" />
-          <input
-            type="search"
-            placeholder={searchMode === 'shops' ? "Search dukan name, category, ya locality..." : "Search product name, brand, in-stock items..."}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            aria-label="Search"
-          />
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+          <div className="search-box" style={{ flex: 1, marginBottom: 0 }}>
+            <Search size={18} color="var(--text-muted)" aria-hidden="true" />
+            <input
+              type="search"
+              placeholder={searchMode === 'shops' ? "Search dukan name, category, ya locality..." : "Search product name, brand, in-stock items..."}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsSmartSearchOpen(true)}
+            className="btn btn-secondary"
+            title="AI Smart Natural Language Search"
+            style={{
+              padding: '0 12px',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)',
+              borderColor: 'rgba(99, 102, 241, 0.25)',
+              color: 'var(--color-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Sparkles size={16} />
+            <span style={{ fontSize: '0.78rem', fontWeight: 800 }}>AI Search</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="btn btn-secondary"
+            title="Scan Barcode / Photo"
+            style={{ padding: '0 12px', color: 'var(--text-primary)' }}
+          >
+            <Camera size={17} />
+          </button>
         </div>
+
         <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="View mode">
           <button onClick={() => setSearchMode('shops')} className={`btn btn-sm ${searchMode === 'shops' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'shops'}>
             <Store size={16} aria-hidden="true" />
@@ -391,6 +431,20 @@ export const ExploreShopsScreen = () => {
       <CustomerCopilotModal
         isOpen={isCopilotOpen}
         onClose={() => setIsCopilotOpen(false)}
+      />
+
+      {/* AI Smart Search Modal */}
+      <SmartSearchModal
+        isOpen={isSmartSearchOpen}
+        onClose={() => setIsSmartSearchOpen(false)}
+        onSelectProduct={(p) => setInspectedProduct(p)}
+      />
+
+      {/* Camera / Barcode Scanner Modal */}
+      <ProductScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onSelectProduct={(p) => setInspectedProduct(p)}
       />
     </AppLayout>
   );

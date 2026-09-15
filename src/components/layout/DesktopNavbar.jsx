@@ -5,7 +5,7 @@
  * Laptop & Desktop screens ke liye top navigation bar:
  * - Brand logo ("ShopMe QuickPick")
  * - GPS Location pill with live detection
- * - Quick nav links: Explore Shops, Deals & Offers, My Pickups, Saved
+ * - Quick nav links: Explore Shops, Deals & Offers, My Pickups, Saved, Mera Khata
  * - Theme Switcher (Light / Dark)
  * - User Profile Avatar or Login button
  */
@@ -18,6 +18,7 @@ import {
   Tag,
   ShoppingBag,
   Heart,
+  BookOpen,
   User,
   Sun,
   Moon,
@@ -136,6 +137,16 @@ export const DesktopNavbar = () => {
             <span>Saved</span>
             {savedCount > 0 && <span className="nav-badge" style={{ position: 'static', marginLeft: '4px' }}>{savedCount}</span>}
           </NavLink>
+
+          {isAuthenticated && (
+            <NavLink
+              to="/khata"
+              className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
+            >
+              <BookOpen size={18} />
+              <span>Mera Khata</span>
+            </NavLink>
+          )}
         </nav>
 
         {/* Utilities: Theme switch & Profile */}

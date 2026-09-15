@@ -5,6 +5,7 @@
  * Grahak app ka slide-out menu bar:
  * - Aas-paas ki dukaanein
  * - Meri Bookings & Holds
+ * - Mera Khata (Digital Passbook & Udhar)
  * - Mera Account / Profile
  * - Support & Logout
  */
@@ -15,10 +16,10 @@ import {
   X,
   Store,
   ShoppingBag,
+  BookOpen,
   User,
   LogOut,
   ChevronRight,
-  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -117,7 +118,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                     display: 'inline-block',
                   }}
                 >
-                  🛍️ Grahak
+                  Grahak
                 </span>
               </div>
             </div>
@@ -149,6 +150,17 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               <div style={{ flex: 1, textAlign: 'left' }}>
                 <div className="drawer-link-title">My Pickups & Holds</div>
                 <div className="drawer-link-sub">Reserved items & pickup OTP codes</div>
+              </div>
+              <ChevronRight size={16} color="var(--text-muted)" />
+            </button>
+
+            <button className="drawer-link-btn" onClick={() => handleNavigate(isAuthenticated ? '/khata' : '/login')}>
+              <div className="drawer-icon-bubble" style={{ background: '#fef3c7', color: '#d97706' }}>
+                <BookOpen size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title">Mera Khata (Passbook)</div>
+                <div className="drawer-link-sub">Udhar hisaab, UPI pay & passbook</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
