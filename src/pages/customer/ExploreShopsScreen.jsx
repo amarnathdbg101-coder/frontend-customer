@@ -42,8 +42,8 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
 import { ProductScannerModal } from '../../components/customer/ProductScannerModal';
+import { CategoryBar } from '../../components/customer/CategoryBar';
 
-const CATEGORIES = ['All', 'Electronics', 'Kirana & Grocery', 'Pharmacy', 'Fashion', 'Home & Kitchen'];
 const RADIUS_OPTIONS = [
   { label: '1 km', value: 1 },
   { label: '3 km', value: 3 },
@@ -81,10 +81,10 @@ export const ExploreShopsScreen = () => {
         hold_hours,
         notes,
       });
-      alert(`Item safaltapoorvak reserve ho gaya! Pickup Code: ${res.pickup_code || res.reservation_number}`);
+      alert(`Item reserved successfully! Pickup Code: ${res.pickup_code || res.reservation_number}`);
       setInspectedProduct(null);
     } catch (err) {
-      alert(err.message || 'Reservation fail ho gaya');
+      alert(err.message || 'Reservation failed');
     }
   }, []);
 
@@ -100,8 +100,8 @@ export const ExploreShopsScreen = () => {
         lng: coords?.lng,
         radius_km: radiusKm < 999 ? radiusKm : undefined,
       };
-      if (selectedCategory !== 'All') {
-        params.category = selectedCategory;
+      if (selectedCategory && selectedCategory !== 'All') {
+        params.category_id = selectedCategory;
       }
 
       const prodPromise = (coords?.lat && coords?.lng)
@@ -109,7 +109,7 @@ export const ExploreShopsScreen = () => {
             lat: coords.lat,
             lng: coords.lng,
             radius_km: radiusKm < 999 ? radiusKm : 15,
-            category: selectedCategory !== 'All' ? selectedCategory : undefined,
+            category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
             open_now: openNowOnly,
             q: searchTerm || undefined,
             limit: 40,
@@ -130,7 +130,7 @@ export const ExploreShopsScreen = () => {
           const fallbackShops = await shopApi.listPublicShops({
             lat: coords?.lat,
             lng: coords?.lng,
-            category: selectedCategory !== 'All' ? selectedCategory : undefined,
+            category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
           });
           shopList = Array.isArray(fallbackShops?.shops) ? fallbackShops.shops : (Array.isArray(fallbackShops) ? fallbackShops : []);
         } catch (e) {
@@ -167,7 +167,6 @@ export const ExploreShopsScreen = () => {
     }
   };
 
-  // Memoized filtered lists
   const filteredShops = useMemo(() => {
     return shops.filter((s) => {
       const term = debouncedSearch.toLowerCase();
@@ -204,8 +203,7 @@ export const ExploreShopsScreen = () => {
 
   return (
     <AppLayout title="QuickPick Local" subtitle="Find In-Stock Products Around You">
-      {/* SEO */}
-      <title>ShopMe — Explore Nearby Shops & Products</title>
+      <title>ShopMe — Explore Nearby Shops &amp; Products</title>
 
       {/* GPS Header Bar */}
       <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', marginBottom: '14px' }}>
@@ -214,7 +212,7 @@ export const ExploreShopsScreen = () => {
             <MapPin size={18} color="var(--color-primary)" aria-hidden="true" />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Aapki Current Location</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Current Location</div>
             <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
               {locationName}
             </div>
@@ -248,7 +246,7 @@ export const ExploreShopsScreen = () => {
           aria-pressed={openNowOnly}
         >
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: openNowOnly ? '#10b981' : '#94a3b8' }} aria-hidden="true" />
-          Abhi Khuli Dukanien (Open)
+          Open Stores Only
         </button>
       </div>
 
@@ -259,7 +257,7 @@ export const ExploreShopsScreen = () => {
             <Search size={18} color="var(--text-muted)" aria-hidden="true" />
             <input
               type="search"
-              placeholder={searchMode === 'shops' ? "Search dukan name, category, ya locality..." : "Search product name, brand, in-stock items..."}
+              placeholder={searchMode === 'shops' ? "Search store name, category, or locality..." : "Search product name, brand, or in-stock items..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               aria-label="Search"
@@ -297,29 +295,23 @@ export const ExploreShopsScreen = () => {
         <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="View mode">
           <button onClick={() => setSearchMode('shops')} className={`btn btn-sm ${searchMode === 'shops' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'shops'}>
             <Store size={16} aria-hidden="true" />
-            <span>Nazdeeki Dukaanein ({filteredShops.length})</span>
+            <span>Nearby Stores ({filteredShops.length})</span>
           </button>
           <button onClick={() => setSearchMode('products')} className={`btn btn-sm ${searchMode === 'products' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'products'}>
             <Package size={16} aria-hidden="true" />
-            <span>Products In-Stock ({filteredProducts.length})</span>
+            <span>In-Stock Products ({filteredProducts.length})</span>
           </button>
         </div>
       </div>
 
-      {/* Category Pills */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '16px', scrollbarWidth: 'none' }} role="toolbar" aria-label="Category filter">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`btn btn-sm ${selectedCategory === cat ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-            aria-pressed={selectedCategory === cat}
-          >
-            {cat}
-          </button>
-        ))}
-        {searchMode === 'products' && (
+      {/* 🚀 Powerful Category Bar (Exact mobile app category feature ported to web app) */}
+      <CategoryBar
+        selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
+        onSelectCategory={(catId) => setSelectedCategory(catId || 'All')}
+      />
+
+      {searchMode === 'products' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
           <button
             type="button"
             onClick={() => setInStockOnly(!inStockOnly)}
@@ -327,10 +319,10 @@ export const ExploreShopsScreen = () => {
             style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}
             aria-pressed={inStockOnly}
           >
-            ⚡ Sirf In-Stock
+            ⚡ In-Stock Only
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Content Feed */}
       {loading ? (
@@ -339,8 +331,8 @@ export const ExploreShopsScreen = () => {
         filteredShops.length === 0 ? (
           <EmptyState
             icon={Store}
-            title="Koi Nazdeeki Dukan Nahi Mili"
-            description="Upar diye gaye Radius ko badhayein (e.g. 5km ya 10km) ya category filter hata kar dekhein."
+            title="No Nearby Stores Found"
+            description="Try increasing your search radius (e.g. 5km or 10km) or clearing category filters."
           />
         ) : (
           <div className="customer-shop-grid">
@@ -361,8 +353,8 @@ export const ExploreShopsScreen = () => {
         filteredProducts.length === 0 ? (
           <EmptyState
             icon={Package}
-            title="Koi Product Nahi Mila"
-            description="Dusre product name ya category filter se search karein."
+            title="No Products Found"
+            description="Try searching with another product name or category filter."
           />
         ) : (
           <div className="customer-product-grid">

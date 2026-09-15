@@ -1,12 +1,7 @@
 /**
  * Dedicated Customer Profile Screen
  * 
- * Hinglish Hint:
- * Grahak (Customer) ka personal account page:
- * - Profile details (Naam, Phone, Email, Photo upload)
- * - Mera Khata (Digital Passbook & Udhar payment)
- * - Meri Pickups & Holds ka quick link
- * - Direct Logout button
+ * Professional English localization.
  */
 
 import React, { useState } from 'react';
@@ -40,7 +35,7 @@ export const CustomerProfileScreen = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('Photo ka size 2MB se kam hona chahiye');
+      alert('Image size must be less than 2MB.');
       return;
     }
 
@@ -48,24 +43,24 @@ export const CustomerProfileScreen = () => {
       setAvatarUploading(true);
       const data = await uploadApi.uploadUserAvatar(file);
       updateUser({ avatar_url: data.avatar_url });
-      alert('Profile photo safaltapoorvak update ho gayi!');
+      alert('Profile photo updated successfully!');
     } catch (err) {
       console.error('Avatar upload error:', err);
-      alert('Avatar upload nahi ho saka: ' + (err.message || 'Error'));
+      alert('Failed to upload avatar: ' + (err.message || 'Error'));
     } finally {
       setAvatarUploading(false);
     }
   };
 
   const handleLogout = () => {
-    if (window.confirm('Kya aap sach me logout karna chahte hain?')) {
+    if (window.confirm('Are you sure you want to sign out?')) {
       logout();
       navigate('/login');
     }
   };
 
   return (
-    <AppLayout title="Mera Account">
+    <AppLayout title="My Account">
       <div className="profile-container" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         
         {/* User Card */}
@@ -95,7 +90,7 @@ export const CustomerProfileScreen = () => {
                   }}
                 />
               ) : (
-                user?.name ? user.name[0].toUpperCase() : 'G'
+                user?.name ? user.name[0].toUpperCase() : 'C'
               )}
             </div>
 
@@ -115,7 +110,7 @@ export const CustomerProfileScreen = () => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
-              title="Profile photo badlein"
+              title="Change profile photo"
             >
               <Camera size={16} />
             </label>
@@ -130,11 +125,11 @@ export const CustomerProfileScreen = () => {
           </div>
 
           {avatarUploading && (
-            <p style={{ fontSize: '0.8rem', color: '#60a5fa', marginBottom: '0.5rem' }}>Photo upload ho rahi hai...</p>
+            <p style={{ fontSize: '0.8rem', color: '#60a5fa', marginBottom: '0.5rem' }}>Uploading photo...</p>
           )}
 
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
-            {user?.name || 'Grahak'}
+            {user?.name || 'Customer'}
           </h2>
           <span style={{ 
             display: 'inline-block', 
@@ -146,17 +141,17 @@ export const CustomerProfileScreen = () => {
             fontWeight: 500,
             marginBottom: '1rem'
           }}>
-            Grahak (Buyer)
+            Customer (Buyer)
           </span>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left', background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-subtle)', padding: '0.85rem', borderRadius: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
               <Phone size={16} style={{ color: '#3b82f6' }} />
-              <span>{user?.phone || 'Phone number joda nahi'}</span>
+              <span>{user?.phone || 'No phone number linked'}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
               <Mail size={16} style={{ color: '#3b82f6' }} />
-              <span>{user?.email || 'Email missing'}</span>
+              <span>{user?.email || 'No email address'}</span>
             </div>
           </div>
         </div>
@@ -182,8 +177,8 @@ export const CustomerProfileScreen = () => {
                 <BookOpen size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 700 }}>Mera Khata (Passbook & Udhar)</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dukano ka udhar hisaab, UPI proof & My QR</p>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 700 }}>My Ledger &amp; Credit Passbook</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Store credit balance, UPI payments &amp; QR code</p>
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -207,8 +202,8 @@ export const CustomerProfileScreen = () => {
                 <ShoppingBag size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Meri Bookings & Pickups</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dukaan par pickup ke liye hold kiye gaye items</p>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>My Store Reservations &amp; Pickups</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Items held for store pickup with OTP codes</p>
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -232,8 +227,8 @@ export const CustomerProfileScreen = () => {
                 <Store size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Aas-paas ki Dukaanein</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Apne ilaqe ki certified dukaano se khareedari karein</p>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Nearby Stores</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Browse certified local stores in your area</p>
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -267,7 +262,7 @@ export const CustomerProfileScreen = () => {
           }}
         >
           <LogOut size={18} />
-          <span>Account Se Logout Karein</span>
+          <span>Sign Out</span>
         </button>
 
       </div>
