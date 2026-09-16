@@ -213,15 +213,15 @@ export const CustomerKhataScreen = () => {
 
   if (loading) {
     return (
-      <AppLayout title="Mera Khata">
-        <LoadingSpinner message="Khata aur Udhar Passbook load ho raha hai..." fullScreen />
+      <AppLayout title={t('khata.ledger_title')}>
+        <LoadingSpinner message={isHindi ? "खाता बही लोड हो रही है..." : "Loading Khata ledger..."} fullScreen />
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Mera Khata (Passbook)" subtitle="Aapke Udhar aur Jama Ka Hisaab">
-      <title>Mera Khata & Udhar Passbook — ShopSilo</title>
+    <AppLayout title={t('khata.ledger_title')} subtitle={t('khata.ledger_subtitle')}>
+      <title>{t('khata.ledger_title')} — ShopSilo</title>
 
       {/* Top Banner & Summary Card */}
       <div
@@ -836,7 +836,7 @@ export const CustomerKhataScreen = () => {
                   className="btn btn-primary btn-block"
                   style={{ fontWeight: 800 }}
                 >
-                  {upiLoading ? 'Proof Submit Ho Raha Hai...' : 'Payment Proof Submit Karein'}
+                  {upiLoading ? t('common.processing') : t('common.submit')}
                 </button>
               </div>
             </form>
@@ -921,14 +921,14 @@ export const CustomerKhataScreen = () => {
                   className="btn btn-primary btn-block"
                   style={{ fontWeight: 800 }}
                 >
-                  {ptpLoading ? 'Save Ho Raha Hai...' : 'Promise Date Confirm Karein'}
+                  {ptpLoading ? t('common.processing') : t('common.confirm')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowPtpModal(false)}
                   className="btn btn-secondary"
                 >
-                  Radd
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>

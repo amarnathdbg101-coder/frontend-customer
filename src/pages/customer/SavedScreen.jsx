@@ -1,8 +1,20 @@
+/**
+ * Customer Saved Items & Followed Stores (Wishlist)
+ * 
+ * Features:
+ * - Subtabs for saved products and followed stores
+ * - Quick Add to Cart from Wishlist
+ * - Direct storefront navigation & call/directions
+ * - Full i18n support (English & Formal Hindi)
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Store, Package, MapPin, Phone, Navigation, Trash2 } from 'lucide-react';
+import { Heart, Store, Package, MapPin, Phone, Navigation, Trash2, ShoppingCart } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useSaved } from '../../context/SavedContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { reservationApi } from '../../api/reservation.api';
@@ -12,11 +24,14 @@ export const SavedScreen = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { savedProducts, savedShops, toggleSaveProduct, toggleSaveShop } = useSaved();
+  const { t, isHindi } = useLanguage();
+  const { addItem, isInCart } = useCart();
+
   const [activeTab, setActiveTab] = useState('products'); // 'products' | 'shops'
   const [inspectedProduct, setInspectedProduct] = useState(null);
 
   return (
-    <AppLayout title="Saved Items" subtitle="Aapke Pasandeeda Products & Dukaanein">
+    <AppLayout title={t('saved.title')} subtitle={t('saved.subtitle')}>
       {/* Subtabs */}
       <div
         style={{
@@ -36,14 +51,14 @@ export const SavedScreen = () => {
             borderRadius: '8px',
             border: 'none',
             fontSize: '0.85rem',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer',
             background: activeTab === 'products' ? 'var(--color-primary)' : 'transparent',
             color: activeTab === 'products' ? '#fff' : 'var(--text-secondary)',
             transition: 'all 0.2s',
           }}
         >
-          Products ({savedProducts.length})
+          {t('saved.saved_products')} ({savedProducts.length})
         </button>
         <button
           onClick={() => setActiveTab('shops')}
@@ -53,14 +68,14 @@ export const SavedScreen = () => {
             borderRadius: '8px',
             border: 'none',
             fontSize: '0.85rem',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer',
             background: activeTab === 'shops' ? 'var(--color-primary)' : 'transparent',
             color: activeTab === 'shops' ? '#fff' : 'var(--text-secondary)',
             transition: 'all 0.2s',
           }}
         >
-          Dukaanein ({savedShops.length})
+          {t('saved.saved_shops')} ({savedShops.length})
         </button>
       </div>
 
@@ -70,151 +85,162 @@ export const SavedScreen = () => {
           <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
             <Heart size={44} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
             <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-              No saved products
+              {t('saved.no_saved_products')}
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-              Tap the heart on any product to keep it here for quick price check and availability.
+              {t('saved.subtitle')}
             </p>
             <button
               onClick={() => navigate('/')}
+              className="btn btn-primary"
               style={{
                 marginTop: '16px',
-                background: 'var(--color-primary)',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 16px',
+                padding: '8px 20px',
                 borderRadius: '8px',
-                fontWeight: 600,
+                fontWeight: 700,
                 fontSize: '0.85rem',
-                cursor: 'pointer',
               }}
             >
-              Browse Products
+              {t('saved.browse_deals')}
             </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {savedProducts.map((p) => (
-              <div
-                key={p.id}
-                className="card card-clickable"
-                onClick={() => setInspectedProduct(p)}
-                style={{
-                  margin: 0,
-                  padding: '16px',
-                  borderRadius: '16px',
-                  border: '1.5px solid var(--border-subtle)',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
-                  display: 'flex',
-                  gap: '14px',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                }}
-              >
+            {savedProducts.map((p) => {
+              const inCart = isInCart(p.id);
+
+              return (
                 <div
+                  key={p.id}
+                  className="card card-clickable"
+                  onClick={() => setInspectedProduct(p)}
                   style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '12px',
-                    backgroundColor: '#ffffff',
-                    overflow: 'hidden',
-                    flexShrink: 0,
+                    margin: 0,
+                    padding: '16px',
+                    borderRadius: '16px',
+                    border: '1.5px solid var(--border-subtle)',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
                     display: 'flex',
+                    gap: '14px',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid var(--border-subtle)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                   }}
                 >
-                  {p.images && p.images[0] ? (
-                    <img
-                      src={getImageUrl(p.images[0])}
-                      alt={p.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
-                    />
-                  ) : (
-                    <Package size={32} color="var(--text-muted)" style={{ opacity: 0.5 }} />
-                  )}
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.25 }}>
-                    {p.name}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-                    <span style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-                      ₹{p.price}
-                    </span>
-                    {(p.compare_price || p.mrp) && (p.compare_price || p.mrp) > p.price && (
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                        ₹{p.compare_price || p.mrp}
-                      </span>
+                  <div
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '12px',
+                      backgroundColor: '#ffffff',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    {p.images && p.images[0] ? (
+                      <img
+                        src={getImageUrl(p.images[0])}
+                        alt={p.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                      />
+                    ) : (
+                      <Package size={32} color="var(--text-muted)" style={{ opacity: 0.5 }} />
                     )}
                   </div>
-                  {p.shop_name && (
-                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Store size={12} color="var(--color-primary)" />
-                      <span>{p.shop_name}</span>
-                    </div>
-                  )}
-                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => toggleSaveProduct(p)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#ef4444',
-                      padding: '4px',
-                    }}
-                    title="Remove from saved"
-                  >
-                    <Heart size={20} fill="#ef4444" />
-                  </button>
-                  <button
-                    onClick={() => setInspectedProduct(p)}
-                    className="btn btn-primary btn-sm"
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: '6px',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                    }}
-                  >
-                    View Details
-                  </button>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                      {p.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+                      <span style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
+                        ₹{p.price}
+                      </span>
+                      {(p.compare_price || p.mrp) && (p.compare_price || p.mrp) > p.price && (
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                          ₹{p.compare_price || p.mrp}
+                        </span>
+                      )}
+                    </div>
+                    {p.shop_name && (
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Store size={12} color="var(--color-primary)" />
+                        <span>{p.shop_name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => toggleSaveProduct(p)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#ef4444',
+                        padding: '4px',
+                      }}
+                      title={t('saved.remove_saved')}
+                    >
+                      <Heart size={20} fill="#ef4444" />
+                    </button>
+
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => addItem(p, 1)}
+                        className={`btn btn-sm ${inCart ? 'btn-success' : 'btn-secondary'}`}
+                        style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '0.74rem', fontWeight: 700 }}
+                        title={t('products.add_to_cart')}
+                      >
+                        <ShoppingCart size={13} />
+                      </button>
+
+                      <button
+                        onClick={() => setInspectedProduct(p)}
+                        className="btn btn-primary btn-sm"
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {t('common.view_details')}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )
       ) : savedShops.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
           <Store size={44} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
           <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-            No saved shops
+            {t('saved.no_saved_shops')}
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-            Save your favourite local shops for quick access and direct calls.
+            {t('saved.subtitle')}
           </p>
           <button
             onClick={() => navigate('/')}
+            className="btn btn-primary"
             style={{
               marginTop: '16px',
-              background: 'var(--color-primary)',
-              color: '#fff',
-              border: 'none',
-              padding: '8px 16px',
+              padding: '8px 20px',
               borderRadius: '8px',
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '0.85rem',
-              cursor: 'pointer',
             }}
           >
-            Explore Shops
+            {t('nav.explore')}
           </button>
         </div>
       ) : (
@@ -273,7 +299,7 @@ export const SavedScreen = () => {
                     color: '#ef4444',
                     padding: '4px',
                   }}
-                  title="Remove from saved"
+                  title={t('saved.remove_saved')}
                 >
                   <Heart size={18} fill="#ef4444" />
                 </button>
@@ -300,7 +326,7 @@ export const SavedScreen = () => {
                       textDecoration: 'none',
                     }}
                   >
-                    <Phone size={12} /> Call
+                    <Phone size={12} /> {t('common.call_shop')}
                   </a>
                 )}
                 {s.latitude && s.longitude && (
@@ -323,7 +349,7 @@ export const SavedScreen = () => {
                       textDecoration: 'none',
                     }}
                   >
-                    <Navigation size={12} /> Directions
+                    <Navigation size={12} /> {t('common.directions')}
                   </a>
                 )}
                 <button
@@ -340,7 +366,7 @@ export const SavedScreen = () => {
                     cursor: 'pointer',
                   }}
                 >
-                  Storefront
+                  {t('products.visit_storefront')}
                 </button>
               </div>
             </div>
@@ -355,7 +381,7 @@ export const SavedScreen = () => {
           onClose={() => setInspectedProduct(null)}
           onReserve={async ({ product, quantity, hold_hours, notes }) => {
             if (!isAuthenticated) {
-              alert('Item reserve karne ke liye pehle Login karein');
+              alert(t('auth.login_required_reserve'));
               navigate('/login');
               return;
             }
@@ -366,10 +392,10 @@ export const SavedScreen = () => {
                 hold_hours,
                 notes,
               });
-              alert(`Item Hold Ho Gaya! Pickup Code: ${res.pickup_code || res.reservation_number || 'OK'}`);
+              alert(`${t('checkout.reservation_success_title')} ${t('checkout.pickup_otp')}: ${res.pickup_code || res.reservation_number || 'OK'}`);
               setInspectedProduct(null);
             } catch (err) {
-              alert(err.message || 'Reservation fail ho gaya');
+              alert(err.message || t('common.error'));
             }
           }}
           isMerchant={false}

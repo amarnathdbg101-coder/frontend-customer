@@ -4,14 +4,12 @@
  * Features:
  * - GPS Auto-detect & Radius Selector (1km, 3km, 5km, 10km, All)
  * - Open Now filter & Live OPEN/CLOSED shop badges
- * - Distance calculation in km/m based on device GPS
- * - Nearby In-stock product discovery via /products/nearby
- * - "Bhav-Taav" Deal exploration & 1-Click Pickup Reservation
- * - Responsive Multi-Column Grid (Mobile 1-2 cols, Tablet 2-3 cols, Desktop 3-5 cols)
- * - 1-Click Call Shop & GPS Directions
- * - "Pick" AI Shopping Co-Pilot widget
- * - AI Smart Natural Language Search Modal
- * - Visual Camera & Barcode/SKU Scanner Modal
+ * - Multi-criteria sorting (Featured, Price Low-to-High, Price High-to-Low, Discount, Rating)
+ * - Price range filter presets
+ * - Pagination / Load More products
+ * - Distance calculation in km based on device GPS
+ * - In-stock discovery & Instant Pickup Reservation
+ * - Full i18n support (English & Formal Hindi)
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -25,6 +23,8 @@ import {
   Package,
   Sparkles,
   Camera,
+  ArrowUpDown,
+  Filter,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -33,6 +33,7 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { ProductCard } from '../../components/cards/ProductCard';
@@ -57,7 +58,8 @@ export const ExploreShopsScreen = () => {
   const navigate = useNavigate();
   const { coords, locationName, radiusKm, setRadiusKm, detectLocation, isDetecting } = useLocation();
   const { isProductSaved, toggleSaveProduct, isShopSaved, toggleSaveShop } = useSaved();
-  const { isHindi, language, t } = useLanguage();
+  const { isHindi, t } = useLanguage();
+  const { openCart, cartCount } = useCart();
 
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
@@ -67,6 +69,10 @@ export const ExploreShopsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [sortBy, setSortBy] = useState('featured'); // 'featured', 'price_asc', 'price_desc', 'discount', 'rating'
+  const [priceFilter, setPriceFilter] = useState('all'); // 'all', 'under_100', '100_500', '500_2000', 'above_2000'
+  const [displayLimit, setDisplayLimit] = useState(12);
+
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -83,12 +89,12 @@ export const ExploreShopsScreen = () => {
         hold_hours,
         notes,
       });
-      alert(`Item reserved successfully! Pickup Code: ${res.pickup_code || res.reservation_number}`);
+      alert(`${t('checkout.reservation_success_title')} ${t('checkout.pickup_otp')}: ${res.pickup_code || res.reservation_number || 'OK'}`);
       setInspectedProduct(null);
     } catch (err) {
-      alert(err.message || 'Reservation failed');
+      alert(err.message || t('common.error'));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();
@@ -114,9 +120,9 @@ export const ExploreShopsScreen = () => {
             category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
             open_now: openNowOnly,
             q: searchTerm || undefined,
-            limit: 40,
-          }).catch(() => productApi.listProducts({ limit: 40 }))
-        : productApi.listProducts({ limit: 40 });
+            limit: 60,
+          }).catch(() => productApi.listProducts({ limit: 60 }))
+        : productApi.listProducts({ limit: 60 });
 
       const [shopData, prodData] = await Promise.allSettled([
         shopApi.listPublicShops(params),
@@ -178,7 +184,7 @@ export const ExploreShopsScreen = () => {
         (s.city || '').toLowerCase().includes(term) ||
         (s.address || '').toLowerCase().includes(term);
       const matchesOpen = openNowOnly ? Boolean(s.is_active) : true;
-      
+
       let matchesCat = true;
       if (selectedCategory && selectedCategory !== 'All') {
         const catKey = selectedCategory.toLowerCase();
@@ -191,7 +197,7 @@ export const ExploreShopsScreen = () => {
   }, [shops, debouncedSearch, openNowOnly, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    let result = products.filter((p) => {
       const term = debouncedSearch.toLowerCase();
       const matchesSearch =
         (p.name || '').toLowerCase().includes(term) ||
@@ -215,12 +221,44 @@ export const ExploreShopsScreen = () => {
         matchesCat = pCat.includes(catKey) || catKey.includes(pCat);
       }
 
-      return matchesSearch && matchesStock && matchesCat;
+      // Price filter
+      let matchesPrice = true;
+      const price = Number(p.price || 0);
+      if (priceFilter === 'under_100') matchesPrice = price < 100;
+      else if (priceFilter === '100_500') matchesPrice = price >= 100 && price <= 500;
+      else if (priceFilter === '500_2000') matchesPrice = price > 500 && price <= 2000;
+      else if (priceFilter === 'above_2000') matchesPrice = price > 2000;
+
+      return matchesSearch && matchesStock && matchesCat && matchesPrice;
     });
-  }, [products, debouncedSearch, inStockOnly, selectedCategory]);
+
+    // Sorting
+    if (sortBy === 'price_asc') {
+      result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+    } else if (sortBy === 'price_desc') {
+      result.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+    } else if (sortBy === 'discount') {
+      result.sort((a, b) => {
+        const discA = a.compare_price && a.compare_price > a.price ? a.compare_price - a.price : 0;
+        const discB = b.compare_price && b.compare_price > b.price ? b.compare_price - b.price : 0;
+        return discB - discA;
+      });
+    } else if (sortBy === 'rating') {
+      result.sort((a, b) => Number(b.rating || 4.8) - Number(a.rating || 4.8));
+    }
+
+    return result;
+  }, [products, debouncedSearch, inStockOnly, selectedCategory, priceFilter, sortBy]);
+
+  const visibleProducts = useMemo(() => {
+    return filteredProducts.slice(0, displayLimit);
+  }, [filteredProducts, displayLimit]);
 
   return (
-    <AppLayout title={isHindi ? "शॉपसिलो हाइपरलोकल बाज़ार" : "QuickPick Local"} subtitle={isHindi ? "अपने आस-पास उपलब्ध सामान व दुकानें खोजें" : "Find In-Stock Products Around You"}>
+    <AppLayout
+      title={isHindi ? 'शॉपसिलो हाइपरलोकल बाज़ार' : 'ShopSilo Local Market'}
+      subtitle={isHindi ? 'अपने आस-पास उपलब्ध सामान व दुकानें खोजें' : 'Find In-Stock Products Around You'}
+    >
       <title>ShopSilo — Explore Nearby Shops &amp; Products</title>
 
       {/* GPS Header Bar */}
@@ -230,7 +268,7 @@ export const ExploreShopsScreen = () => {
             <MapPin size={18} color="var(--color-primary)" aria-hidden="true" />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{isHindi ? "वर्तमान स्थान (GPS)" : "Current Location"}</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{isHindi ? 'वर्तमान स्थान (GPS)' : 'Current Location'}</div>
             <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
               {locationName}
             </div>
@@ -238,7 +276,7 @@ export const ExploreShopsScreen = () => {
         </div>
         <button onClick={detectLocation} disabled={isDetecting} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.78rem' }} aria-label="Detect GPS location">
           <Crosshair size={14} className={isDetecting ? 'spin' : ''} aria-hidden="true" />
-          {isDetecting ? (isHindi ? 'लोकेशन खोज रहे हैं...' : 'Detecting...') : (isHindi ? 'लाइव जीपीएस' : 'Live GPS')}
+          {isDetecting ? t('common.loading') : (isHindi ? 'लाइव जीपीएस' : 'Live GPS')}
         </button>
       </div>
 
@@ -264,7 +302,7 @@ export const ExploreShopsScreen = () => {
           aria-pressed={openNowOnly}
         >
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: openNowOnly ? '#10b981' : '#94a3b8' }} aria-hidden="true" />
-          {isHindi ? "केवल खुली दुकानें" : "Open Stores Only"}
+          {t('common.open_now')}
         </button>
       </div>
 
@@ -275,17 +313,17 @@ export const ExploreShopsScreen = () => {
             <Search size={18} color="var(--text-muted)" aria-hidden="true" />
             <input
               type="search"
-              placeholder={searchMode === 'shops' ? "Search store name, category, or locality..." : "Search product name, brand, or in-stock items..."}
+              placeholder={searchMode === 'shops' ? t('nav.search_placeholder') : "Search product name, brand, or in-stock items..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Search"
+              aria-label={t('common.search')}
             />
           </div>
           <button
             type="button"
             onClick={() => setIsSmartSearchOpen(true)}
             className="btn btn-secondary"
-            title="AI Smart Natural Language Search"
+            title="AI Smart Search"
             style={{
               padding: '0 12px',
               background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)',
@@ -303,7 +341,7 @@ export const ExploreShopsScreen = () => {
             type="button"
             onClick={() => setIsScannerOpen(true)}
             className="btn btn-secondary"
-            title="Scan Barcode / Photo"
+            title="Scan Barcode"
             style={{ padding: '0 12px', color: 'var(--text-primary)' }}
           >
             <Camera size={17} />
@@ -313,32 +351,94 @@ export const ExploreShopsScreen = () => {
         <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="View mode">
           <button onClick={() => setSearchMode('shops')} className={`btn btn-sm ${searchMode === 'shops' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'shops'}>
             <Store size={16} aria-hidden="true" />
-            <span>{isHindi ? "आस-पास की दुकानें" : "Nearby Stores"} ({filteredShops.length})</span>
+            <span>{t('nav.explore')} ({filteredShops.length})</span>
           </button>
           <button onClick={() => setSearchMode('products')} className={`btn btn-sm ${searchMode === 'products' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'products'}>
             <Package size={16} aria-hidden="true" />
-            <span>{isHindi ? "उपलब्ध सामान (स्टॉक)" : "In-Stock Products"} ({filteredProducts.length})</span>
+            <span>{t('products.all_products')} ({filteredProducts.length})</span>
           </button>
         </div>
       </div>
 
-      {/* 🚀 Powerful Category Bar (Exact mobile app category feature ported to web app) */}
+      {/* Category Bar */}
       <CategoryBar
         selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
         onSelectCategory={(catId) => setSelectedCategory(catId || 'All')}
       />
 
+      {/* Product Sort & Filter Controls */}
       {searchMode === 'products' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-          <button
-            type="button"
-            onClick={() => setInStockOnly(!inStockOnly)}
-            className={`btn btn-sm ${inStockOnly ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-            aria-pressed={inStockOnly}
-          >
-            {isHindi ? "⚡ केवल उपलब्ध स्टॉक" : "⚡ In-Stock Only"}
-          </button>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            marginBottom: '14px',
+            backgroundColor: 'var(--bg-surface)',
+            padding: '8px 12px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-subtle)',
+          }}
+        >
+          {/* Sorting Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ArrowUpDown size={14} color="var(--text-muted)" />
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+              {t('products.sort_by')}:
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="form-input"
+              style={{
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                padding: '4px 8px',
+                borderRadius: '6px',
+                width: 'auto',
+                marginBottom: 0,
+              }}
+            >
+              <option value="featured">{t('products.sort_featured')}</option>
+              <option value="price_asc">{t('products.sort_price_low_high')}</option>
+              <option value="price_desc">{t('products.sort_price_high_low')}</option>
+              <option value="discount">{t('products.sort_discount')}</option>
+              <option value="rating">{t('products.sort_rating')}</option>
+            </select>
+          </div>
+
+          {/* Filter Pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', maxWidth: '100%' }}>
+            <button
+              type="button"
+              onClick={() => setInStockOnly(!inStockOnly)}
+              className={`btn btn-sm ${inStockOnly ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap', padding: '3px 8px' }}
+              aria-pressed={inStockOnly}
+            >
+              ⚡ {t('products.filter_in_stock_only')}
+            </button>
+
+            {[
+              { id: 'all', label: t('products.price_all') },
+              { id: 'under_100', label: t('products.price_under_100') },
+              { id: '100_500', label: t('products.price_100_500') },
+              { id: '500_2000', label: t('products.price_500_2000') },
+              { id: 'above_2000', label: t('products.price_above_2000') },
+            ].map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPriceFilter(p.id)}
+                className={`btn btn-sm ${priceFilter === p.id ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: 600, whiteSpace: 'nowrap', padding: '3px 8px' }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -349,8 +449,8 @@ export const ExploreShopsScreen = () => {
         filteredShops.length === 0 ? (
           <EmptyState
             icon={Store}
-            title="No Nearby Stores Found"
-            description="Try increasing your search radius (e.g. 5km or 10km) or clearing category filters."
+            title={t('common.no_results')}
+            description={t('common.try_adjusting_search')}
           />
         ) : (
           <div className="customer-shop-grid">
@@ -371,21 +471,50 @@ export const ExploreShopsScreen = () => {
         filteredProducts.length === 0 ? (
           <EmptyState
             icon={Package}
-            title="No Products Found"
-            description="Try searching with another product name or category filter."
+            title={t('common.no_results')}
+            description={t('common.try_adjusting_search')}
           />
         ) : (
-          <div className="customer-product-grid">
-            {filteredProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                isSaved={isProductSaved(p.id)}
-                onToggleSave={toggleSaveProduct}
-                onClick={() => setInspectedProduct(p)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="customer-product-grid">
+              {visibleProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  isSaved={isProductSaved(p.id)}
+                  onToggleSave={toggleSaveProduct}
+                  onClick={() => setInspectedProduct(p)}
+                />
+              ))}
+            </div>
+
+            {/* Pagination / Load More */}
+            <div style={{ textAlign: 'center', marginTop: '24px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                {t('common.showing_count', { current: visibleProducts.length, total: filteredProducts.length })}
+              </div>
+
+              {visibleProducts.length < filteredProducts.length ? (
+                <button
+                  type="button"
+                  onClick={() => setDisplayLimit((prev) => prev + 12)}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '8px 24px',
+                    borderRadius: 'var(--radius-full)',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {t('common.load_more')}
+                </button>
+              ) : (
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                  ✓ {t('common.all_loaded')}
+                </span>
+              )}
+            </div>
+          </>
         )
       )}
 

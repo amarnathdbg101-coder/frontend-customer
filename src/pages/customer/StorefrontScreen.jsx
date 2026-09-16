@@ -1,11 +1,11 @@
 /**
  * Shop Storefront Screen (Customer View)
  * 
- * Hinglish Hint:
- * Kisi specific dukan ka online digital panna (Storefront):
- * - Dukan ki details, timing, address aur WhatsApp contact
- * - Dukan ke sare products dekhna
- * - Item Reserve / Hold karna taaki dukan par jakar pickup kar sakein
+ * Features:
+ * - Shop profile banner, photos, timing, and WhatsApp contact
+ * - Store product catalog with search, sorting, and stock status
+ * - 1-Click Quick Add to Cart & Counter Pickup Reservation
+ * - Full i18n support (English & Formal Hindi)
  */
 
 import React, { useState, useEffect } from 'react';
@@ -22,27 +22,33 @@ import {
   Package,
   MessageCircle,
   Eye,
+  ShoppingCart,
+  Star,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
 import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
+import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { getImageUrl } from '../../utils/imageUrl';
 
 export const StorefrontScreen = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { addItem, isInCart } = useCart();
+  const { t, isHindi } = useLanguage();
 
   const [shop, setShop] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Selected product for detail inspection modal
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(null);
@@ -74,7 +80,7 @@ export const StorefrontScreen = () => {
 
   const handleReserveFromModal = async ({ product, quantity, hold_hours, notes }) => {
     if (!isAuthenticated) {
-      alert('Item reserve karne ke liye pehle Login karein');
+      alert(t('auth.login_required_reserve'));
       navigate('/login');
       return;
     }
@@ -90,7 +96,7 @@ export const StorefrontScreen = () => {
       setReservationSuccess(res);
       setInspectedProduct(null);
     } catch (err) {
-      alert(err.message || 'Reservation fail ho gaya');
+      alert(err.message || t('common.error'));
     }
   };
 
@@ -99,7 +105,7 @@ export const StorefrontScreen = () => {
   );
 
   return (
-    <AppLayout title={shop?.name || 'Dukan Storefront'} showBack={true}>
+    <AppLayout title={shop?.name || t('nav.explore')} showBack={true}>
       {/* Shop Profile Banner & Photos */}
       {shop && (
         <div
@@ -113,9 +119,8 @@ export const StorefrontScreen = () => {
             marginBottom: '14px',
           }}
         >
-          {/* Shop Promotional Banner Image if available */}
           {shop.banners && shop.banners.length > 0 && (
-            <div style={{ width: '100%', height: '120px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '120px', overflow: 'relative', position: 'relative' }}>
               <img
                 src={getImageUrl(shop.banners[0])}
                 alt={shop.name}
@@ -133,7 +138,6 @@ export const StorefrontScreen = () => {
 
           <div style={{ padding: '16px' }}>
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-              {/* Shop Logo Avatar */}
               <div
                 style={{
                   width: '56px',
@@ -161,10 +165,10 @@ export const StorefrontScreen = () => {
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: '1.25rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {shop.name}
                 </h1>
-                <div style={{ fontSize: '0.78rem', opacity: 0.85 }}>{shop.category}</div>
+                <div style={{ fontSize: '0.78rem', opacity: 0.85, marginTop: '2px' }}>{shop.category}</div>
                 <div
                   style={{
                     fontSize: '0.74rem',
@@ -199,7 +203,7 @@ export const StorefrontScreen = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {shop.phone && (
                   <a
-                    href={`https://wa.me/91${shop.phone.replace(/[^0-9]/g, '')}?text=Namaste%20${encodeURIComponent(shop.name)}`}
+                    href={`https://wa.me/91${shop.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(shop.name)}`}
                     target="_blank"
                     rel="noreferrer"
                     style={{
@@ -228,7 +232,7 @@ export const StorefrontScreen = () => {
                     fontWeight: 700,
                   }}
                 >
-                  {shop.is_active ? 'Open Abhi' : 'Closed'}
+                  {shop.is_active ? t('common.open_now') : t('common.closed')}
                 </span>
               </div>
             </div>
@@ -254,7 +258,7 @@ export const StorefrontScreen = () => {
               }}
             >
               <Eye size={15} />
-              <span>Dukan Ki Puri Jankari, Timing & Photos Dekhein</span>
+              <span>{t('products.seller_info')}</span>
             </button>
           </div>
         </div>
@@ -262,16 +266,16 @@ export const StorefrontScreen = () => {
 
       {/* Search Bar */}
       <div className="search-box">
-        <Search size={18} />
+        <Search size={18} color="var(--text-muted)" />
         <input
-          type="text"
-          placeholder="Is dukan me saman khojein..."
+          type="search"
+          placeholder={t('nav.search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Products Grid (Spacious Professional E-commerce Cards) */}
+      {/* Products Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
         {filteredProducts.map((p) => {
           const stock = Number(
@@ -286,6 +290,7 @@ export const StorefrontScreen = () => {
           const hasDiscount = p.compare_price && p.compare_price > p.price;
           const discountPct = hasDiscount ? Math.round(((p.compare_price - p.price) / p.compare_price) * 100) : 0;
           const brand = p.attributes?.brand || p.attributes?.company;
+          const inCart = isInCart(p.id);
 
           const handleOpenModal = () => {
             const enriched = {
@@ -320,7 +325,6 @@ export const StorefrontScreen = () => {
               }}
             >
               <div>
-                {/* Big High-Res Product Photo */}
                 <div
                   style={{
                     width: '100%',
@@ -334,7 +338,6 @@ export const StorefrontScreen = () => {
                     marginBottom: '12px',
                     border: '1.5px solid var(--border-subtle)',
                     position: 'relative',
-                    boxShadow: 'inset 0 0 8px rgba(0,0,0,0.02)',
                   }}
                 >
                   {p.images && p.images.length > 0 ? (
@@ -348,7 +351,6 @@ export const StorefrontScreen = () => {
                     <Package size={44} color="var(--text-muted)" style={{ opacity: 0.4 }} />
                   )}
 
-                  {/* Stock Pill on image */}
                   <span
                     style={{
                       position: 'absolute',
@@ -362,19 +364,16 @@ export const StorefrontScreen = () => {
                       borderRadius: '6px',
                       backgroundColor: inStock ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
                       color: '#ffffff',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
                     }}
                   >
-                    {inStock ? `✓ ${stock} in store` : 'Out of stock'}
+                    {inStock ? `${stock} in store` : t('products.out_of_stock')}
                   </span>
                 </div>
 
-                {/* Product Title */}
                 <div style={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.3, color: 'var(--text-primary)' }}>
                   {p.name}
                 </div>
 
-                {/* Brand & Attribute Chips Upfront */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px' }}>
                   {brand && (
                     <span style={{ fontSize: '0.72rem', background: 'rgba(37, 99, 235, 0.09)', color: '#2563eb', padding: '2px 7px', borderRadius: '6px', fontWeight: 700 }}>
@@ -382,19 +381,14 @@ export const StorefrontScreen = () => {
                     </span>
                   )}
                   {p.attributes?.size && (
-                    <span style={{ fontSize: '0.7rem', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                      Size: {p.attributes.size}
-                    </span>
-                  )}
-                  {p.attributes?.weight && (
-                    <span style={{ fontSize: '0.7rem', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                      {p.attributes.weight}
+                    <span style={{ fontSize: '0.7rem', background: 'var(--bg-surface-subtle)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                      {p.attributes.size}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Bottom: Pricing & CTA Button */}
+              {/* Bottom */}
               <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
                   <span style={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--color-primary)' }}>
@@ -412,32 +406,46 @@ export const StorefrontScreen = () => {
                   )}
                 </div>
 
-                <button
-                  className="btn btn-primary btn-block"
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                  }}
-                  disabled={!inStock}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenModal();
-                  }}
-                >
-                  <Eye size={14} />
-                  <span>{inStock ? 'View Details & Hold' : 'Out of Stock'}</span>
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                  {inStock && (
+                    <button
+                      type="button"
+                      onClick={() => addItem(p, 1)}
+                      className={`btn btn-sm ${inCart ? 'btn-success' : 'btn-secondary'}`}
+                      style={{ padding: '8px 12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <ShoppingCart size={14} />
+                      <span>{inCart ? t('products.already_in_cart') : t('products.add_to_cart')}</span>
+                    </button>
+                  )}
+
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                    onClick={handleOpenModal}
+                  >
+                    <Eye size={14} />
+                    <span>{inStock ? t('products.reserve_for_pickup') : t('products.product_details')}</span>
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Shop Reviews Section */}
+      {shop && <ShopReviewsSection shopSlug={shop.slug} shopName={shop.name} />}
 
       {/* Product Detail Modal */}
       {inspectedProduct && (
@@ -449,16 +457,16 @@ export const StorefrontScreen = () => {
         />
       )}
 
-      {/* Reservation Success Bottom Sheet with OTP/Pickup Code */}
+      {/* Reservation Success Modal */}
       {reservationSuccess && (
         <div className="modal-backdrop" onClick={() => setReservationSuccess(null)}>
           <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
             <div style={{ textAlign: 'center', padding: '10px' }}>
               <CheckCircle size={48} color="var(--color-success)" style={{ margin: '0 auto 8px auto' }} />
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Item Hold Ho Gaya!</h2>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{t('checkout.reservation_success_title')}</h2>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Dukan counter par jakar yeh Pickup Code dikhayein:
+                {t('checkout.reservation_success_desc')}
               </p>
 
               <div
@@ -473,14 +481,14 @@ export const StorefrontScreen = () => {
                   margin: '16px 0',
                 }}
               >
-                {reservationSuccess.pickup_code || reservationSuccess.reservation_number || 'HOLD-OK'}
+                {reservationSuccess.pickup_code || reservationSuccess.reservation_number || 'OK'}
               </div>
 
               <button
                 className="btn btn-secondary btn-block"
                 onClick={() => setReservationSuccess(null)}
               >
-                Theek Hai
+                {t('common.confirm')}
               </button>
             </div>
           </div>

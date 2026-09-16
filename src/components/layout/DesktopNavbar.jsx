@@ -4,6 +4,7 @@
  * Features:
  * - Brand Logo & Slogan
  * - Navigation tabs (Explore Shops, Deals, Pickups, Saved, Khata)
+ * - Live Shopping Cart drawer button with badge count
  * - Menu bar "दुकान बनाएं" / "Create Shop" action button
  * - Bilingual Switcher (Hindi / English)
  * - Dark / Light Theme Toggle
@@ -21,11 +22,13 @@ import {
   Sun,
   Moon,
   PlusCircle,
+  ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/imageUrl';
 
 export const DesktopNavbar = () => {
@@ -33,7 +36,8 @@ export const DesktopNavbar = () => {
   const { user, isAuthenticated } = useAuth();
   const { savedProducts, savedShops } = useSaved();
   const { isDark, toggleTheme } = useTheme();
-  const { setLanguage, isHindi } = useLanguage();
+  const { setLanguage, isHindi, t } = useLanguage();
+  const { cartCount, openCart } = useCart();
 
   const savedCount = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
@@ -77,7 +81,7 @@ export const DesktopNavbar = () => {
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
             <Store size={18} />
-            <span>{isHindi ? 'दुकानें' : 'Explore Shops'}</span>
+            <span>{t('nav.explore')}</span>
           </NavLink>
 
           <NavLink
@@ -85,7 +89,7 @@ export const DesktopNavbar = () => {
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
             <Tag size={18} />
-            <span>{isHindi ? 'ऑफ़र्स एवं डील्स' : 'Deals & Offers'}</span>
+            <span>{t('nav.deals')}</span>
           </NavLink>
 
           <NavLink
@@ -93,7 +97,7 @@ export const DesktopNavbar = () => {
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
             <ShoppingBag size={18} />
-            <span>{isHindi ? 'मेरी बुकिंग्स' : 'My Pickups'}</span>
+            <span>{t('nav.reservations')}</span>
           </NavLink>
 
           <NavLink
@@ -101,7 +105,7 @@ export const DesktopNavbar = () => {
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
             <Heart size={18} />
-            <span>{isHindi ? 'पसंदीदा' : 'Saved'}</span>
+            <span>{t('nav.saved')}</span>
             {savedCount > 0 && <span className="nav-badge" style={{ position: 'static', marginLeft: '4px' }}>{savedCount}</span>}
           </NavLink>
 
@@ -111,11 +115,11 @@ export const DesktopNavbar = () => {
               className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
             >
               <BookOpen size={18} />
-              <span>{isHindi ? 'मेरा खाता' : 'My Khata'}</span>
+              <span>{t('nav.khata')}</span>
             </NavLink>
           )}
 
-          {/* Menu Bar: Shop bnane ka option */}
+          {/* Shop Creation Action Button */}
           <a
             href="https://shop.shopsilo.in/register"
             target="_blank"
@@ -133,15 +137,60 @@ export const DesktopNavbar = () => {
               textDecoration: 'none',
               boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
             }}
-            title={isHindi ? 'अपनी दुकान बनाएं और रजिस्टर करें' : 'Create & Register Your Shop'}
+            title={t('nav.create_shop')}
           >
             <PlusCircle size={15} />
-            <span>{isHindi ? 'दुकान बनाएं' : 'Create Shop'}</span>
+            <span>{t('nav.create_shop')}</span>
           </a>
         </nav>
 
-        {/* Utilities: Language Selector, Theme Switch & Profile */}
+        {/* Utilities: Cart, Language Selector, Theme Switch & Profile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '16px' }}>
+          {/* Cart Trigger Button */}
+          <button
+            type="button"
+            onClick={openCart}
+            style={{
+              background: 'var(--bg-surface-subtle)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text-primary)',
+              position: 'relative',
+            }}
+            title={t('nav.cart')}
+            aria-label={t('nav.cart')}
+          >
+            <ShoppingCart size={17} />
+            {cartCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  backgroundColor: 'var(--color-primary)',
+                  color: '#ffffff',
+                  fontSize: '0.65rem',
+                  fontWeight: 900,
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                }}
+              >
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           {/* Language Switcher Pill */}
           <div
             style={{
@@ -167,7 +216,7 @@ export const DesktopNavbar = () => {
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
-              title="हिंदी भाषा चुनें"
+              title="हिंदी"
             >
               हिंदी
             </button>
@@ -184,7 +233,7 @@ export const DesktopNavbar = () => {
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
-              title="Select English language"
+              title="English"
             >
               EN
             </button>
@@ -205,7 +254,7 @@ export const DesktopNavbar = () => {
               cursor: 'pointer',
               color: 'var(--text-primary)',
             }}
-            title={isDark ? (isHindi ? 'लाइट मोड चालू करें' : 'Switch to Light Mode') : (isHindi ? 'डार्क मोड चालू करें' : 'Switch to Dark Mode')}
+            title={isDark ? t('profile.light_mode') : t('profile.dark_mode')}
           >
             {isDark ? <Sun size={17} color="#fbbf24" /> : <Moon size={17} />}
           </button>
@@ -250,7 +299,7 @@ export const DesktopNavbar = () => {
                 )}
               </div>
               <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {user.name || user.full_name || (isHindi ? 'मेरा अकाउंट' : 'My Account')}
+                {user.name || user.full_name || t('nav.profile')}
               </span>
             </button>
           ) : (
@@ -259,7 +308,7 @@ export const DesktopNavbar = () => {
               className="btn btn-primary btn-sm"
               style={{ padding: '7px 16px', fontWeight: 700 }}
             >
-              {isHindi ? 'लॉगिन' : 'Login'}
+              {t('nav.login')}
             </button>
           )}
         </div>

@@ -1,19 +1,17 @@
 /**
  * ShopSilo Customer Web Application Router
  * 
- * Ported from Flutter APK (QuickPick) routes:
+ * Routes:
  * - '/'             -> Nearby discovery with GPS & Radius slider
  * - '/deals'        -> Live deals & promotional offers feed
- * - '/saved'        -> Saved items & favorite shops
- * - '/shop/:slug'   -> Dukan ka storefront, live items aur pickup booking
- * - '/reservations' -> Grahak ke hold kiye huye item pickup codes (OTP)
- * - '/khata'        -> Grahak Digital Khata Passbook, Udhar & UPI Payments
- * - '/profile'      -> Grahak ka profile aur account settings
+ * - '/saved'        -> Saved items & favorite shops (Wishlist)
+ * - '/shop/:slug'   -> Merchant storefront, catalog & pickup booking
+ * - '/reservations' -> Customer Pickup Orders & QR verification codes
+ * - '/khata'        -> Digital Khata Passbook & Ledger
+ * - '/profile'      -> Account settings, addresses & preferences
  * - '/login'        -> Customer Login
  * - '/register'     -> Customer Signup
- * 
- * Performance: All page components are lazy-loaded with React.lazy() for
- * code splitting. Each route loads only when navigated to.
+ * - '/reset-password' -> Password Recovery
  */
 
 import React, { lazy, Suspense } from 'react';
@@ -22,9 +20,12 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LocationProvider } from './context/LocationContext';
 import { SavedProvider } from './context/SavedContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { LanguageProvider } from './context/LanguageContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { CartProvider } from './context/CartContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { CartDrawer } from './components/cart/CartDrawer';
+import { CheckoutModal } from './components/cart/CheckoutModal';
 
 // Lazy-loaded Auth Pages
 const LoginScreen = lazy(() => import('./pages/auth/LoginScreen').then(m => ({ default: m.LoginScreen })));
@@ -41,16 +42,18 @@ const CustomerKhataScreen = lazy(() => import('./pages/customer/CustomerKhataScr
 const CustomerProfileScreen = lazy(() => import('./pages/customer/CustomerProfileScreen').then(m => ({ default: m.CustomerProfileScreen })));
 
 // Suspense fallback for route loading
-const RouteFallback = () => (
-  <LoadingSpinner message="Page load ho raha hai..." fullScreen />
-);
+const RouteFallback = () => {
+  const { isHindi } = useLanguage();
+  return <LoadingSpinner message={isHindi ? "पेज लोड हो रहा है..." : "Loading page..."} fullScreen />;
+};
 
 // Protected Route Guard for Customer Profile / Orders / Khata
 const ProtectedCustomerRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const { isHindi } = useLanguage();
 
   if (loading) {
-    return <LoadingSpinner message="Session verify ho raha hai..." fullScreen />;
+    return <LoadingSpinner message={isHindi ? "सत्र सत्यापित किया जा रहा है..." : "Verifying session..."} fullScreen />;
   }
 
   if (!isAuthenticated) {
@@ -68,48 +71,52 @@ function App() {
           <AuthProvider>
             <LocationProvider>
               <SavedProvider>
-                <BrowserRouter>
-                  <Suspense fallback={<RouteFallback />}>
-                    <Routes>
-                      {/* Public Store Discovery, Deals & Shopping */}
-                      <Route path="/" element={<ExploreShopsScreen />} />
-                      <Route path="/deals" element={<DealsScreen />} />
-                      <Route path="/saved" element={<SavedScreen />} />
-                      <Route path="/shop/:slug" element={<StorefrontScreen />} />
+                <CartProvider>
+                  <BrowserRouter>
+                    <CartDrawer />
+                    <CheckoutModal />
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        {/* Public Store Discovery, Deals & Shopping */}
+                        <Route path="/" element={<ExploreShopsScreen />} />
+                        <Route path="/deals" element={<DealsScreen />} />
+                        <Route path="/saved" element={<SavedScreen />} />
+                        <Route path="/shop/:slug" element={<StorefrontScreen />} />
 
-                      {/* Customer Pickups & Orders */}
-                      <Route path="/reservations" element={<ReservationsScreen />} />
+                        {/* Customer Pickups & Orders */}
+                        <Route path="/reservations" element={<ReservationsScreen />} />
 
-                      {/* Customer Khata Passbook & Udhar */}
-                      <Route
-                        path="/khata"
-                        element={
-                          <ProtectedCustomerRoute>
-                            <CustomerKhataScreen />
-                          </ProtectedCustomerRoute>
-                        }
-                      />
+                        {/* Customer Khata Passbook & Udhar */}
+                        <Route
+                          path="/khata"
+                          element={
+                            <ProtectedCustomerRoute>
+                              <CustomerKhataScreen />
+                            </ProtectedCustomerRoute>
+                          }
+                        />
 
-                      {/* Customer Profile */}
-                      <Route
-                        path="/profile"
-                        element={
-                          <ProtectedCustomerRoute>
-                            <CustomerProfileScreen />
-                          </ProtectedCustomerRoute>
-                        }
-                      />
+                        {/* Customer Profile */}
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedCustomerRoute>
+                              <CustomerProfileScreen />
+                            </ProtectedCustomerRoute>
+                          }
+                        />
 
-                      {/* Auth Routes */}
-                      <Route path="/login" element={<LoginScreen />} />
-                      <Route path="/register" element={<RegisterScreen />} />
-                      <Route path="/reset-password" element={<ResetPasswordScreen />} />
+                        {/* Auth Routes */}
+                        <Route path="/login" element={<LoginScreen />} />
+                        <Route path="/register" element={<RegisterScreen />} />
+                        <Route path="/reset-password" element={<ResetPasswordScreen />} />
 
-                      {/* Fallback */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Suspense>
-                </BrowserRouter>
+                        {/* Fallback */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </Suspense>
+                  </BrowserRouter>
+                </CartProvider>
               </SavedProvider>
             </LocationProvider>
           </AuthProvider>

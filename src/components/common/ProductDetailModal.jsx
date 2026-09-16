@@ -1,15 +1,15 @@
 /**
  * ProductDetailModal Component
  * 
- * Hinglish Hint:
- * Kisi bhi product par tap karne par ek modern responsive bottom-sheet / modal khulti hai:
- * - High-resolution image gallery (multiple images preview)
- * - Complete product specifications & flexible attributes (Brand, Size, Color, etc.)
- * - SKU, Price, Stock indicator
- * - 🤝 Bhav-Taav Karein (Real-time algorithmic bargaining with instant acceptance or sweet-spot counter-offer)
- * - 🔔 Notify Me (Out-of-stock notification registration for automatic WhatsApp alerts)
- * - Customer ke liye instant "Hold / Reserve" for in-store counter pickup
- * - Merchant ke liye "Adjust Stock" action
+ * Production-ready modal with:
+ * - High-resolution image gallery (multi-image carousel & thumbnail strip)
+ * - Complete product specifications & attributes
+ * - Star ratings and customer reviews section
+ * - 🤝 Algorithmic Bargaining (Make Offer)
+ * - 🔔 Out-of-stock notification registration
+ * - 🛒 Add to Cart with live quantity control
+ * - 🛍️ 1-Click Counter Pickup Reservation
+ * - Full i18n support (Strict English & Formal Hindi)
  */
 
 import React, { useState } from 'react';
@@ -34,33 +34,47 @@ import {
   Send,
   Bell,
   ArrowRight,
+  ShoppingCart,
+  Plus,
+  Minus,
+  Star,
 } from 'lucide-react';
 import { getCategoryEmoji } from '../../utils/categoryMeta';
 import { getImageUrl } from '../../utils/imageUrl';
 import { productApi } from '../../api/product.api';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { ProductReviewsSection } from '../customer/ProductReviewsSection';
 
 export const ProductDetailModal = ({
   product,
   onClose,
-  onReserve,        // Customer action
-  onAdjustStock,    // Merchant action
+  onReserve,
+  onAdjustStock,
   isMerchant = false,
 }) => {
   if (!product) return null;
 
   const { user } = useAuth();
+  const { addItem, isInCart, getItemQuantity, openCart } = useCart();
+  const { t, isHindi } = useLanguage();
+
   const images = product.images && product.images.length > 0 ? product.images : [];
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [copiedSKU, setCopiedSKU] = useState(false);
 
-  // Reserve form state for customers
+  // Reserve form state
   const [reserveQty, setReserveQty] = useState(1);
   const [reserveHours, setReserveHours] = useState(4);
   const [reserveNotes, setReserveNotes] = useState('');
   const [reserving, setReserving] = useState(false);
 
-  // 🤝 Bhav-Taav (Bargaining) State
+  // Cart quantity selector
+  const [cartQty, setCartQty] = useState(1);
+  const [addedToast, setAddedToast] = useState(false);
+
+  // Bargaining State
   const [showBargainBox, setShowBargainBox] = useState(false);
   const [offerPrice, setOfferPrice] = useState(Math.round(product.price * 0.9));
   const [offerQty, setOfferQty] = useState(1);
@@ -70,7 +84,7 @@ export const ProductDetailModal = ({
   const [offerResult, setOfferResult] = useState(null);
   const [offerError, setOfferError] = useState(null);
 
-  // 🔔 Notify Me (Out of Stock Alert) State
+  // Stock alert state
   const [alertPhone, setAlertPhone] = useState(user?.phone || '');
   const [alertName, setAlertName] = useState(user?.name || user?.full_name || '');
   const [subscribingAlert, setSubscribingAlert] = useState(false);
@@ -96,6 +110,12 @@ export const ProductDetailModal = ({
     }
   };
 
+  const handleAddToCart = () => {
+    addItem(product, cartQty);
+    setAddedToast(true);
+    setTimeout(() => setAddedToast(false), 2500);
+  };
+
   const handleReserveSubmit = async (e) => {
     e.preventDefault();
     if (onReserve) {
@@ -113,16 +133,15 @@ export const ProductDetailModal = ({
     }
   };
 
-  // Submit Bhav-Taav proposal
   const handleBargainSubmit = async (e) => {
     e.preventDefault();
     setOfferError(null);
     if (!offerPhone || offerPhone.trim().length < 10) {
-      setOfferError('Kripya valid 10-digit mobile number dalein taaki dukan par token dikha sakein.');
+      setError(t('auth.invalid_phone'));
       return;
     }
     if (Number(offerPrice) <= 0) {
-      setOfferError('Offer price 0 se jyada hona chahiye.');
+      setOfferError('Invalid offer price');
       return;
     }
 
@@ -137,18 +156,17 @@ export const ProductDetailModal = ({
       const data = res.data || res;
       setOfferResult(data);
     } catch (err) {
-      setOfferError(err.response?.data?.message || err.message || 'Bhav submit karne me dikkat aayi.');
+      setOfferError(err.response?.data?.message || err.message || t('common.error'));
     } finally {
       setSubmittingOffer(false);
     }
   };
 
-  // Submit Out-of-Stock Notify Me
   const handleStockAlertSubmit = async (e) => {
     e.preventDefault();
     setAlertError(null);
     if (!alertPhone || alertPhone.trim().length < 10) {
-      setAlertError('Kripya valid 10-digit mobile number dalein.');
+      setAlertError(t('auth.invalid_phone'));
       return;
     }
 
@@ -160,7 +178,7 @@ export const ProductDetailModal = ({
       });
       setAlertSuccess(true);
     } catch (err) {
-      setAlertError(err.response?.data?.message || err.message || 'Alert register nahi ho paya.');
+      setAlertError(err.response?.data?.message || err.message || t('common.error'));
     } finally {
       setSubscribingAlert(false);
     }
@@ -176,6 +194,7 @@ export const ProductDetailModal = ({
           flexDirection: 'column',
           padding: 0,
           overflow: 'hidden',
+          maxHeight: '90vh',
         }}
       >
         {/* Modal Handle & Close Button */}
@@ -191,7 +210,7 @@ export const ProductDetailModal = ({
         >
           <div className="sheet-handle" style={{ margin: 0 }} />
           <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-            Product Details
+            {t('products.product_details')}
           </div>
           <button
             onClick={onClose}
@@ -207,7 +226,8 @@ export const ProductDetailModal = ({
               cursor: 'pointer',
               color: 'var(--text-secondary)',
             }}
-            title="Band Karein"
+            title={t('common.close')}
+            aria-label={t('common.close')}
           >
             <X size={18} />
           </button>
@@ -245,11 +265,10 @@ export const ProductDetailModal = ({
               ) : (
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
                   <Package size={64} style={{ opacity: 0.4, margin: '0 auto 8px auto' }} />
-                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>Koi Photo Available Nahi Hai</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{t('products.no_photo')}</div>
                 </div>
               )}
 
-              {/* Multiple Images Navigation Arrows */}
               {images.length > 1 && (
                 <>
                   <button
@@ -270,6 +289,7 @@ export const ProductDetailModal = ({
                       cursor: 'pointer',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                     }}
+                    aria-label="Previous image"
                   >
                     <ChevronLeft size={18} color="#0f172a" />
                   </button>
@@ -291,6 +311,7 @@ export const ProductDetailModal = ({
                       cursor: 'pointer',
                       boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                     }}
+                    aria-label="Next image"
                   >
                     <ChevronRight size={18} color="#0f172a" />
                   </button>
@@ -298,7 +319,6 @@ export const ProductDetailModal = ({
               )}
             </div>
 
-            {/* Thumbnail Strip */}
             {images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
                 {images.map((img, idx) => (
@@ -328,11 +348,10 @@ export const ProductDetailModal = ({
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25, margin: 0 }}>
                   {product.name}
                 </h2>
-                
-                {/* Brand & Category line */}
+
                 <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
                   {(product.attributes?.brand || product.attributes?.company) && (
                     <span
@@ -345,7 +364,7 @@ export const ProductDetailModal = ({
                         borderRadius: '6px',
                       }}
                     >
-                      Brand: {product.attributes?.brand || product.attributes?.company}
+                      {product.attributes?.brand || product.attributes?.company}
                     </span>
                   )}
 
@@ -387,7 +406,7 @@ export const ProductDetailModal = ({
                 {product.compare_price && product.compare_price > product.price && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', marginTop: '2px' }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                      MRP ₹{product.compare_price}
+                      {t('products.mrp')} ₹{product.compare_price}
                     </span>
                     <span
                       style={{
@@ -399,13 +418,9 @@ export const ProductDetailModal = ({
                         borderRadius: '4px',
                       }}
                     >
-                      Save ₹{product.compare_price - product.price} ({Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF)
+                      {t('products.save_amount', { amount: product.compare_price - product.price })} (
+                      {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF)
                     </span>
-                  </div>
-                )}
-                {isMerchant && product.cost_price > 0 && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Kharid: ₹{product.cost_price}
                   </div>
                 )}
               </div>
@@ -434,11 +449,12 @@ export const ProductDetailModal = ({
                     backgroundColor: inStock ? '#10b981' : '#ef4444',
                   }}
                 />
-                {inStock ? `Stock: ${currentStock} units available` : 'Currently Out of Stock'}
+                {inStock ? `${t('products.in_stock')}: ${currentStock} units` : t('products.out_of_stock')}
               </span>
 
               {product.sku && (
                 <button
+                  type="button"
                   onClick={handleCopySKU}
                   style={{
                     display: 'inline-flex',
@@ -453,17 +469,128 @@ export const ProductDetailModal = ({
                     border: 'none',
                     cursor: 'pointer',
                   }}
-                  title="SKU Copy Karein"
+                  title={t('common.copy')}
                 >
                   <Copy size={12} />
                   <span>SKU: {product.sku}</span>
-                  {copiedSKU && <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Copied</span>}
+                  {copiedSKU && <span style={{ color: '#15803d', fontWeight: 700 }}>✓ {t('common.copied')}</span>}
                 </button>
               )}
             </div>
           </div>
 
-          {/* 🤝 Customer Feature: Bhav-Taav Negotiation (Make Offer) */}
+          {/* 🛒 Add to Cart Quick Bar */}
+          {!isMerchant && inStock && (
+            <div
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1.5px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: '14px',
+                marginBottom: '16px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    {t('products.select_quantity')}:
+                  </span>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      border: '1.5px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '3px 8px',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setCartQty((q) => Math.max(1, q - 1))}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: '2px' }}
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', minWidth: '18px', textAlign: 'center' }}>
+                      {cartQty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCartQty((q) => Math.min(currentStock, q + 1))}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: '2px' }}
+                      aria-label="Increase quantity"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flex: 1, justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="btn btn-primary"
+                    style={{
+                      padding: '9px 18px',
+                      borderRadius: 'var(--radius-md)',
+                      fontWeight: 800,
+                      fontSize: '0.85rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <ShoppingCart size={16} />
+                    <span>{t('products.add_to_cart')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {addedToast && (
+                <div
+                  style={{
+                    marginTop: '10px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    color: '#065f46',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <CheckCircle size={15} color="#10b981" />
+                    {t('cart.item_added')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      openCart();
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-primary)',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      fontSize: '0.78rem',
+                    }}
+                  >
+                    {t('nav.cart')} →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 🤝 Customer Feature: Bargaining (Make Offer) */}
           {!isMerchant && inStock && allowBargain && (
             <div
               style={{
@@ -478,10 +605,10 @@ export const ProductDetailModal = ({
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Sparkles size={16} color="var(--color-primary)" />
-                    🤝 Bhav-Taav Karein (Make Offer)
+                    {t('bargain.title')}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    Apna rate propose karein — hamara smart engine turant best discount calculate karega!
+                    {t('bargain.subtitle')}
                   </div>
                 </div>
 
@@ -498,7 +625,7 @@ export const ProductDetailModal = ({
                     borderRadius: 'var(--radius-full)',
                   }}
                 >
-                  {showBargainBox ? 'Hide' : 'Rate Lagayein'}
+                  {showBargainBox ? t('common.close') : t('bargain.submit_offer')}
                 </button>
               </div>
 
@@ -506,7 +633,6 @@ export const ProductDetailModal = ({
                 <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
                   {!offerResult ? (
                     <form onSubmit={handleBargainSubmit}>
-                      {/* Quick percentage discount pills */}
                       <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
                         {[5, 10, 15, 20].map((pct) => {
                           const discounted = Math.round(product.price * (1 - pct / 100));
@@ -537,7 +663,7 @@ export const ProductDetailModal = ({
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '10px' }}>
                         <div>
                           <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '3px' }}>
-                            Aapka Proposed Rate (₹)
+                            {t('bargain.propose_price')}
                           </label>
                           <input
                             type="number"
@@ -553,7 +679,7 @@ export const ProductDetailModal = ({
 
                         <div>
                           <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '3px' }}>
-                            Quantity (Kitne Pieces)
+                            {t('bargain.quantity')}
                           </label>
                           <input
                             type="number"
@@ -570,7 +696,7 @@ export const ProductDetailModal = ({
 
                       <div style={{ marginBottom: '12px' }}>
                         <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '3px' }}>
-                          Aapka Mobile Number (10-Digit WhatsApp)
+                          {t('bargain.mobile_label')}
                         </label>
                         <input
                           type="tel"
@@ -595,31 +721,30 @@ export const ProductDetailModal = ({
                         style={{ fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                       >
                         <Send size={16} />
-                        <span>{submittingOffer ? 'Calculating Deal...' : `Bhav Submit Karein (₹${offerPrice * offerQty})`}</span>
+                        <span>{submittingOffer ? t('bargain.calculating') : `${t('bargain.submit_offer')} (₹${offerPrice * offerQty})`}</span>
                       </button>
                     </form>
                   ) : (
-                    /* Offer Result Display */
                     <div>
                       {offerResult.status === 'DEAL_ACCEPTED' && (
                         <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 'var(--radius-md)', padding: '14px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 900, fontSize: '0.92rem' }}>
                             <CheckCircle size={20} color="#10b981" />
-                            🎉 Deal Accepted! Rate Manzoor Hai!
+                            {t('bargain.deal_accepted_title')}
                           </div>
                           <p style={{ fontSize: '0.8rem', color: '#047857', marginTop: '6px', lineHeight: 1.4 }}>
-                            {offerResult.message || `Aapko yeh item ₹${offerResult.agreed_price} me diya jaa raha hai!`}
+                            {offerResult.message || t('bargain.deal_accepted_msg')}
                           </p>
 
                           <div style={{ backgroundColor: '#ffffff', border: '1px dashed #10b981', borderRadius: 'var(--radius-sm)', padding: '10px', margin: '10px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>EXCLUSIVE DEAL CODE</div>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('bargain.deal_code')}</div>
                               <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '1px' }}>
                                 {offerResult.deal_code}
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>VALID FOR</div>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{t('bargain.valid_for')}</div>
                               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#b91c1c' }}>30 Minutes</div>
                             </div>
                           </div>
@@ -633,7 +758,7 @@ export const ProductDetailModal = ({
                                 className="btn btn-sm"
                                 style={{ flex: 1, backgroundColor: '#25D366', color: '#ffffff', fontWeight: 800, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
                               >
-                                <MessageSquare size={16} /> WhatsApp Order Karein
+                                <MessageSquare size={16} /> {t('bargain.order_whatsapp')}
                               </a>
                             )}
                             <button
@@ -642,7 +767,7 @@ export const ProductDetailModal = ({
                               className="btn btn-secondary btn-sm"
                               style={{ fontWeight: 600 }}
                             >
-                              Reset
+                              {t('common.retry')}
                             </button>
                           </div>
                         </div>
@@ -652,26 +777,11 @@ export const ProductDetailModal = ({
                         <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 'var(--radius-md)', padding: '14px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#92400e', fontWeight: 900, fontSize: '0.92rem' }}>
                             <Sparkles size={18} color="#d97706" />
-                            🤝 Dukan Ka Counter Offer: ₹{offerResult.agreed_price}
+                            {t('bargain.counter_offer_title', { price: offerResult.agreed_price })}
                           </div>
                           <p style={{ fontSize: '0.8rem', color: '#78350f', marginTop: '6px', lineHeight: 1.4 }}>
                             {offerResult.message}
                           </p>
-
-                          {/* Bundle Volume Upsell (Science of bargaining) */}
-                          {offerResult.bundle_upsell && (
-                            <div style={{ backgroundColor: '#ffffff', border: '1.5px solid #6366f1', borderRadius: 'var(--radius-sm)', padding: '10px', margin: '10px 0' }}>
-                              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#4f46e5', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                🔥 VOLUME BUNDLE BACHAT OFFER
-                              </div>
-                              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '3px' }}>
-                                {offerResult.bundle_upsell.description}
-                              </div>
-                              <div style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: 700, marginTop: '2px' }}>
-                                Total Savings: ₹{offerResult.bundle_upsell.total_savings} (Sirf ₹{offerResult.bundle_upsell.unit_price}/piece)
-                              </div>
-                            </div>
-                          )}
 
                           <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                             {offerResult.whatsapp_order_url && (
@@ -682,7 +792,7 @@ export const ProductDetailModal = ({
                                 className="btn btn-sm"
                                 style={{ flex: 1, backgroundColor: '#25D366', color: '#ffffff', fontWeight: 800, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px' }}
                               >
-                                <MessageSquare size={16} /> Deal Lock Karein (WhatsApp)
+                                <MessageSquare size={16} /> {t('bargain.order_whatsapp')}
                               </a>
                             )}
                             <button
@@ -691,25 +801,9 @@ export const ProductDetailModal = ({
                               className="btn btn-secondary btn-sm"
                               style={{ fontWeight: 600 }}
                             >
-                              Doosra Bhav Try Karein
+                              {t('bargain.try_another')}
                             </button>
                           </div>
-                        </div>
-                      )}
-
-                      {offerResult.status === 'BARGAIN_DISABLED' && (
-                        <div style={{ backgroundColor: 'var(--bg-surface-subtle)', borderRadius: 'var(--radius-md)', padding: '12px', textAlign: 'center' }}>
-                          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-                            {offerResult.message || 'Is product par fixed price hai, bhav-taav uplabdh nahi hai.'}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setOfferResult(null)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ marginTop: '8px' }}
-                          >
-                            Theek Hai
-                          </button>
                         </div>
                       )}
                     </div>
@@ -723,8 +817,8 @@ export const ProductDetailModal = ({
           {!isMerchant && !inStock && (
             <div
               style={{
-                backgroundColor: 'var(--color-danger-light)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
                 borderRadius: 'var(--radius-md)',
                 padding: '16px',
                 marginBottom: '16px',
@@ -733,22 +827,22 @@ export const ProductDetailModal = ({
             >
               <Bell size={26} color="#ef4444" style={{ margin: '0 auto 6px auto' }} />
               <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.92rem' }}>
-                Filhal Out of Stock Hai
+                {t('stock_alert.title')}
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', marginBottom: '12px' }}>
-                Jaise hi dukan me naya stock aayega, hum aapko WhatsApp ya SMS par turant notify kar denge!
+                {t('stock_alert.subtitle')}
               </p>
 
               {alertSuccess ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#15803d', fontWeight: 800, fontSize: '0.85rem' }}>
                   <CheckCircle size={18} color="#15803d" />
-                  Alert lag gaya hai! Restock hote hi aapko message aayega.
+                  {t('stock_alert.registered_msg')}
                 </div>
               ) : (
                 <form onSubmit={handleStockAlertSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '360px', margin: '0 auto' }}>
                   <input
                     type="tel"
-                    placeholder="WhatsApp Mobile Number (10-Digit)"
+                    placeholder={t('stock_alert.phone_placeholder')}
                     required
                     value={alertPhone}
                     onChange={(e) => setAlertPhone(e.target.value)}
@@ -766,14 +860,14 @@ export const ProductDetailModal = ({
                     className="btn btn-primary btn-block btn-sm"
                     style={{ fontWeight: 700 }}
                   >
-                    {subscribingAlert ? 'Saving...' : '🔔 Notify Me (Jab Stock Aaye)'}
+                    {subscribingAlert ? t('common.loading') : t('stock_alert.notify_me_btn')}
                   </button>
                 </form>
               )}
             </div>
           )}
 
-          {/* Flexible Specifications & Attributes Card */}
+          {/* Specifications & Attributes */}
           {(() => {
             const PRIVATE_KEYS = ['cost_price', 'unit_profit', 'profit_margin_pct', 'profit', 'margin', 'supplier', 'wholesale_price'];
             const safeEntries = Object.entries(product.attributes || {}).filter(([key, val]) => {
@@ -798,14 +892,14 @@ export const ProductDetailModal = ({
               >
                 <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Layers size={14} color="var(--color-primary)" />
-                  SPECIFICATIONS & ATTRIBUTES
+                  {t('products.product_details')}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {product.weight > 0 && (
                     <div style={{ backgroundColor: 'var(--bg-surface)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                        WEIGHT / NET QTY
+                        {t('products.weight')}
                       </div>
                       <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                         {product.weight} kg
@@ -830,7 +924,7 @@ export const ProductDetailModal = ({
             );
           })()}
 
-          {/* Description Section */}
+          {/* Description */}
           {product.description && (
             <div
               style={{
@@ -842,7 +936,7 @@ export const ProductDetailModal = ({
               }}
             >
               <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                Description / Vivaran
+                {t('products.description')}
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>
                 {product.description}
@@ -850,7 +944,10 @@ export const ProductDetailModal = ({
             </div>
           )}
 
-          {/* Seller / Shop Info Card (Customer View) */}
+          {/* Product Reviews & Ratings Feed */}
+          {!isMerchant && <ProductReviewsSection product={product} />}
+
+          {/* Seller / Shop Info Card */}
           {!isMerchant && (product.shop_name || product.shop?.name) && (
             <div
               style={{
@@ -864,7 +961,7 @@ export const ProductDetailModal = ({
             >
               <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Store size={14} color="var(--color-primary)" />
-                DUKAN KI JANKARI (SELLER)
+                {t('products.seller_info')}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
@@ -886,7 +983,7 @@ export const ProductDetailModal = ({
                     className="btn btn-secondary btn-sm"
                     style={{ fontSize: '0.74rem', padding: '6px 10px', textDecoration: 'none', flexShrink: 0, fontWeight: 700 }}
                   >
-                    Storefront →
+                    {t('products.visit_storefront')} →
                   </a>
                 )}
               </div>
@@ -899,7 +996,7 @@ export const ProductDetailModal = ({
                       className="btn btn-secondary btn-sm"
                       style={{ flex: 1, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', textDecoration: 'none', fontWeight: 600 }}
                     >
-                      <Phone size={13} /> Call Shop
+                      <Phone size={13} /> {t('common.call_shop')}
                     </a>
                   )}
                   {product.shop_latitude && product.shop_longitude && (
@@ -910,7 +1007,7 @@ export const ProductDetailModal = ({
                       className="btn btn-secondary btn-sm"
                       style={{ flex: 1, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', textDecoration: 'none', fontWeight: 600 }}
                     >
-                      <Navigation size={13} /> Directions
+                      <Navigation size={13} /> {t('common.directions')}
                     </a>
                   )}
                 </div>
@@ -918,17 +1015,18 @@ export const ProductDetailModal = ({
             </div>
           )}
 
-          {/* Customer Action: Reserve / Hold Item */}
+          {/* 🛍️ Customer Action: Direct 1-Click Pickup Reservation */}
           {!isMerchant && inStock && (
             <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>
-                🛍️ DUKAN SE PICKUP KE LIYE HOLD / RESERVE KAREIN
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShoppingBag size={16} color="var(--color-primary)" />
+                <span>{t('products.reserve_for_pickup')}</span>
               </div>
 
               <form onSubmit={handleReserveSubmit}>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                   <div style={{ flex: 1 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Kitne Pieces (Qty)</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('cart.quantity')}</label>
                     <input
                       type="number"
                       min="1"
@@ -940,26 +1038,26 @@ export const ProductDetailModal = ({
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Hold Time (Hours)</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('products.hold_hours')}</label>
                     <select
                       className="form-input"
                       value={reserveHours}
                       onChange={(e) => setReserveHours(e.target.value)}
                     >
-                      <option value="2">2 Ghante</option>
-                      <option value="4">4 Ghante</option>
-                      <option value="8">8 Ghante</option>
-                      <option value="24">24 Ghante</option>
+                      <option value="2">{t('products.hours_count', { count: 2 })}</option>
+                      <option value="4">{t('products.hours_count', { count: 4 })}</option>
+                      <option value="8">{t('products.hours_count', { count: 8 })}</option>
+                      <option value="24">{t('products.hours_count', { count: 24 })}</option>
                     </select>
                   </div>
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Koi Special Note (Optional)</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('products.special_instructions')}</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. Mai 2 baje counter par aaunga"
+                    placeholder={t('checkout.notes_placeholder')}
                     value={reserveNotes}
                     onChange={(e) => setReserveNotes(e.target.value)}
                   />
@@ -972,7 +1070,7 @@ export const ProductDetailModal = ({
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
                   <ShoppingBag size={18} />
-                  <span>{reserving ? 'Hold Ho Raha Hai...' : `Item Hold Karein (₹${product.price * reserveQty})`}</span>
+                  <span>{reserving ? t('common.processing') : `${t('products.reserve_for_pickup')} (₹${product.price * reserveQty})`}</span>
                 </button>
               </form>
             </div>
@@ -988,7 +1086,7 @@ export const ProductDetailModal = ({
                   onAdjustStock(product);
                 }}
               >
-                Stock In / Stock Out Adjust Karein
+                {t('inventory.edit_product')}
               </button>
             </div>
           )}

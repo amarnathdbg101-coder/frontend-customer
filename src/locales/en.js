@@ -5,9 +5,10 @@ export default {
     "explore": "Explore Shops",
     "deals": "Live Deals",
     "saved": "Saved Items",
-    "reservations": "Pickups",
+    "reservations": "My Pickups",
     "profile": "Profile",
     "khata": "My Khata Ledger",
+    "cart": "Shopping Cart",
     "login": "Sign In",
     "logout": "Sign Out",
     "search_placeholder": "Search products, grocery, electronics or nearby shops...",
@@ -17,7 +18,8 @@ export default {
     "notifications": "Notifications",
     "help": "Help & Support",
     "privacy": "Privacy & Terms",
-    "report": "Grievance Redressal (IT Rules 2021)"
+    "report": "Grievance Redressal (IT Rules 2021)",
+    "create_shop": "Create Shop"
   },
   "common": {
     "save": "Save",
@@ -59,7 +61,10 @@ export default {
     "directions": "Directions",
     "call_shop": "Call Shop",
     "whatsapp_chat": "WhatsApp Chat",
-    "verified_shop": "Verified Merchant"
+    "verified_shop": "Verified Merchant",
+    "load_more": "Load More Products",
+    "showing_count": "Showing {{current}} of {{total}} items",
+    "all_loaded": "All available items loaded"
   },
   "auth": {
     "login_title": "Welcome Back to ShopSilo",
@@ -88,7 +93,8 @@ export default {
     "passwords_mismatch": "Passwords do not match",
     "login_success": "Signed in successfully!",
     "register_success": "Account created successfully! Welcome to ShopSilo.",
-    "logout_confirm": "Are you sure you want to sign out?"
+    "logout_confirm": "Are you sure you want to sign out?",
+    "login_required_reserve": "Please sign in to reserve items or proceed with checkout."
   },
   "products": {
     "catalog_title": "Product Catalog",
@@ -102,12 +108,13 @@ export default {
     "save_amount": "You Save ₹{{amount}}",
     "reserve_for_pickup": "Reserve for Pickup",
     "add_to_cart": "Add to Cart",
-    "already_in_cart": "Added in Cart",
+    "already_in_cart": "In Cart",
     "select_quantity": "Select Quantity",
     "product_details": "Product Specifications",
     "category": "Category",
     "brand": "Brand",
     "unit_size": "Package Size",
+    "weight": "Weight / Net Qty",
     "sku_code": "SKU / Barcode",
     "description": "Product Description",
     "customer_reviews": "Customer Reviews & Ratings",
@@ -119,11 +126,41 @@ export default {
     "sort_price_low_high": "Price: Low to High",
     "sort_price_high_low": "Price: High to Low",
     "sort_discount": "Highest Discount",
+    "sort_rating": "Top Customer Rated",
     "filter_by_category": "Filter by Category",
     "filter_in_stock_only": "In Stock Only",
     "filter_price_range": "Price Range",
+    "price_all": "All Prices",
+    "price_under_100": "Under ₹100",
+    "price_100_500": "₹100 - ₹500",
+    "price_500_2000": "₹500 - ₹2,000",
+    "price_above_2000": "Above ₹2,000",
     "all_products": "All Products",
-    "share_product": "Share Product"
+    "share_product": "Share Product",
+    "no_photo": "No Image Available",
+    "hold_hours": "Hold Duration",
+    "hours_count": "{{count}} Hours",
+    "special_instructions": "Special Instructions (Optional)",
+    "seller_info": "Merchant Information",
+    "visit_storefront": "Visit Storefront"
+  },
+  "cart": {
+    "title": "Your Shopping Cart",
+    "items_count": "{{count}} Items",
+    "empty_title": "Your Cart is Empty",
+    "empty_desc": "Explore verified local stores and add fresh grocery or essentials to your cart.",
+    "browse_btn": "Browse Local Stores",
+    "proceed_checkout": "Proceed to Counter Pickup",
+    "clear_cart": "Clear Cart",
+    "clear_confirm": "Are you sure you want to remove all items from your cart?",
+    "item_added": "Item added to cart!",
+    "item_removed": "Item removed from cart.",
+    "subtotal": "Item Subtotal",
+    "savings": "Total Savings",
+    "total_payable": "Total Payable at Counter",
+    "pickup_from": "Pickup from:",
+    "quantity": "Qty",
+    "max_stock_reached": "Maximum available stock limit reached"
   },
   "checkout": {
     "reservation_title": "Counter Pickup Reservation",
@@ -138,12 +175,15 @@ export default {
     "slot_1hour": "Within 1 hour",
     "slot_2hour": "Within 2-3 hours",
     "slot_evening": "This Evening (5 PM - 8 PM)",
+    "customer_details": "Customer Contact Details",
+    "customer_name": "Full Name",
+    "customer_phone": "Mobile Number (for Pickup OTP)",
     "customer_notes": "Special Packing Instructions (Optional)",
-    "notes_placeholder": "e.g., Please ensure fresh batch packaging, pack in a single box...",
+    "notes_placeholder": "e.g., Please pack securely in a single bag, fresh batch preferred...",
     "confirm_reservation": "Confirm Counter Pickup",
     "pickup_instructions": "Payment is made directly at the shop counter via UPI, Cash, or Khata upon physical inspection.",
-    "reservation_success_title": "Reservation Confirmed!",
-    "reservation_success_desc": "Your pickup token has been generated. Show the QR code or 4-digit token at the shop counter.",
+    "reservation_success_title": "Pickup Reservation Confirmed!",
+    "reservation_success_desc": "Your pickup token has been generated. Present this QR code or 4-digit token at the shop counter.",
     "view_token": "View Pickup Token",
     "pickup_otp": "Pickup Verification OTP",
     "token_number": "Token #{{token}}",
@@ -152,7 +192,35 @@ export default {
     "status_completed": "Collected & Completed",
     "status_cancelled": "Cancelled",
     "cancel_reservation": "Cancel Reservation",
-    "cancel_confirm": "Are you sure you want to cancel this reservation?"
+    "cancel_confirm": "Are you sure you want to cancel this reservation?",
+    "step_review": "1. Review Order",
+    "step_details": "2. Customer Info",
+    "step_confirm": "3. Pickup Token"
+  },
+  "bargain": {
+    "title": "Price Negotiation (Make Offer)",
+    "subtitle": "Propose your offer price — our smart pricing engine calculates the best instant deal!",
+    "propose_price": "Your Proposed Price (₹)",
+    "quantity": "Quantity (Units)",
+    "mobile_label": "Your Mobile Number (10-Digit)",
+    "submit_offer": "Submit Offer Price",
+    "calculating": "Calculating Deal...",
+    "deal_accepted_title": "Deal Accepted!",
+    "deal_accepted_msg": "Your offer price has been approved by the merchant pricing policy.",
+    "deal_code": "EXCLUSIVE DEAL CODE",
+    "valid_for": "VALID FOR",
+    "order_whatsapp": "Order via WhatsApp",
+    "counter_offer_title": "Store Counter Offer: ₹{{price}}",
+    "bundle_title": "VOLUME BUNDLE SAVINGS OFFER",
+    "try_another": "Try Another Offer Price",
+    "fixed_price_msg": "This item has fixed pricing and is not eligible for negotiation."
+  },
+  "stock_alert": {
+    "title": "Currently Out of Stock",
+    "subtitle": "Register your contact details to receive an instant WhatsApp or SMS alert when stock arrives!",
+    "registered_msg": "Alert registered! You will be notified the moment stock is replenished.",
+    "phone_placeholder": "10-Digit Mobile Number",
+    "notify_me_btn": "Notify Me When In Stock"
   },
   "khata": {
     "ledger_title": "My Digital Khata Ledger",
@@ -183,7 +251,8 @@ export default {
     "saved_shops": "Followed Shops",
     "no_saved_products": "You have not saved any products yet.",
     "no_saved_shops": "You are not following any shops yet.",
-    "browse_deals": "Browse Live Deals"
+    "browse_deals": "Browse Live Deals",
+    "remove_saved": "Remove from Saved"
   },
   "profile": {
     "my_profile": "My Profile",
@@ -208,13 +277,19 @@ export default {
   },
   "reviews": {
     "store_reviews": "Store Reviews",
+    "product_reviews": "Product Customer Reviews",
     "customer_feedback": "Customer Feedback",
     "overall_rating": "Overall Rating",
     "based_on_reviews": "Based on {{count}} verified reviews",
-    "rate_experience": "Rate your store shopping experience",
-    "feedback_placeholder": "Share your genuine experience regarding item quality, pricing, and counter service...",
-    "submit_review": "Post Review",
-    "review_submitted": "Thank you! Your verified review has been submitted."
+    "rate_experience": "Rate your experience",
+    "rate_product": "Rate this product",
+    "feedback_placeholder": "Share your genuine experience regarding item quality, packaging, and performance...",
+    "review_title_placeholder": "Brief summary of your review...",
+    "reviewer_name_label": "Your Name",
+    "submit_review": "Post Verified Review",
+    "review_submitted": "Thank you! Your verified review has been published.",
+    "no_reviews_yet": "No reviews yet. Be the first to review this product!",
+    "rating_stars": "{{rating}} out of 5 stars"
   },
   "grievance": {
     "title": "Grievance Redressal Mechanism",

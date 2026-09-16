@@ -1,13 +1,14 @@
 /**
- * Top App Header Component (Modern Glassy Style with Bilingual Selector)
+ * Top App Header Component (Modern Glassy Style with Bilingual Selector and Cart Trigger)
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Menu, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Menu, Sun, Moon, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { SideDrawer } from './SideDrawer';
 import { getImageUrl } from '../../utils/imageUrl';
 
@@ -15,7 +16,8 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
   const navigate = useNavigate();
   const { user, shop } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const { language, setLanguage, isHindi } = useLanguage();
+  const { setLanguage, isHindi, t } = useLanguage();
+  const { cartCount, openCart } = useCart();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -35,7 +37,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                 borderRadius: 'var(--radius-sm)',
                 color: 'var(--text-primary)',
               }}
-              title={isHindi ? 'पीछे जाएं' : 'Go Back'}
+              title={t('nav.back')}
             >
               <ArrowLeft size={20} />
             </button>
@@ -53,7 +55,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                 borderRadius: 'var(--radius-sm)',
                 color: 'var(--text-primary)',
               }}
-              title={isHindi ? 'साइड मेनू खोलें' : 'Open Menu'}
+              title={t('nav.menu')}
             >
               <Menu size={22} />
             </button>
@@ -77,7 +79,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                   }}
                 />
                 <span style={{ fontWeight: 600, color: shop.is_active ? '#065f46' : '#991b1b' }}>
-                  {shop.is_active ? (isHindi ? 'खुली है' : 'Open Now') : (isHindi ? 'बंद है' : 'Closed')}
+                  {shop.is_active ? t('common.open_now') : t('common.closed')}
                 </span>
               </div>
             ) : user ? (
@@ -89,6 +91,49 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Cart Trigger */}
+          <button
+            type="button"
+            onClick={openCart}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-primary)',
+              position: 'relative',
+            }}
+            title={t('nav.cart')}
+            aria-label={t('nav.cart')}
+          >
+            <ShoppingCart size={20} />
+            {cartCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '1px',
+                  right: '1px',
+                  backgroundColor: 'var(--color-primary)',
+                  color: '#ffffff',
+                  fontSize: '0.62rem',
+                  fontWeight: 900,
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           {/* Language Switcher Pill */}
           <div
             style={{
@@ -116,7 +161,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
             </button>
           </div>
 
-          {/* Quick Dark/Light Theme Toggle */}
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             style={{
@@ -130,7 +175,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-primary)',
             }}
-            title={isDark ? (isHindi ? 'लाइट मोड' : 'Light Mode') : (isHindi ? 'डार्क मोड' : 'Dark Mode')}
+            title={isDark ? t('profile.light_mode') : t('profile.dark_mode')}
           >
             {isDark ? <Sun size={19} color="#fbbf24" /> : <Moon size={19} />}
           </button>
@@ -155,7 +200,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                 overflow: 'hidden',
                 padding: 0,
               }}
-              title={isHindi ? 'प्रोफ़ाइल एवं सेटिंग्स' : 'Profile & Settings'}
+              title={t('nav.profile')}
             >
               {user.avatar_url ? (
                 <img
@@ -172,7 +217,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
               onClick={() => navigate('/login')}
               className="btn btn-primary btn-sm"
             >
-              {isHindi ? 'लॉगिन' : 'Login'}
+              {t('nav.login')}
             </button>
           )}
         </div>
