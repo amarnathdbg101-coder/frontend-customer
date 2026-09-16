@@ -745,19 +745,7 @@ export const CustomerKhataScreen = () => {
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
                       SCAN WITH ANY UPI APP (GPay / PhonePe / Paytm / BHIM)
                     </div>
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(upiUri)}&size=180x180&margin=4`}
-                      alt="Shop UPI QR"
-                      style={{
-                        width: '180px',
-                        height: '180px',
-                        borderRadius: '10px',
-                        border: '4px solid #ffffff',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        margin: '0 auto',
-                        display: 'block',
-                      }}
-                    />
+                    <RealQRCode value={upiUri} size={180} logoText="UPI" showDownload={true} downloadFilename={"upi-pay-" + (selectedKhata?.shop_name || "store")} />
 
                     <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>UPI ID:</span>
@@ -1065,17 +1053,7 @@ export const CustomerKhataScreen = () => {
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
               }}
             >
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-                  JSON.stringify({
-                    phone: user?.phone || '',
-                    name: user?.name || user?.full_name || '',
-                    type: 'shopsilo_khata_customer',
-                  })
-                )}&size=200x200&margin=2`}
-                alt="My Khata QR"
-                style={{ width: '200px', height: '200px', display: 'block' }}
-              />
+              <RealQRCode value={"SHOPME-CUSTOMER-KHATA:" + (user?.phone || user?.id || "")} size={200} logoText="KHATA" showDownload={true} downloadFilename={"my-khata-qr-" + (user?.phone || "")} />
             </div>
 
             <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
