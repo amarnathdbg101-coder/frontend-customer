@@ -1,10 +1,10 @@
 /**
  * Reusable Product Card Component
- * Bilingual, accessible, and responsive card with live stock badges and hold actions
+ * Supports MRP strike-through, discount percentage, and Public/Private Price Visibility toggle
  */
 
 import React, { memo } from 'react';
-import { Package, Heart, Store, Sparkles, Eye } from 'lucide-react';
+import { Package, Heart, Store, Sparkles, Eye, MessageCircle, Phone } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -25,8 +25,11 @@ const ProductCardInner = ({
     0
   );
   const inStock = stock > 0;
-  const hasDiscount = p.compare_price && p.compare_price > p.price;
-  const discountPct = hasDiscount ? Math.round(((p.compare_price - p.price) / p.compare_price) * 100) : 0;
+  const isPricePublic = p.is_price_public !== false && p.show_price !== false;
+  const mrp = Number(p.compare_price || p.mrp || 0);
+  const price = Number(p.price || 0);
+  const hasDiscount = mrp > price;
+  const discountPct = hasDiscount ? Math.round(((mrp - price) / mrp) * 100) : 0;
   const brand = p.attributes?.brand || p.attributes?.company;
   const allowBargain = p.allow_bargain !== false;
 
@@ -35,7 +38,7 @@ const ProductCardInner = ({
       className="card card-clickable product-card"
       onClick={onClick}
       role="article"
-      aria-label={`Product: ${p.name}, Price: ₹${p.price}`}
+      aria-label={`Product: ${p.name}, Price: ${isPricePublic ? '₹' + price : 'Price on Request'}`}
     >
       {/* Image Box */}
       <div className="product-card-image-box">
@@ -84,14 +87,27 @@ const ProductCardInner = ({
           <span>{p.shop_name || (isHindi ? 'प्रमाणित दुकान' : 'Verified Store')}</span>
         </div>
 
-        {/* Price */}
+        {/* Price & MRP Row */}
         <div className="product-card-price-row">
-          <span className="product-card-price">₹{p.price}</span>
-          {hasDiscount && (
-            <span className="product-card-mrp">₹{p.compare_price}</span>
-          )}
-          {hasDiscount && (
-            <span className="product-card-discount">{discountPct}% OFF</span>
+          {isPricePublic ? (
+            <>
+              <span className="product-card-price">₹{price}</span>
+              {hasDiscount && (
+                <span className="product-card-mrp">₹{mrp}</span>
+              )}
+              {hasDiscount && (
+                <span className="product-card-discount">{discountPct}% OFF</span>
+              )}
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--color-primary)' }}>
+                {isHindi ? 'मूल्य पूछताछ पर' : 'Price on Request'}
+              </span>
+              <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', padding: '2px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                {isHindi ? 'भाव-ताव' : 'Bargain'}
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -102,7 +118,12 @@ const ProductCardInner = ({
           onClick={onClick}
           className="btn btn-primary btn-sm product-card-cta"
         >
-          {allowBargain && inStock ? (
+          {!isPricePublic ? (
+            <>
+              <MessageCircle size={13} aria-hidden="true" />
+              <span>{isHindi ? 'दुकान से पूछें' : 'Ask Price'}</span>
+            </>
+          ) : allowBargain && inStock ? (
             <>
               <Sparkles size={13} aria-hidden="true" />
               <span>{isHindi ? 'भाव-ताव / होल्ड' : 'Bhav-Taav'}</span>
