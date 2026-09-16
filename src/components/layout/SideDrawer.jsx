@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
+  ExternalLink,
   Store,
   ShoppingBag,
   BookOpen,
@@ -170,6 +171,55 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
+          </div>
+
+                    {/* Merchant Portal Banner for Business Owners */}
+          <div
+            style={{
+              marginTop: '16px',
+              padding: '14px',
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
+              borderRadius: '16px',
+              color: '#ffffff',
+              border: '1px solid #3730a3',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div style={{ background: '#4f46e5', padding: '7px', borderRadius: '10px', display: 'flex' }}>
+                <Store size={18} color="#ffffff" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
+                  {isHindi ? 'दुकानदार पोर्टल (Merchant OS)' : 'Shop Owner Portal'}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#c7d2fe' }}>
+                  {isHindi ? 'काउंटर POS बिलिंग, इन्वेंटरी व खाता' : 'Smart Billing POS, Stock & Khata'}
+                </div>
+              </div>
+            </div>
+            <a
+              href="https://shop.shopsilo.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                background: '#ffffff',
+                color: '#312e81',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                padding: '8px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                marginTop: '10px',
+              }}
+            >
+              <span>{isHindi ? 'दुकानदार लॉगिन / मर्चेंट पोर्टल' : 'Open Merchant Portal'}</span>
+              <ExternalLink size={14} />
+            </a>
           </div>
 
           <div style={{ marginTop: '20px' }}>

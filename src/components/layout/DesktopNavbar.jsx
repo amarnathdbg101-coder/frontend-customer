@@ -7,6 +7,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Store,
+  ExternalLink,
   MapPin,
   Tag,
   ShoppingBag,
@@ -143,6 +144,36 @@ export const DesktopNavbar = () => {
             </NavLink>
           )}
         </nav>
+
+                  {/* Merchant Portal Direct Link */}
+          <a
+            href="https://shop.shopsilo.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              padding: '6px 13px',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid #4338ca',
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(67, 56, 202, 0.25)',
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+            title={isHindi ? 'दुकानदार पोर्टल (बिलिंग POS व खाता OS)' : 'Shop Owner Portal (POS Billing & Khata OS)'}
+          >
+            <Store size={14} color="#a5b4fc" />
+            <span>{isHindi ? 'दुकानदार पोर्टल' : 'Merchant Portal'}</span>
+            <ExternalLink size={12} color="#a5b4fc" />
+          </a>
 
         {/* Utilities: Language Selector, Theme Switch & Profile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '16px' }}>

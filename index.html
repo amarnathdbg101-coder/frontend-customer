@@ -6,35 +6,150 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    <title>ShopSilo - Hyperlocal Retail Marketplace | शॉपसिलो हाइपरलोकल बाजार</title>
-    <meta name="description" content="ShopSilo connects you with verified neighborhood stores for real-time inventory discovery, bargain offers, and instant 30-minute counter pickup reservations." />
-    <meta name="keywords" content="ShopSilo, hyperlocal retail, local shops, grocery pickup, store inventory, digital khata, nearby market" />
+    <title>ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS</title>
+    <meta name="description" content="ShopSilo connects customers with verified neighborhood retail stores for real-time inventory discovery, bargain offers, and instant 30-minute counter pickup. Access the Customer Marketplace or the Merchant Dukan OS." />
+    <meta name="keywords" content="ShopSilo, shopsilo.in, shop owner portal, merchant login, hyperlocal retail, local shops, grocery pickup, store inventory, digital khata, dukan billing pos, nearby market" />
     <meta name="theme-color" content="#4f46e5" />
     <meta name="color-scheme" content="light dark" />
 
     <!-- OpenGraph / Social Meta Tags -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="ShopSilo - Hyperlocal Retail Marketplace" />
-    <meta property="og:description" content="Discover verified neighborhood stores, real-time inventory, and instant counter pickup reservations." />
+    <meta property="og:title" content="ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS" />
+    <meta property="og:description" content="Discover verified neighborhood stores, real-time inventory, and instant counter pickup reservations. Merchant POS billing & Digital Khata available." />
     <meta property="og:site_name" content="ShopSilo" />
+    <meta property="og:url" content="https://shopsilo.in/" />
+    <meta property="og:image" content="https://shopsilo.in/favicon.svg" />
 
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="ShopSilo - Hyperlocal Retail Marketplace" />
+    <meta name="twitter:title" content="ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS" />
     <meta name="twitter:description" content="Discover verified neighborhood stores, real-time inventory, and instant counter pickup reservations." />
+    <meta name="twitter:image" content="https://shopsilo.in/favicon.svg" />
 
-    <!-- Structured Data (JSON-LD) -->
+    <!-- Google Sitelinks & Rich Search Snippets (JSON-LD) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "ShopSilo Hyperlocal Market",
-      "url": "https://shopsilo.in",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://shopsilo.in/?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://shopsilo.in/#website",
+          "url": "https://shopsilo.in/",
+          "name": "ShopSilo",
+          "alternateName": ["ShopSilo India", "ShopSilo Hyperlocal", "शॉपसिलो", "ShopSilo Marketplace", "ShopSilo Dukan"],
+          "description": "ShopSilo connects shoppers with neighborhood local stores for real-time inventory discovery, bargain offers, and instant 30-minute counter pickup reservations.",
+          "inLanguage": ["hi", "en"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://shopsilo.in/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          },
+          "hasPart": [
+            {
+              "@type": "WebPage",
+              "@id": "https://shop.shopsilo.in/#merchant-os",
+              "name": "ShopSilo Merchant OS (Shop Owner Portal)",
+              "description": "Smart retail billing counter (POS), real-time inventory manager, digital customer khata ledger with WhatsApp reminders, and daily profit analytics.",
+              "url": "https://shop.shopsilo.in/"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://shopsilo.in/#customer-marketplace",
+              "name": "ShopSilo Customer Marketplace",
+              "description": "Explore nearby retail stores, browse in-stock products, compare local prices and reserve counter pickups.",
+              "url": "https://shopsilo.in/"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://shopsilo.in/explore#explore-shops",
+              "name": "Explore Neighborhood Shops",
+              "description": "Discover verified local grocery, electronics, fashion, and hardware stores with live inventory.",
+              "url": "https://shopsilo.in/explore"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://shopsilo.in/khata#digital-khata",
+              "name": "Digital Khata & Udhar Passbook",
+              "description": "Track store credit, view itemized digital parchis, check trust score, and pay pending bills via UPI.",
+              "url": "https://shopsilo.in/khata"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://shopsilo.in/deals#flash-deals",
+              "name": "Daily Bargains & Flash Offers",
+              "description": "Exclusive neighborhood discount deals and store clearance savings.",
+              "url": "https://shopsilo.in/deals"
+            },
+            {
+              "@type": "WebPage",
+              "@id": "https://shop.shopsilo.in/register#shop-registration",
+              "name": "Register Your Shop (Dukan Registration)",
+              "description": "Set up your free online store in 1 minute and start counter billing.",
+              "url": "https://shop.shopsilo.in/register"
+            }
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://shopsilo.in/#organization",
+          "name": "ShopSilo Technologies India",
+          "url": "https://shopsilo.in/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://shopsilo.in/favicon.svg",
+            "caption": "ShopSilo Logo"
+          },
+          "description": "Hyperlocal Retail & Merchant Technology Platform connecting neighborhood commerce.",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+91-7979014637",
+            "contactType": "customer service",
+            "areaServed": "IN",
+            "availableLanguage": ["Hindi", "English"]
+          }
+        },
+        {
+          "@type": "ItemList",
+          "name": "ShopSilo Key Portals & Sitelinks",
+          "itemListElement": [
+            {
+              "@type": "SiteNavigationElement",
+              "position": 1,
+              "name": "Shop Owner Portal (Merchant OS)",
+              "description": "Smart retail POS billing, inventory management, and digital customer khata.",
+              "url": "https://shop.shopsilo.in/"
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "position": 2,
+              "name": "Explore Neighborhood Shops",
+              "description": "Find nearby verified stores with in-stock products.",
+              "url": "https://shopsilo.in/explore"
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "position": 3,
+              "name": "Digital Khata Passbook",
+              "description": "View store credit, itemized receipts, and pay balances online.",
+              "url": "https://shopsilo.in/khata"
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "position": 4,
+              "name": "Today's Flash Deals & Offers",
+              "description": "Exclusive local market discounts and counter pickup bargains.",
+              "url": "https://shopsilo.in/deals"
+            },
+            {
+              "@type": "SiteNavigationElement",
+              "position": 5,
+              "name": "Shopkeeper Registration",
+              "description": "Create your store online and start POS billing.",
+              "url": "https://shop.shopsilo.in/register"
+            }
+          ]
+        }
+      ]
     }
     </script>
 
@@ -51,6 +166,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <!-- Search Engine Crawler Sitelinks Fallback Header -->
+    <noscript>
+      <header style="padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc;">
+        <h1>ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS</h1>
+        <p>Connecting verified neighborhood retail stores for real-time inventory discovery, bargain offers, and instant 30-minute counter pickup reservations.</p>
+        <nav aria-label="ShopSilo Official Sitelinks">
+          <ul style="line-height: 2;">
+            <li><a href="https://shop.shopsilo.in" style="color: #60a5fa; font-weight: bold; font-size: 1.1rem;">🏪 Shop Owner Portal (ShopSilo Merchant OS) - Retail Billing POS, Inventory & Khata Ledger</a></li>
+            <li><a href="https://shopsilo.in/explore" style="color: #60a5fa;">🛍️ Explore Neighborhood Shops & Live Inventory</a></li>
+            <li><a href="https://shopsilo.in/khata" style="color: #60a5fa;">🧾 Digital Khata Ledger & Udhar Passbook</a></li>
+            <li><a href="https://shopsilo.in/deals" style="color: #60a5fa;">⚡ Today's Flash Deals & Discount Offers</a></li>
+            <li><a href="https://shop.shopsilo.in/register" style="color: #60a5fa;">✨ Register Your Store (Dukan Registration)</a></li>
+            <li><a href="https://shopsilo.in/privacy.html" style="color: #94a3b8;">Privacy Policy</a></li>
+            <li><a href="https://shopsilo.in/terms.html" style="color: #94a3b8;">Terms of Service</a></li>
+          </ul>
+        </nav>
+      </header>
+    </noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
