@@ -1,121 +1,90 @@
 /**
- * Customer SideDrawer Component
- * Slide-out navigation menu with full bilingual support & theme settings
+ * Universal Responsive Mobile Drawer Navigation Menu
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
-  ExternalLink,
   Store,
-  ShoppingBag,
   BookOpen,
+  ShoppingBag,
   User,
   LogOut,
   ChevronRight,
+  PlusCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { getImageUrl } from '../../utils/imageUrl';
 import { ThemeLanguageBar } from '../common/ThemeLanguageBar';
+import { getImageUrl } from '../../utils/imageUrl';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { isHindi } = useLanguage();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  const handleLogout = () => {
-    if (window.confirm(isHindi ? 'क्या आप निश्चित रूप से लॉग आउट करना चाहते हैं?' : 'Are you sure you want to log out?')) {
-      logout();
-      onClose();
-      navigate('/login');
-    }
-  };
+  if (!isOpen) return null;
 
   const handleNavigate = (path) => {
-    navigate(path);
     onClose();
+    navigate(path);
+  };
+
+  const handleCreateShop = () => {
+    onClose();
+    window.open('https://shop.shopsilo.in/register', '_blank');
+  };
+
+  const handleLogout = async () => {
+    onClose();
+    await logout();
+    navigate('/login');
   };
 
   return (
     <>
-      <div
-        className={`drawer-backdrop ${isOpen ? 'active' : ''}`}
-        onClick={onClose}
-        aria-hidden={!isOpen}
-      />
+      {/* Backdrop */}
+      <div className="drawer-overlay" onClick={onClose} />
 
-      <aside className={`side-drawer ${isOpen ? 'open' : ''}`}>
+      {/* Drawer Container */}
+      <aside className="drawer-container" aria-label="Customer Navigation Drawer">
+        {/* Header Profile Section */}
         <div className="drawer-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '42px',
-                height: '42px',
+                width: '46px',
+                height: '46px',
                 borderRadius: '50%',
-                background: user?.avatar_url ? 'transparent' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '1.1rem',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)',
-                flexShrink: 0,
+                fontWeight: 900,
+                fontSize: '1.2rem',
                 overflow: 'hidden',
+                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
               }}
             >
               {user?.avatar_url ? (
                 <img
                   src={getImageUrl(user.avatar_url)}
-                  alt={user?.name || 'Customer'}
+                  alt={user.name || user.full_name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                user?.name?.charAt(0)?.toUpperCase() || 'G'
+                (user?.name || user?.full_name)?.charAt(0)?.toUpperCase() || 'S'
               )}
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user ? user.name : (isHindi ? 'नमस्ते, अतिथि ग्राहक' : 'Welcome, Guest')}
+
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)' }}>
+                {user ? user.name || user.full_name || (isHindi ? 'नमस्ते ग्राहक' : 'Hello Customer') : (isHindi ? 'नमस्ते ग्राहक' : 'Welcome Guest')}
               </div>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                 {user ? user.phone || user.email : (isHindi ? 'हाइपरलोकल बाज़ार में स्वागत है' : 'Hyperlocal Shopping Portal')}
-              </div>
-              <div style={{ marginTop: '2px' }}>
-                <span
-                  style={{
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    padding: '2px 7px',
-                    borderRadius: 'var(--radius-full)',
-                    display: 'inline-block',
-                  }}
-                >
-                  {isHindi ? 'ग्राहक' : 'Customer'}
-                </span>
               </div>
             </div>
           </div>
@@ -161,6 +130,20 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
 
+            {/* Menu item: Shop bnane ka option */}
+            <button className="drawer-link-btn" onClick={handleCreateShop}>
+              <div className="drawer-icon-bubble" style={{ background: '#ede9fe', color: '#6d28d9' }}>
+                <PlusCircle size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title" style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
+                  {isHindi ? 'दुकान बनाएं' : 'Create Shop'}
+                </div>
+                <div className="drawer-link-sub">{isHindi ? 'नई दुकान रजिस्टर करें और बिलिंग शुरू करें' : 'Register store & start billing'}</div>
+              </div>
+              <ChevronRight size={16} color="var(--text-muted)" />
+            </button>
+
             <button className="drawer-link-btn" onClick={() => handleNavigate(isAuthenticated ? '/profile' : '/login')}>
               <div className="drawer-icon-bubble" style={{ background: '#f1f5f9', color: '#334155' }}>
                 <User size={18} />
@@ -171,55 +154,6 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
-          </div>
-
-                    {/* Merchant Portal Banner for Business Owners */}
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '14px',
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-              borderRadius: '16px',
-              color: '#ffffff',
-              border: '1px solid #3730a3',
-              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <div style={{ background: '#4f46e5', padding: '7px', borderRadius: '10px', display: 'flex' }}>
-                <Store size={18} color="#ffffff" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
-                  {isHindi ? 'दुकानदार पोर्टल (Merchant OS)' : 'Shop Owner Portal'}
-                </div>
-                <div style={{ fontSize: '0.72rem', color: '#c7d2fe' }}>
-                  {isHindi ? 'काउंटर POS बिलिंग, इन्वेंटरी व खाता' : 'Smart Billing POS, Stock & Khata'}
-                </div>
-              </div>
-            </div>
-            <a
-              href="https://shop.shopsilo.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                background: '#ffffff',
-                color: '#312e81',
-                fontWeight: 800,
-                fontSize: '0.8rem',
-                padding: '8px',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                marginTop: '10px',
-              }}
-            >
-              <span>{isHindi ? 'दुकानदार लॉगिन / मर्चेंट पोर्टल' : 'Open Merchant Portal'}</span>
-              <ExternalLink size={14} />
-            </a>
           </div>
 
           <div style={{ marginTop: '20px' }}>

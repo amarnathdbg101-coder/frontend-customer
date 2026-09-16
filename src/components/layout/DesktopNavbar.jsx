@@ -1,102 +1,73 @@
 /**
- * Desktop Navbar Component (Screens >= 1024px)
- * High-performance top navigation with GPS, Search, Language Switcher, and Theme Toggle
+ * Universal Desktop Top Navigation Bar (Customer Portal)
+ * 
+ * Features:
+ * - Brand Logo & Slogan
+ * - Navigation tabs (Explore Shops, Deals, Pickups, Saved, Khata)
+ * - Menu bar "दुकान बनाएं" / "Create Shop" action button
+ * - Bilingual Switcher (Hindi / English)
+ * - Dark / Light Theme Toggle
+ * - User Profile & Account Dropdown
  */
 
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import {
   Store,
-  ExternalLink,
-  MapPin,
   Tag,
-  ShoppingBag,
   Heart,
+  ShoppingBag,
   BookOpen,
-  User,
   Sun,
   Moon,
-  Navigation,
+  PlusCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useLocation } from '../../context/LocationContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useSaved } from '../../context/SavedContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 
 export const DesktopNavbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { locationName, detectLocation, isDetecting } = useLocation();
-  const { isDark, toggleTheme } = useTheme();
-  const { language, setLanguage, isHindi } = useLanguage();
   const { savedProducts, savedShops } = useSaved();
+  const { isDark, toggleTheme } = useTheme();
+  const { setLanguage, isHindi } = useLanguage();
 
   const savedCount = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
   return (
-    <header className="desktop-navbar" role="banner">
-      <div className="desktop-navbar-inner">
+    <header className="desktop-nav-header">
+      <div className="desktop-nav-container">
         {/* Brand Logo */}
-        <div
-          onClick={() => navigate('/')}
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
-        >
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #312e81 100%)',
+              width: '38px',
+              height: '38px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 900,
               fontSize: '1.25rem',
-              boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)',
+              boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
             }}
           >
-            <Store size={22} />
+            S
           </div>
           <div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
               ShopSilo
             </div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
-              {isHindi ? 'हाइपरलोकल बाज़ार' : 'HYPERLOCAL RETAIL'}
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+              {isHindi ? 'हाइपरलोकल बाज़ार' : 'Hyperlocal Market'}
             </div>
           </div>
-        </div>
-
-        {/* GPS Location Pill */}
-        <button
-          type="button"
-          onClick={detectLocation}
-          disabled={isDetecting}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'var(--bg-surface-subtle)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-full)',
-            padding: '6px 14px',
-            cursor: 'pointer',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            transition: 'all 0.15s ease',
-          }}
-          title={isHindi ? 'लाइव जीपीएस लोकेशन अपडेट करें' : 'Update Live GPS Location'}
-        >
-          <MapPin size={16} color="var(--color-primary)" />
-          <span style={{ maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {isDetecting ? (isHindi ? 'लोकेशन खोज रहे हैं...' : 'Detecting GPS...') : locationName || 'Darbhanga, Bihar'}
-          </span>
-          <Navigation size={12} color="var(--text-muted)" />
-        </button>
+        </Link>
 
         {/* Navigation Links */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
@@ -143,37 +114,31 @@ export const DesktopNavbar = () => {
               <span>{isHindi ? 'मेरा खाता' : 'My Khata'}</span>
             </NavLink>
           )}
-        </nav>
 
-                  {/* Merchant Portal Direct Link */}
+          {/* Menu Bar: Shop bnane ka option */}
           <a
-            href="https://shop.shopsilo.in"
+            href="https://shop.shopsilo.in/register"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-sm"
+            className="btn btn-sm btn-primary"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '0.78rem',
-              padding: '6px 13px',
               borderRadius: 'var(--radius-full)',
-              border: '1px solid #4338ca',
+              padding: '6px 14px',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              marginLeft: '8px',
               textDecoration: 'none',
-              boxShadow: '0 4px 14px rgba(67, 56, 202, 0.25)',
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
-            title={isHindi ? 'दुकानदार पोर्टल (बिलिंग POS व खाता OS)' : 'Shop Owner Portal (POS Billing & Khata OS)'}
+            title={isHindi ? 'अपनी दुकान बनाएं और रजिस्टर करें' : 'Create & Register Your Shop'}
           >
-            <Store size={14} color="#a5b4fc" />
-            <span>{isHindi ? 'दुकानदार पोर्टल' : 'Merchant Portal'}</span>
-            <ExternalLink size={12} color="#a5b4fc" />
+            <PlusCircle size={15} />
+            <span>{isHindi ? 'दुकान बनाएं' : 'Create Shop'}</span>
           </a>
+        </nav>
 
         {/* Utilities: Language Selector, Theme Switch & Profile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '16px' }}>

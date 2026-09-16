@@ -89,29 +89,6 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Quick Merchant Portal Link Pill */}
-          <a
-            href="https://shop.shopsilo.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-              color: '#ffffff',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              padding: '4px 8px',
-              borderRadius: 'var(--radius-full)',
-              textDecoration: 'none',
-              border: '1px solid #4338ca',
-            }}
-            title={isHindi ? 'दुकानदार पोर्टल खोलें' : 'Open Shop Owner Portal'}
-          >
-            <span>🏪 {isHindi ? 'दुकान' : 'Shop'}</span>
-          </a>
-
           {/* Language Switcher Pill */}
           <div
             style={{

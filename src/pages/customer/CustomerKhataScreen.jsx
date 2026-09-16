@@ -555,7 +555,7 @@ export const CustomerKhataScreen = () => {
                             </div>
                             <div>
                               <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                                {isCredit ? 'Udhar Diya (Taken)' : 'Jama Kiya (Paid)'}
+                                {isCredit ? 'उधार लिया (Udhar Taken)' : 'उधार वापस किया (Payment Paid)'}
                               </div>
                               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                                 {new Date(tx.created_at).toLocaleDateString('en-IN', {
@@ -577,7 +577,7 @@ export const CustomerKhataScreen = () => {
                                 color: isCredit ? 'var(--color-danger)' : 'var(--color-success)',
                               }}
                             >
-                              {isCredit ? '+' : '-'}₹{tx.amount}
+                              {isCredit ? '-' : '+'}₹{Number(tx.amount).toLocaleString('en-IN')}
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                               Bal: ₹{tx.balance_after}
