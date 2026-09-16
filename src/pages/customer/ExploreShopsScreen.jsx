@@ -1,3 +1,19 @@
+/**
+ * Customer Explore & Marketplace Screen
+ * 
+ * Features:
+ * - GPS Auto-detect & Radius Selector (1km, 3km, 5km, 10km, All)
+ * - Open Now filter & Live OPEN/CLOSED shop badges
+ * - Distance calculation in km/m based on device GPS
+ * - Nearby In-stock product discovery via /products/nearby
+ * - "Bhav-Taav" Deal exploration & 1-Click Pickup Reservation
+ * - Responsive Multi-Column Grid (Mobile 1-2 cols, Tablet 2-3 cols, Desktop 3-5 cols)
+ * - 1-Click Call Shop & GPS Directions
+ * - "Pick" AI Shopping Co-Pilot widget
+ * - AI Smart Natural Language Search Modal
+ * - Visual Camera & Barcode/SKU Scanner Modal
+ */
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -16,7 +32,6 @@ import { reservationApi } from '../../api/reservation.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
-import { useLanguage } from '../../context/LanguageContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { ProductCard } from '../../components/cards/ProductCard';
@@ -41,291 +56,295 @@ export const ExploreShopsScreen = () => {
   const navigate = useNavigate();
   const { coords, locationName, radiusKm, setRadiusKm, detectLocation, isDetecting } = useLocation();
   const { isProductSaved, toggleSaveProduct, isShopSaved, toggleSaveShop } = useSaved();
-  const { t, isHindi } = useLanguage();
 
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchMode, setSearchMode] = useState('shops');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [openNowOnly, setOpenNowOnly] = useState(false);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [inspectedProduct, setInspectedProduct] = useState(null);
+  const [inspectedShop, setInspectedShop] = useState(null);
 
-  // Tabs: 'shops' | 'products'
-  const [activeTab, setActiveTab] = useState('shops');
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [openOnly, setOpenOnly] = useState(false);
+  const debouncedSearch = useDebounce(searchTerm, 400);
 
-  // Modals
-  const [showCopilot, setShowCopilot] = useState(false);
-  const [showSmartSearch, setShowSmartSearch] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedShop, setSelectedShop] = useState(null);
-
-  const fetchExploreData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
-      const params = {};
-      if (coords?.lat && coords?.lng) {
-        params.lat = coords.lat;
-        params.lng = coords.lng;
-        if (radiusKm && radiusKm < 999) {
-          params.radius = radiusKm;
-        }
-      }
-      if (debouncedSearch) {
-        params.q = debouncedSearch;
-      }
-      if (selectedCategory) {
-        params.category = selectedCategory;
+      const res = await reservationApi.createReservation({
+        product_id: product.id,
+        quantity,
+        hold_hours,
+        notes,
+      });
+      alert(`Item reserved successfully! Pickup Code: ${res.pickup_code || res.reservation_number}`);
+      setInspectedProduct(null);
+    } catch (err) {
+      alert(err.message || 'Reservation failed');
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [selectedCategory, radiusKm, openNowOnly, searchMode]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        lat: coords?.lat,
+        lng: coords?.lng,
+        radius_km: radiusKm < 999 ? radiusKm : undefined,
+      };
+      if (selectedCategory && selectedCategory !== 'All') {
+        params.category_id = selectedCategory;
       }
 
-      const [shopsRes, productsRes] = await Promise.allSettled([
-        shopApi.getNearbyShops(params),
-        productApi.getNearbyProducts(params),
+      const prodPromise = (coords?.lat && coords?.lng)
+        ? productApi.findNearbyProducts({
+            lat: coords.lat,
+            lng: coords.lng,
+            radius_km: radiusKm < 999 ? radiusKm : 15,
+            category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
+            open_now: openNowOnly,
+            q: searchTerm || undefined,
+            limit: 40,
+          }).catch(() => productApi.listProducts({ limit: 40 }))
+        : productApi.listProducts({ limit: 40 });
+
+      const [shopData, prodData] = await Promise.allSettled([
+        shopApi.listPublicShops(params),
+        prodPromise,
       ]);
 
-      if (shopsRes.status === 'fulfilled') {
-        const data = shopsRes.value?.data || shopsRes.value?.shops || shopsRes.value || [];
-        setShops(Array.isArray(data) ? data : []);
-      } else {
-        setShops([]);
-      }
+      let shopList = shopData.status === 'fulfilled'
+        ? Array.isArray(shopData.value?.shops) ? shopData.value.shops : (Array.isArray(shopData.value) ? shopData.value : [])
+        : [];
 
-      if (productsRes.status === 'fulfilled') {
-        const pData = productsRes.value?.data || productsRes.value?.products || productsRes.value || [];
-        setProducts(Array.isArray(pData) ? pData : []);
-      } else {
-        setProducts([]);
+      if (shopList.length === 0 && params.radius_km) {
+        try {
+          const fallbackShops = await shopApi.listPublicShops({
+            lat: coords?.lat,
+            lng: coords?.lng,
+            category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
+          });
+          shopList = Array.isArray(fallbackShops?.shops) ? fallbackShops.shops : (Array.isArray(fallbackShops) ? fallbackShops : []);
+        } catch (e) {
+          console.warn('Fallback shops fetch error:', e);
+        }
       }
+      setShops(shopList);
+
+      const prodRaw = prodData.status === 'fulfilled' ? prodData.value : null;
+      const prodList = Array.isArray(prodRaw?.products)
+        ? prodRaw.products
+        : (Array.isArray(prodRaw?.data) ? prodRaw.data : (Array.isArray(prodRaw) ? prodRaw : []));
+      const normalizedProds = prodList.map((p) => {
+        const qty = Number(
+          p.available_quantity ??
+          p.stock_quantity ??
+          p.inventory?.available_quantity ??
+          p.inventory?.quantity ??
+          p.stock ??
+          0
+        );
+        return {
+          ...p,
+          id: p.id || p.product_id,
+          stock_quantity: qty,
+          available_quantity: qty,
+        };
+      });
+      setProducts(normalizedProds);
     } catch (err) {
-      setError(err.message || t('common.error'));
+      console.error('Failed to load marketplace data:', err);
     } finally {
       setLoading(false);
     }
-  }, [coords, radiusKm, debouncedSearch, selectedCategory, t]);
+  };
 
-  useEffect(() => {
-    fetchExploreData();
-  }, [fetchExploreData]);
-
-  // Filtered lists
   const filteredShops = useMemo(() => {
-    return shops.filter((shop) => {
-      if (openOnly && !shop.is_active) return false;
-      return true;
+    return shops.filter((s) => {
+      const term = debouncedSearch.toLowerCase();
+      const matchesSearch =
+        (s.name || '').toLowerCase().includes(term) ||
+        (s.category || '').toLowerCase().includes(term) ||
+        (s.city || '').toLowerCase().includes(term) ||
+        (s.address || '').toLowerCase().includes(term);
+      const matchesOpen = openNowOnly ? Boolean(s.is_active) : true;
+      return matchesSearch && matchesOpen;
     });
-  }, [shops, openOnly]);
+  }, [shops, debouncedSearch, openNowOnly]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      if (openOnly && p.shop && !p.shop.is_active) return false;
-      return true;
+      const term = debouncedSearch.toLowerCase();
+      const matchesSearch =
+        (p.name || '').toLowerCase().includes(term) ||
+        (p.description || '').toLowerCase().includes(term) ||
+        (p.category_name || '').toLowerCase().includes(term) ||
+        (p.category?.name || '').toLowerCase().includes(term);
+      const prodStock = Number(
+        p.available_quantity ??
+        p.stock_quantity ??
+        p.inventory?.available_quantity ??
+        p.inventory?.quantity ??
+        p.stock ??
+        0
+      );
+      const matchesStock = inStockOnly ? prodStock > 0 : true;
+      return matchesSearch && matchesStock;
     });
-  }, [products, openOnly]);
-
-  const handleReserve = async (reservationData) => {
-    try {
-      await reservationApi.createReservation(reservationData);
-      alert(t('checkout.reservation_success_title'));
-      navigate('/reservations');
-    } catch (err) {
-      alert(err.response?.data?.message || (isHindi ? 'आरक्षण विफल हुआ' : 'Reservation failed'));
-    }
-  };
+  }, [products, debouncedSearch, inStockOnly]);
 
   return (
-    <AppLayout title="ShopMe" subtitle={locationName || (isHindi ? 'नजदीकी बाजार' : 'Hyperlocal Retail')}>
-      {/* Top Search & Assistant Bar */}
-      <div className="explore-search-section">
-        <div className="search-input-wrapper">
-          <Search size={18} className="search-icon" aria-hidden="true" />
-          <input
-            type="text"
-            className="search-input"
-            placeholder={t('nav.search_placeholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label={t('nav.search_placeholder')}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="search-clear-btn"
-              aria-label={t('common.clear_all')}
-            >
-              &times;
-            </button>
-          )}
+    <AppLayout title="QuickPick Local" subtitle="Find In-Stock Products Around You">
+      <title>ShopMe — Explore Nearby Shops &amp; Products</title>
+
+      {/* GPS Header Bar */}
+      <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <MapPin size={18} color="var(--color-primary)" aria-hidden="true" />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Current Location</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
+              {locationName}
+            </div>
+          </div>
         </div>
-
-        {/* AI Smart Search & Scanner Action Buttons */}
-        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-          <button
-            onClick={() => setShowSmartSearch(true)}
-            className="btn btn-secondary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, justifyContent: 'center' }}
-          >
-            <Sparkles size={15} color="var(--color-primary)" />
-            <span>{isHindi ? 'एआई स्मार्ट खोज' : 'AI Smart Search'}</span>
-          </button>
-
-          <button
-            onClick={() => setShowScanner(true)}
-            className="btn btn-secondary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, justifyContent: 'center' }}
-          >
-            <Camera size={15} color="var(--color-primary)" />
-            <span>{isHindi ? 'कैमरा स्कैनर' : 'Scan Barcode / Item'}</span>
-          </button>
-
-          <button
-            onClick={() => setShowCopilot(true)}
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            title={isHindi ? 'एआई सहायक' : 'AI Copilot'}
-          >
-            <Bot size={16} />
-            <span>{isHindi ? 'एआई सहायक' : 'AI Copilot'}</span>
-          </button>
-        </div>
+        <button onClick={detectLocation} disabled={isDetecting} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.78rem' }} aria-label="Detect GPS location">
+          <Crosshair size={14} className={isDetecting ? 'spin' : ''} aria-hidden="true" />
+          {isDetecting ? 'Detecting...' : 'Live GPS'}
+        </button>
       </div>
 
-      {/* Category Horizontal Filter Bar */}
-      <div style={{ margin: '14px 0' }}>
-        <CategoryBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(selectedCategory === cat ? null : cat)}
-        />
+      {/* Radius Filter & Open Now */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }} role="toolbar" aria-label="Radius filter">
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, whiteSpace: 'nowrap' }}>Radius:</span>
+        {RADIUS_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setRadiusKm(opt.value)}
+            className={`btn btn-sm ${radiusKm === opt.value ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '5px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+            aria-pressed={radiusKm === opt.value}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setOpenNowOnly(!openNowOnly)}
+          className={`btn btn-sm ${openNowOnly ? 'btn-success' : 'btn-secondary'}`}
+          style={{ marginLeft: 'auto', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+          aria-pressed={openNowOnly}
+        >
+          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: openNowOnly ? '#10b981' : '#94a3b8' }} aria-hidden="true" />
+          Open Stores Only
+        </button>
       </div>
 
-      {/* Filter Controls: Tabs & Radius */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
-        {/* Switch View Tabs */}
-        <div style={{ display: 'flex', background: 'var(--bg-surface-subtle)', borderRadius: 'var(--radius-full)', padding: '3px' }} role="tablist">
+      {/* Search Bar & Mode Switcher */}
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+          <div className="search-box" style={{ flex: 1, marginBottom: 0 }}>
+            <Search size={18} color="var(--text-muted)" aria-hidden="true" />
+            <input
+              type="search"
+              placeholder={searchMode === 'shops' ? "Search store name, category, or locality..." : "Search product name, brand, or in-stock items..."}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search"
+            />
+          </div>
           <button
-            role="tab"
-            aria-selected={activeTab === 'shops'}
-            onClick={() => setActiveTab('shops')}
+            type="button"
+            onClick={() => setIsSmartSearchOpen(true)}
+            className="btn btn-secondary"
+            title="AI Smart Natural Language Search"
             style={{
-              border: 'none',
-              background: activeTab === 'shops' ? 'var(--color-primary)' : 'transparent',
-              color: activeTab === 'shops' ? '#ffffff' : 'var(--text-secondary)',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              padding: '6px 16px',
-              borderRadius: 'var(--radius-full)',
-              cursor: 'pointer',
+              padding: '0 12px',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)',
+              borderColor: 'rgba(99, 102, 241, 0.25)',
+              color: 'var(--color-primary)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
             }}
           >
-            <Store size={15} />
-            <span>{t('nav.explore')} ({filteredShops.length})</span>
+            <Sparkles size={16} />
+            <span style={{ fontSize: '0.78rem', fontWeight: 800 }}>AI Search</span>
           </button>
-
           <button
-            role="tab"
-            aria-selected={activeTab === 'products'}
-            onClick={() => setActiveTab('products')}
-            style={{
-              border: 'none',
-              background: activeTab === 'products' ? 'var(--color-primary)' : 'transparent',
-              color: activeTab === 'products' ? '#ffffff' : 'var(--text-secondary)',
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              padding: '6px 16px',
-              borderRadius: 'var(--radius-full)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="btn btn-secondary"
+            title="Scan Barcode / Photo"
+            style={{ padding: '0 12px', color: 'var(--text-primary)' }}
           >
-            <Package size={15} />
-            <span>{t('products.all_products')} ({filteredProducts.length})</span>
+            <Camera size={17} />
           </button>
         </div>
 
-        {/* Radius Selector & Open Only toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={() => setOpenOnly(!openOnly)}
-            style={{
-              border: openOnly ? '1.5px solid var(--color-success)' : '1px solid var(--border-subtle)',
-              background: openOnly ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-surface-subtle)',
-              color: openOnly ? 'var(--color-success)' : 'var(--text-secondary)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-full)',
-              cursor: 'pointer',
-            }}
-          >
-            {openOnly ? (isHindi ? '✓ खुली दुकानें' : '✓ Open Only') : t('common.open_now')}
+        <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="View mode">
+          <button onClick={() => setSearchMode('shops')} className={`btn btn-sm ${searchMode === 'shops' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'shops'}>
+            <Store size={16} aria-hidden="true" />
+            <span>Nearby Stores ({filteredShops.length})</span>
           </button>
-
-          <select
-            value={radiusKm}
-            onChange={(e) => setRadiusKm(Number(e.target.value))}
-            style={{
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--bg-surface-subtle)',
-              color: 'var(--text-primary)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              padding: '6px 10px',
-              borderRadius: 'var(--radius-full)',
-              cursor: 'pointer',
-            }}
-            aria-label="Filter by distance radius"
-          >
-            {RADIUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <button onClick={() => setSearchMode('products')} className={`btn btn-sm ${searchMode === 'products' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'products'}>
+            <Package size={16} aria-hidden="true" />
+            <span>In-Stock Products ({filteredProducts.length})</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Content Grid */}
+      {/* 🚀 Powerful Category Bar (Exact mobile app category feature ported to web app) */}
+      <CategoryBar
+        selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
+        onSelectCategory={(catId) => setSelectedCategory(catId || 'All')}
+      />
+
+      {searchMode === 'products' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+          <button
+            type="button"
+            onClick={() => setInStockOnly(!inStockOnly)}
+            className={`btn btn-sm ${inStockOnly ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+            aria-pressed={inStockOnly}
+          >
+            ⚡ In-Stock Only
+          </button>
+        </div>
+      )}
+
+      {/* Content Feed */}
       {loading ? (
-        activeTab === 'shops' ? <SkeletonShopGrid count={4} /> : <SkeletonProductGrid count={6} />
-      ) : error ? (
-        <EmptyState
-          title={t('common.error')}
-          message={error}
-          actionLabel={t('common.retry')}
-          onAction={fetchExploreData}
-        />
-      ) : activeTab === 'shops' ? (
+        searchMode === 'shops' ? <SkeletonShopGrid count={4} /> : <SkeletonProductGrid count={6} />
+      ) : searchMode === 'shops' ? (
         filteredShops.length === 0 ? (
           <EmptyState
-            icon={<Store size={48} color="var(--text-muted)" />}
-            title={t('common.no_results')}
-            message={t('common.try_adjusting_search')}
-            actionLabel={t('common.clear_all')}
-            onAction={() => {
-              setSearchQuery('');
-              setSelectedCategory(null);
-              setOpenOnly(false);
-              setRadiusKm(999);
-            }}
+            icon={Store}
+            title="No Nearby Stores Found"
+            description="Try increasing your search radius (e.g. 5km or 10km) or clearing category filters."
           />
         ) : (
-          <div className="shops-grid">
-            {filteredShops.map((shop) => (
+          <div className="customer-shop-grid">
+            {filteredShops.map((s) => (
               <ShopCard
-                key={shop.id}
-                shop={shop}
+                key={s.id}
+                shop={s}
                 coords={coords}
-                isSaved={isShopSaved(shop.id)}
-                onToggleSave={() => toggleSaveShop(shop)}
-                onClick={() => setSelectedShop(shop)}
-                onNavigate={(path) => navigate(path)}
+                isSaved={isShopSaved(s.id)}
+                onToggleSave={toggleSaveShop}
+                onClick={() => setInspectedShop(s)}
+                onNavigate={navigate}
               />
             ))}
           </div>
@@ -333,86 +352,92 @@ export const ExploreShopsScreen = () => {
       ) : (
         filteredProducts.length === 0 ? (
           <EmptyState
-            icon={<Package size={48} color="var(--text-muted)" />}
-            title={t('common.no_results')}
-            message={t('common.try_adjusting_search')}
-            actionLabel={t('common.clear_all')}
-            onAction={() => {
-              setSearchQuery('');
-              setSelectedCategory(null);
-              setOpenOnly(false);
-              setRadiusKm(999);
-            }}
+            icon={Package}
+            title="No Products Found"
+            description="Try searching with another product name or category filter."
           />
         ) : (
-          <div className="products-grid">
-            {filteredProducts.map((prod) => (
+          <div className="customer-product-grid">
+            {filteredProducts.map((p) => (
               <ProductCard
-                key={prod.id}
-                product={prod}
-                isSaved={isProductSaved(prod.id)}
-                onToggleSave={() => toggleSaveProduct(prod)}
-                onClick={() => setSelectedProduct(prod)}
+                key={p.id}
+                product={p}
+                isSaved={isProductSaved(p.id)}
+                onToggleSave={toggleSaveProduct}
+                onClick={() => setInspectedProduct(p)}
               />
             ))}
           </div>
         )
       )}
 
-      {/* Modals */}
-      {selectedProduct && (
+      {/* Product Detail Modal */}
+      {inspectedProduct && (
         <ProductDetailModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onReserve={handleReserve}
+          product={inspectedProduct}
+          onClose={() => setInspectedProduct(null)}
+          onReserve={handleReserveFromModal}
         />
       )}
 
-      {selectedShop && (
+      {/* Shop Detail Modal */}
+      {inspectedShop && (
         <ShopDetailModal
-          shop={selectedShop}
-          coords={coords}
-          onClose={() => setSelectedShop(null)}
-          onNavigate={(path) => {
-            setSelectedShop(null);
-            navigate(path);
-          }}
+          shop={inspectedShop}
+          onClose={() => setInspectedShop(null)}
         />
       )}
 
-      {showCopilot && (
-        <CustomerCopilotModal
-          isOpen={showCopilot}
-          onClose={() => setShowCopilot(false)}
-          onSelectProduct={(p) => {
-            setShowCopilot(false);
-            setSelectedProduct(p);
-          }}
-        />
-      )}
+      {/* Floating AI Co-Pilot Button */}
+      <button
+        onClick={() => setIsCopilotOpen(true)}
+        className="btn"
+        aria-label="Open AI Shopping Assistant"
+        style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '20px',
+          background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '30px',
+          padding: '10px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontSize: '0.88rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
+          zIndex: 90,
+          transition: 'transform 0.2s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+      >
+        <Bot size={18} aria-hidden="true" />
+        <span>Ask Pick (AI)</span>
+      </button>
 
-      {showSmartSearch && (
-        <SmartSearchModal
-          isOpen={showSmartSearch}
-          onClose={() => setShowSmartSearch(false)}
-          onSelectProduct={(p) => {
-            setShowSmartSearch(false);
-            setSelectedProduct(p);
-          }}
-        />
-      )}
+      {/* Co-Pilot Modal */}
+      <CustomerCopilotModal
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+      />
 
-      {showScanner && (
-        <ProductScannerModal
-          isOpen={showScanner}
-          onClose={() => setShowScanner(false)}
-          onSelectProduct={(p) => {
-            setShowScanner(false);
-            setSelectedProduct(p);
-          }}
-        />
-      )}
+      {/* AI Smart Search Modal */}
+      <SmartSearchModal
+        isOpen={isSmartSearchOpen}
+        onClose={() => setIsSmartSearchOpen(false)}
+        onSelectProduct={(p) => setInspectedProduct(p)}
+      />
+
+      {/* Camera / Barcode Scanner Modal */}
+      <ProductScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onSelectProduct={(p) => setInspectedProduct(p)}
+      />
     </AppLayout>
   );
 };
-export default ExploreShopsScreen;

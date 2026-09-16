@@ -1,26 +1,32 @@
+/**
+ * Customer SideDrawer Component
+ * 
+ * Hinglish Hint:
+ * Grahak app ka slide-out menu bar:
+ * - Aas-paas ki dukaanein
+ * - Meri Bookings & Holds
+ * - Mera Khata (Digital Passbook & Udhar)
+ * - Mera Account / Profile
+ * - Support & Logout
+ */
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   X,
   Store,
-  Tag,
   ShoppingBag,
-  Heart,
   BookOpen,
   User,
   LogOut,
   ChevronRight,
-  ShieldAlert,
-  FileText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { ThemeLanguageBar } from '../common/ThemeLanguageBar';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
-  const { t, isHindi } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,7 +49,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handleLogout = () => {
-    if (window.confirm(t('auth.logout_confirm'))) {
+    if (window.confirm('Kya aap sure hain ki aap logout karna chahte hain?')) {
       logout();
       onClose();
       navigate('/login');
@@ -63,170 +69,136 @@ export const SideDrawer = ({ isOpen, onClose }) => {
         aria-hidden={!isOpen}
       />
 
-      <aside className={`drawer-content ${isOpen ? 'open' : ''}`} role="dialog" aria-modal="true" aria-label="Menu">
-        {/* Drawer Header */}
+      <aside className={`side-drawer ${isOpen ? 'open' : ''}`}>
         <div className="drawer-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <div
               style={{
-                width: '44px',
-                height: '44px',
+                width: '42px',
+                height: '42px',
                 borderRadius: '50%',
-                background: user?.avatar_url ? 'transparent' : 'var(--color-primary)',
+                background: user?.avatar_url ? 'transparent' : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 900,
+                fontWeight: 800,
                 fontSize: '1.1rem',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.35)',
+                flexShrink: 0,
                 overflow: 'hidden',
-                border: '2px solid var(--color-primary-light, #c7d2fe)',
               }}
             >
               {user?.avatar_url ? (
                 <img
                   src={getImageUrl(user.avatar_url)}
-                  alt={user?.name || user?.full_name}
+                  alt={user?.name || 'Customer'}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                (user?.name || user?.full_name)?.charAt(0)?.toUpperCase() || 'G'
+                user?.name?.charAt(0)?.toUpperCase() || 'G'
               )}
             </div>
-
-            <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {user ? user.full_name || user.name : (isHindi ? 'अतिथि ग्राहक' : 'Guest Customer')}
-              </h3>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-                {user ? user.phone || user.email : (isHindi ? 'लॉगिन नहीं है' : 'Not signed in')}
-              </p>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontWeight: 800, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user ? user.name : 'Namaste, Guest'}
+              </div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user ? user.phone || user.email : 'Local Shopping Me Swagat Hai'}
+              </div>
+              <div style={{ marginTop: '2px' }}>
+                <span
+                  style={{
+                    backgroundColor: '#dbeafe',
+                    color: '#1e40af',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    padding: '2px 7px',
+                    borderRadius: 'var(--radius-full)',
+                    display: 'inline-block',
+                  }}
+                >
+                  Grahak
+                </span>
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              padding: '6px',
-            }}
-            aria-label={t('common.close')}
-          >
+          <button onClick={onClose} className="drawer-close-btn" title="Menu Band Karein">
             <X size={20} />
           </button>
         </div>
 
-        {/* Drawer Body Nav Links */}
-        <div className="drawer-body" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '16px' }}>
-          <button
-            className="drawer-nav-item"
-            onClick={() => handleNavigate('/')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px', background: 'transparent', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-              <Store size={18} color="var(--color-primary)" />
-              <span>{t('nav.explore')}</span>
-            </div>
-            <ChevronRight size={16} color="var(--text-muted)" />
-          </button>
-
-          <button
-            className="drawer-nav-item"
-            onClick={() => handleNavigate('/deals')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px', background: 'transparent', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-              <Tag size={18} color="#10b981" />
-              <span>{t('nav.deals')}</span>
-            </div>
-            <ChevronRight size={16} color="var(--text-muted)" />
-          </button>
-
-          <button
-            className="drawer-nav-item"
-            onClick={() => handleNavigate('/reservations')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px', background: 'transparent', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-              <ShoppingBag size={18} color="#f59e0b" />
-              <span>{t('nav.reservations')}</span>
-            </div>
-            <ChevronRight size={16} color="var(--text-muted)" />
-          </button>
-
-          <button
-            className="drawer-nav-item"
-            onClick={() => handleNavigate('/saved')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px', background: 'transparent', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-              <Heart size={18} color="#ef4444" />
-              <span>{t('nav.saved')}</span>
-            </div>
-            <ChevronRight size={16} color="var(--text-muted)" />
-          </button>
-
-          {isAuthenticated && (
-            <button
-              className="drawer-nav-item"
-              onClick={() => handleNavigate('/khata')}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px', background: 'transparent', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                <BookOpen size={18} color="#8b5cf6" />
-                <span>{t('nav.khata')}</span>
+        <div className="drawer-content">
+          <div className="drawer-section-title">MARKETPLACE & ORDERS</div>
+          <div className="drawer-links-group">
+            <button className="drawer-link-btn" onClick={() => handleNavigate('/')}>
+              <div className="drawer-icon-bubble" style={{ background: '#e0e7ff', color: '#4338ca' }}>
+                <Store size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title">Aas-Paas Ki Dukaanein</div>
+                <div className="drawer-link-sub">Explore nearby verified shops</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
-          )}
 
-          <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '8px 0' }} />
+            <button className="drawer-link-btn" onClick={() => handleNavigate('/reservations')}>
+              <div className="drawer-icon-bubble" style={{ background: '#dcfce7', color: '#15803d' }}>
+                <ShoppingBag size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title">My Pickups & Holds</div>
+                <div className="drawer-link-sub">Reserved items & pickup OTP codes</div>
+              </div>
+              <ChevronRight size={16} color="var(--text-muted)" />
+            </button>
 
-          {/* Theme and Language Settings Box */}
-          <ThemeLanguageBar compact={false} />
+            <button className="drawer-link-btn" onClick={() => handleNavigate(isAuthenticated ? '/khata' : '/login')}>
+              <div className="drawer-icon-bubble" style={{ background: '#fef3c7', color: '#d97706' }}>
+                <BookOpen size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title">Mera Khata (Passbook)</div>
+                <div className="drawer-link-sub">Udhar hisaab, UPI pay & passbook</div>
+              </div>
+              <ChevronRight size={16} color="var(--text-muted)" />
+            </button>
 
-          <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '8px 0' }} />
+            <button className="drawer-link-btn" onClick={() => handleNavigate(isAuthenticated ? '/profile' : '/login')}>
+              <div className="drawer-icon-bubble" style={{ background: '#f1f5f9', color: '#334155' }}>
+                <User size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title">My Profile & Account</div>
+                <div className="drawer-link-sub">{isAuthenticated ? 'Details & photo update' : 'Login ya register karein'}</div>
+              </div>
+              <ChevronRight size={16} color="var(--text-muted)" />
+            </button>
+          </div>
 
-          {/* Compliance & Grievance */}
-          <button
-            className="drawer-nav-item"
-            onClick={() => handleNavigate('/profile')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px', background: 'transparent', border: 'none', borderRadius: '12px', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-              <ShieldAlert size={18} color="#dc2626" />
-              <span>{t('nav.report')}</span>
-            </div>
-            <ChevronRight size={16} color="var(--text-muted)" />
-          </button>
+          <div style={{ marginTop: '20px' }}>
+            <div className="drawer-section-title">THEME & LANGUAGE</div>
+            <ThemeLanguageBar />
+          </div>
         </div>
 
-        {/* Drawer Footer */}
-        <div className="drawer-footer" style={{ padding: '16px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div className="drawer-footer">
           {isAuthenticated ? (
-            <button
-              onClick={handleLogout}
-              className="btn btn-secondary"
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--color-danger)' }}
-            >
+            <button className="btn btn-outline btn-block" onClick={handleLogout} style={{ gap: '8px', color: 'var(--color-danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
               <LogOut size={16} />
-              <span>{t('nav.logout')}</span>
+              <span>Logout Karein</span>
             </button>
           ) : (
-            <button
-              onClick={() => handleNavigate('/login')}
-              className="btn btn-primary"
-              style={{ width: '100%' }}
-            >
-              {t('nav.login')}
+            <button className="btn btn-primary btn-block" onClick={() => handleNavigate('/login')}>
+              <span>Login / Account Banayein</span>
             </button>
           )}
+          <div style={{ textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '10px' }}>
+            ShopMe Customer Portal • v1.0
+          </div>
         </div>
       </aside>
     </>
   );
 };
-export default SideDrawer;
