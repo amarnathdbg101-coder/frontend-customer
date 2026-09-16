@@ -1,12 +1,6 @@
 /**
  * Customer App Bottom Navigation Bar
- * 
- * Ported from Flutter APK (QuickPick) tabs:
- * 1. Dukaanein (Explore Nearby Shops)
- * 2. Deals (Live Offers & Discounts Near You)
- * 3. Saved (Wishlist Products & Shops)
- * 4. Bookings (Customer Reservations & Pickups)
- * 5. Profile (Account & Switch to Merchant Mode)
+ * Fully bilingual with live saved badges and active highlight
  */
 
 import React from 'react';
@@ -14,11 +8,13 @@ import { NavLink } from 'react-router-dom';
 import { Store, Tag, Heart, ShoppingBag, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const BottomNav = () => {
   const { isAuthenticated } = useAuth();
   const { savedProducts, savedShops } = useSaved();
-  const totalSaved = savedProducts.length + savedShops.length;
+  const { isHindi } = useLanguage();
+  const totalSaved = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
   return (
     <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
@@ -28,7 +24,7 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <Store size={20} />
-        <span>Dukaanein</span>
+        <span>{isHindi ? 'दुकानें' : 'Shops'}</span>
       </NavLink>
 
       <NavLink
@@ -36,7 +32,7 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <Tag size={20} />
-        <span>Deals</span>
+        <span>{isHindi ? 'डील्स' : 'Deals'}</span>
       </NavLink>
 
       <NavLink
@@ -45,7 +41,7 @@ export const BottomNav = () => {
         style={{ position: 'relative' }}
       >
         <Heart size={20} />
-        <span>Saved</span>
+        <span>{isHindi ? 'पसंदीदा' : 'Saved'}</span>
         {totalSaved > 0 && (
           <span
             style={{
@@ -74,7 +70,7 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <ShoppingBag size={20} />
-        <span>Bookings</span>
+        <span>{isHindi ? 'बुकिंग्स' : 'Bookings'}</span>
       </NavLink>
 
       <NavLink
@@ -82,7 +78,7 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <User size={20} />
-        <span>{isAuthenticated ? 'Profile' : 'Login'}</span>
+        <span>{isAuthenticated ? (isHindi ? 'प्रोफ़ाइल' : 'Profile') : (isHindi ? 'लॉगिन' : 'Login')}</span>
       </NavLink>
     </nav>
   );

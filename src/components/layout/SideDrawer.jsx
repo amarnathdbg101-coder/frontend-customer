@@ -1,13 +1,6 @@
 /**
  * Customer SideDrawer Component
- * 
- * Hinglish Hint:
- * Grahak app ka slide-out menu bar:
- * - Aas-paas ki dukaanein
- * - Meri Bookings & Holds
- * - Mera Khata (Digital Passbook & Udhar)
- * - Mera Account / Profile
- * - Support & Logout
+ * Slide-out navigation menu with full bilingual support & theme settings
  */
 
 import React, { useEffect } from 'react';
@@ -22,11 +15,13 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { ThemeLanguageBar } from '../common/ThemeLanguageBar';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { isHindi } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,7 +44,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handleLogout = () => {
-    if (window.confirm('Kya aap sure hain ki aap logout karna chahte hain?')) {
+    if (window.confirm(isHindi ? 'क्या आप निश्चित रूप से लॉग आउट करना चाहते हैं?' : 'Are you sure you want to log out?')) {
       logout();
       onClose();
       navigate('/login');
@@ -101,10 +96,10 @@ export const SideDrawer = ({ isOpen, onClose }) => {
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user ? user.name : 'Namaste, Guest'}
+                {user ? user.name : (isHindi ? 'नमस्ते, अतिथि ग्राहक' : 'Welcome, Guest')}
               </div>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user ? user.phone || user.email : 'Local Shopping Me Swagat Hai'}
+                {user ? user.phone || user.email : (isHindi ? 'हाइपरलोकल बाज़ार में स्वागत है' : 'Hyperlocal Shopping Portal')}
               </div>
               <div style={{ marginTop: '2px' }}>
                 <span
@@ -118,27 +113,27 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                     display: 'inline-block',
                   }}
                 >
-                  Grahak
+                  {isHindi ? 'ग्राहक' : 'Customer'}
                 </span>
               </div>
             </div>
           </div>
 
-          <button onClick={onClose} className="drawer-close-btn" title="Menu Band Karein">
+          <button onClick={onClose} className="drawer-close-btn" title={isHindi ? 'मेनू बंद करें' : 'Close Menu'}>
             <X size={20} />
           </button>
         </div>
 
         <div className="drawer-content">
-          <div className="drawer-section-title">MARKETPLACE & ORDERS</div>
+          <div className="drawer-section-title">{isHindi ? 'बाज़ार एवं ऑर्डर्स' : 'MARKETPLACE & ORDERS'}</div>
           <div className="drawer-links-group">
             <button className="drawer-link-btn" onClick={() => handleNavigate('/')}>
               <div className="drawer-icon-bubble" style={{ background: '#e0e7ff', color: '#4338ca' }}>
                 <Store size={18} />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div className="drawer-link-title">Aas-Paas Ki Dukaanein</div>
-                <div className="drawer-link-sub">Explore nearby verified shops</div>
+                <div className="drawer-link-title">{isHindi ? 'आस-पास की दुकानें' : 'Explore Nearby Shops'}</div>
+                <div className="drawer-link-sub">{isHindi ? 'प्रमाणित स्थानीय स्टोर खोजें' : 'Discover verified stores'}</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
@@ -148,8 +143,8 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 <ShoppingBag size={18} />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div className="drawer-link-title">My Pickups & Holds</div>
-                <div className="drawer-link-sub">Reserved items & pickup OTP codes</div>
+                <div className="drawer-link-title">{isHindi ? 'मेरी बुकिंग्स एवं होल्ड्स' : 'My Pickups & Holds'}</div>
+                <div className="drawer-link-sub">{isHindi ? 'आरक्षित सामान एवं पिकअप ओटीपी कोड' : 'Reserved items & pickup OTP codes'}</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
@@ -159,8 +154,8 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 <BookOpen size={18} />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div className="drawer-link-title">Mera Khata (Passbook)</div>
-                <div className="drawer-link-sub">Udhar hisaab, UPI pay & passbook</div>
+                <div className="drawer-link-title">{isHindi ? 'मेरा डिजिटल खाता (पासबुक)' : 'My Khata (Digital Passbook)'}</div>
+                <div className="drawer-link-sub">{isHindi ? 'उधार बही, ऑनलाइन यूपीआई भुगतान' : 'Udhar ledger, UPI payments & balance'}</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
@@ -170,15 +165,15 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 <User size={18} />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div className="drawer-link-title">My Profile & Account</div>
-                <div className="drawer-link-sub">{isAuthenticated ? 'Details & photo update' : 'Login ya register karein'}</div>
+                <div className="drawer-link-title">{isHindi ? 'मेरी प्रोफ़ाइल एवं सेटिंग्स' : 'My Profile & Account'}</div>
+                <div className="drawer-link-sub">{isAuthenticated ? (isHindi ? 'खाता विवरण व सेटिंग्स' : 'Account details & preferences') : (isHindi ? 'लॉगिन या नया खाता बनाएं' : 'Sign in or register')}</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
           </div>
 
           <div style={{ marginTop: '20px' }}>
-            <div className="drawer-section-title">THEME & LANGUAGE</div>
+            <div className="drawer-section-title">{isHindi ? 'थीम एवं भाषा सेटिंग्स' : 'THEME & LANGUAGE'}</div>
             <ThemeLanguageBar />
           </div>
         </div>
@@ -187,11 +182,11 @@ export const SideDrawer = ({ isOpen, onClose }) => {
           {isAuthenticated ? (
             <button className="btn btn-outline btn-block" onClick={handleLogout} style={{ gap: '8px', color: 'var(--color-danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
               <LogOut size={16} />
-              <span>Logout Karein</span>
+              <span>{isHindi ? 'लॉग आउट करें' : 'Sign Out'}</span>
             </button>
           ) : (
             <button className="btn btn-primary btn-block" onClick={() => handleNavigate('/login')}>
-              <span>Login / Account Banayein</span>
+              <span>{isHindi ? 'लॉगिन / खाता बनाएं' : 'Login / Register'}</span>
             </button>
           )}
           <div style={{ textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '10px' }}>

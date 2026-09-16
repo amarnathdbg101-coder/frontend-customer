@@ -32,6 +32,7 @@ import { reservationApi } from '../../api/reservation.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { ProductCard } from '../../components/cards/ProductCard';
@@ -202,7 +203,7 @@ export const ExploreShopsScreen = () => {
   }, [products, debouncedSearch, inStockOnly]);
 
   return (
-    <AppLayout title="QuickPick Local" subtitle="Find In-Stock Products Around You">
+    <AppLayout title={isHindi ? "शॉपमी हाइपरलोकल बाज़ार" : "QuickPick Local"} subtitle={isHindi ? "अपने आस-पास उपलब्ध सामान व दुकानें खोजें" : "Find In-Stock Products Around You"}>
       <title>ShopMe — Explore Nearby Shops &amp; Products</title>
 
       {/* GPS Header Bar */}
@@ -212,7 +213,7 @@ export const ExploreShopsScreen = () => {
             <MapPin size={18} color="var(--color-primary)" aria-hidden="true" />
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Current Location</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{isHindi ? "वर्तमान स्थान (GPS)" : "Current Location"}</div>
             <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
               {locationName}
             </div>
@@ -220,7 +221,7 @@ export const ExploreShopsScreen = () => {
         </div>
         <button onClick={detectLocation} disabled={isDetecting} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '0.78rem' }} aria-label="Detect GPS location">
           <Crosshair size={14} className={isDetecting ? 'spin' : ''} aria-hidden="true" />
-          {isDetecting ? 'Detecting...' : 'Live GPS'}
+          {isDetecting ? (isHindi ? 'लोकेशन खोज रहे हैं...' : 'Detecting...') : (isHindi ? 'लाइव जीपीएस' : 'Live GPS')}
         </button>
       </div>
 
@@ -246,7 +247,7 @@ export const ExploreShopsScreen = () => {
           aria-pressed={openNowOnly}
         >
           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: openNowOnly ? '#10b981' : '#94a3b8' }} aria-hidden="true" />
-          Open Stores Only
+          {isHindi ? "केवल खुली दुकानें" : "Open Stores Only"}
         </button>
       </div>
 
@@ -295,11 +296,11 @@ export const ExploreShopsScreen = () => {
         <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="View mode">
           <button onClick={() => setSearchMode('shops')} className={`btn btn-sm ${searchMode === 'shops' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'shops'}>
             <Store size={16} aria-hidden="true" />
-            <span>Nearby Stores ({filteredShops.length})</span>
+            <span>{isHindi ? "आस-पास की दुकानें" : "Nearby Stores"} ({filteredShops.length})</span>
           </button>
           <button onClick={() => setSearchMode('products')} className={`btn btn-sm ${searchMode === 'products' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, fontSize: '0.82rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} role="tab" aria-selected={searchMode === 'products'}>
             <Package size={16} aria-hidden="true" />
-            <span>In-Stock Products ({filteredProducts.length})</span>
+            <span>{isHindi ? "उपलब्ध सामान (स्टॉक)" : "In-Stock Products"} ({filteredProducts.length})</span>
           </button>
         </div>
       </div>
@@ -319,7 +320,7 @@ export const ExploreShopsScreen = () => {
             style={{ borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}
             aria-pressed={inStockOnly}
           >
-            ⚡ In-Stock Only
+            {isHindi ? "⚡ केवल उपलब्ध स्टॉक" : "⚡ In-Stock Only"}
           </button>
         </div>
       )}

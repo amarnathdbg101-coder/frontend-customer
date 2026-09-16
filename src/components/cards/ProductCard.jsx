@@ -1,13 +1,12 @@
 /**
  * Reusable Product Card Component
- * 
- * Extracted from ExploreShopsScreen — a self-contained, memoized product card
- * with image, brand, price, stock status, discount, and wishlist action.
+ * Bilingual, accessible, and responsive card with live stock badges and hold actions
  */
 
 import React, { memo } from 'react';
 import { Package, Heart, Store, Sparkles, Eye } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ProductCardInner = ({
   product,
@@ -15,6 +14,7 @@ const ProductCardInner = ({
   onToggleSave,
   onClick,
 }) => {
+  const { isHindi } = useLanguage();
   const p = product;
   const stock = Number(
     p.available_quantity ??
@@ -55,7 +55,7 @@ const ProductCardInner = ({
         <span
           className={`product-card-stock-badge ${inStock ? 'in-stock' : 'out-of-stock'}`}
         >
-          {inStock ? `${stock} in stock` : 'Out of stock'}
+          {inStock ? (isHindi ? `${stock} उपलब्ध` : `${stock} in stock`) : (isHindi ? 'स्टॉक समाप्त' : 'Out of stock')}
         </span>
 
         {/* Save/Wishlist */}
@@ -81,7 +81,7 @@ const ProductCardInner = ({
         {/* Shop Name */}
         <div className="product-card-shop">
           <Store size={12} color="var(--text-muted)" aria-hidden="true" />
-          <span>{p.shop_name || 'Verified Store'}</span>
+          <span>{p.shop_name || (isHindi ? 'प्रमाणित दुकान' : 'Verified Store')}</span>
         </div>
 
         {/* Price */}
@@ -105,12 +105,12 @@ const ProductCardInner = ({
           {allowBargain && inStock ? (
             <>
               <Sparkles size={13} aria-hidden="true" />
-              <span>Bhav-Taav</span>
+              <span>{isHindi ? 'भाव-ताव / होल्ड' : 'Bhav-Taav'}</span>
             </>
           ) : (
             <>
               <Eye size={13} aria-hidden="true" />
-              <span>Hold / View</span>
+              <span>{isHindi ? 'देखें / होल्ड' : 'Hold / View'}</span>
             </>
           )}
         </button>
@@ -120,3 +120,4 @@ const ProductCardInner = ({
 };
 
 export const ProductCard = memo(ProductCardInner);
+export default ProductCard;
