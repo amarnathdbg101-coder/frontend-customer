@@ -1,126 +1,398 @@
-import React, { useState, useEffect } from 'react';
-import { Layers, Check, X } from 'lucide-react';
-import { apiClient } from '../../api/client';
-
-const getCategoryIcon = (name) => {
-  const lower = (name || '').toLowerCase();
-  if (lower.includes('rice') || lower.includes('grain') || lower.includes('wheat')) return '🌾';
-  if (lower.includes('pulse') || lower.includes('dal') || lower.includes('lentil')) return '🥣';
-  if (lower.includes('flour') || lower.includes('atta') || lower.includes('besan')) return '🥡';
-  if (lower.includes('oil') || lower.includes('ghee')) return '🫒';
-  if (lower.includes('masala') || lower.includes('spice')) return '🌶️';
-  if (lower.includes('sugar') || lower.includes('salt') || lower.includes('sweet')) return '🧂';
-  if (lower.includes('biscuit') || lower.includes('cookie') || lower.includes('snack') || lower.includes('namkeen') || lower.includes('chip')) return '🍪';
-  if (lower.includes('tea') || lower.includes('coffee')) return '☕';
-  if (lower.includes('drink') || lower.includes('juice') || lower.includes('beverage')) return '🥤';
-  if (lower.includes('milk') || lower.includes('curd') || lower.includes('dairy') || lower.includes('paneer') || lower.includes('butter') || lower.includes('cheese')) return '🥛';
-  if (lower.includes('bread') || lower.includes('bakery') || lower.includes('bun') || lower.includes('cake')) return '🍞';
-  if (lower.includes('egg')) return '🥚';
-  if (lower.includes('fruit')) return '🍎';
-  if (lower.includes('vegetable') || lower.includes('sabji')) return '🥦';
-  if (lower.includes('meat') || lower.includes('chicken') || lower.includes('fish') || lower.includes('seafood')) return '🍗';
-  if (lower.includes('soap') || lower.includes('bath') || lower.includes('clean') || lower.includes('laundry')) return '🧼';
-  if (lower.includes('skin') || lower.includes('hair') || lower.includes('shampoo') || lower.includes('oral') || lower.includes('paste')) return '🧴';
-  if (lower.includes('baby')) return '👶';
-  if (lower.includes('puja') || lower.includes('religious')) return '🪔';
-  if (lower.includes('stationery') || lower.includes('book') || lower.includes('pen')) return '📚';
-  if (lower.includes('toy') || lower.includes('game')) return '🧸';
-  if (lower.includes('cloth') || lower.includes('fashion') || lower.includes('wear') || lower.includes('footwear')) return '👕';
-  if (lower.includes('electronic') || lower.includes('mobile') || lower.includes('hardware') || lower.includes('electrical')) return '⚡';
-  if (lower.includes('pharmacy') || lower.includes('medicine') || lower.includes('vitamin') || lower.includes('supplement')) return '💊';
-  if (lower.includes('grocery') || lower.includes('kirana') || lower.includes('general')) return '🛒';
-  return '🏷️';
-};
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Layers,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  X,
+  Check,
+  Sparkles,
+} from 'lucide-react';
+import { ALL_CATEGORIES, CATEGORY_DEPARTMENTS, getCategoryMeta } from '../../constants/categoryData';
+import { CategoryExplorerModal } from './CategoryExplorerModal';
+import { useLanguage } from '../../context/LanguageContext';
 
 export function CategoryBar({ selectedCategoryId, onSelectCategory }) {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { isHindi } = useLanguage();
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+  const [activeDepartment, setActiveDepartment] = useState('all');
+  const scrollContainerRef = useRef(null);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const activeMeta = selectedCategoryId ? getCategoryMeta(selectedCategoryId) : null;
 
-  const fetchCategories = async () => {
-    setLoading(true);
-    try {
-      const res = await apiClient.get('/categories');
-      const raw = res.data?.data || res.data || [];
-      setCategories(Array.isArray(raw) ? raw : []);
-    } catch (err) {
-      console.warn('[CategoryBar] Failed to fetch categories:', err);
-    } finally {
-      setLoading(false);
+  // Filter categories shown in quick horizontal carousel
+  const railCategories = React.useMemo(() => {
+    if (activeDepartment === 'all') {
+      return ALL_CATEGORIES;
+    }
+    return ALL_CATEGORIES.filter((c) => c.department === activeDepartment);
+  }, [activeDepartment]);
+
+  const handleScroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const offset = direction === 'left' ? -320 : 320;
+      scrollContainerRef.current.scrollBy({ left: offset, behavior: 'smooth' });
     }
   };
 
-  const activeCategory = categories.find(
-    (c) => c.id === selectedCategoryId || c.slug === selectedCategoryId || c.name === selectedCategoryId
-  );
-
   return (
-    <div className="mb-4">
-      {/* Horizontal Scrollable Category Pills */}
+    <div style={{ marginBottom: '18px' }}>
+      {/* 1. Header with Title and "View All Categories" Modal Trigger */}
       <div
-        className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        role="toolbar"
-        aria-label="Category filter"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '10px',
+        }}
       >
-        {/* All Pill */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+            {isHindi ? 'श्रेणियां (Categories)' : 'Explore by Category'}
+          </span>
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              backgroundColor: 'rgba(79, 70, 229, 0.12)',
+              color: 'var(--color-primary)',
+              padding: '2px 8px',
+              borderRadius: 'var(--radius-full)',
+            }}
+          >
+            {ALL_CATEGORIES.length}+
+          </span>
+        </div>
+
         <button
           type="button"
-          onClick={() => onSelectCategory(undefined)}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold whitespace-nowrap transition shadow-sm ${
-            !selectedCategoryId
-              ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:border-purple-400'
-          }`}
+          onClick={() => setIsExplorerOpen(true)}
+          className="btn btn-sm btn-secondary"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '0.78rem',
+            fontWeight: 800,
+            padding: '5px 12px',
+            color: 'var(--color-primary)',
+            borderColor: 'rgba(79, 70, 229, 0.3)',
+          }}
+          title={isHindi ? 'सभी 40+ श्रेणियां देखें' : 'View all 40+ categories'}
         >
-          <Layers size={14} />
-          <span>All</span>
+          <LayoutGrid size={14} />
+          <span>{isHindi ? 'सभी श्रेणियां देखें' : 'View All'}</span>
         </button>
+      </div>
 
-        {/* Dynamic Category Pills */}
-        {!loading && categories.map((cat) => {
-          const catKey = cat.id || cat.slug || cat.name;
-          const isSelected = selectedCategoryId === catKey || selectedCategoryId === cat.id || selectedCategoryId === cat.slug || selectedCategoryId === cat.name;
-          const icon = getCategoryIcon(cat.name);
-
+      {/* 2. Department Quick Switcher Tabs */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          paddingBottom: '8px',
+        }}
+      >
+        {CATEGORY_DEPARTMENTS.slice(0, 7).map((dept) => {
+          const isActive = activeDepartment === dept.id;
           return (
             <button
-              key={catKey}
-              type="button"
-              onClick={() => onSelectCategory(isSelected ? undefined : catKey)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-bold whitespace-nowrap transition shadow-sm ${
-                isSelected
-                  ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:border-purple-400'
-              }`}
+              key={dept.id}
+              onClick={() => setActiveDepartment(dept.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-full)',
+                border: isActive ? '1px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+                backgroundColor: isActive ? 'rgba(79, 70, 229, 0.12)' : 'var(--bg-surface-subtle)',
+                color: isActive ? 'var(--color-primary)' : 'var(--text-secondary)',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
             >
-              <span className="text-sm">{icon}</span>
-              <span>{cat.name}</span>
-              {isSelected && <Check size={12} strokeWidth={3} className="ml-0.5" />}
+              <span>{dept.icon}</span>
+              <span>{isHindi ? dept.nameHi : dept.nameEn}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Active Filter Banner */}
-      {activeCategory && (
-        <div className="mt-2 flex items-center justify-between bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300">
-          <span>
-            Showing: <strong className="text-purple-700 dark:text-purple-300 font-extrabold">{activeCategory.name}</strong>
-          </span>
+      {/* 3. Horizontal Visual Category Rail with Desktop Left/Right Controls */}
+      <div style={{ position: 'relative', marginTop: '2px' }}>
+        {/* Desktop Left Scroll Button */}
+        <button
+          type="button"
+          onClick={() => handleScroll('left')}
+          style={{
+            position: 'absolute',
+            left: '-12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: '1px solid var(--border-subtle)',
+            backgroundColor: 'var(--bg-surface)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 10,
+            color: 'var(--text-primary)',
+          }}
+          className="desktop-only-btn"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        {/* Carousel Scroll Container */}
+        <div
+          ref={scrollContainerRef}
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            gap: '10px',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            padding: '4px 2px 8px 2px',
+          }}
+        >
+          {/* "All" Card */}
           <button
             type="button"
             onClick={() => onSelectCategory(undefined)}
-            className="flex items-center gap-1 bg-purple-100 dark:bg-purple-900/60 hover:bg-purple-200 text-purple-700 dark:text-purple-200 px-2.5 py-1 rounded-lg text-xs font-bold transition"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '82px',
+              maxWidth: '82px',
+              padding: '10px 6px',
+              borderRadius: '16px',
+              border: !selectedCategoryId ? '2px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+              backgroundColor: !selectedCategoryId ? 'rgba(79, 70, 229, 0.1)' : 'var(--bg-surface)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              textAlign: 'center',
+              boxShadow: !selectedCategoryId ? '0 4px 14px rgba(79, 70, 229, 0.25)' : 'none',
+            }}
           >
-            <X size={12} />
-            <span>Clear Filter</span>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                background: !selectedCategoryId
+                  ? 'linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%)'
+                  : 'var(--bg-surface-subtle)',
+                color: !selectedCategoryId ? '#ffffff' : 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.3rem',
+                marginBottom: '6px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              ✨
+            </div>
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                color: !selectedCategoryId ? 'var(--color-primary)' : 'var(--text-primary)',
+                lineHeight: 1.15,
+              }}
+            >
+              {isHindi ? 'सभी' : 'All'}
+            </span>
+          </button>
+
+          {/* Dynamic Category Cards */}
+          {railCategories.map((cat) => {
+            const isSelected =
+              selectedCategoryId === cat.id ||
+              selectedCategoryId === cat.slug ||
+              selectedCategoryId === cat.nameEn ||
+              selectedCategoryId === cat.nameHi;
+
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => onSelectCategory(isSelected ? undefined : cat.id)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '86px',
+                  maxWidth: '86px',
+                  padding: '10px 6px',
+                  borderRadius: '16px',
+                  border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+                  backgroundColor: isSelected ? 'rgba(79, 70, 229, 0.1)' : 'var(--bg-surface)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  textAlign: 'center',
+                  position: 'relative',
+                  boxShadow: isSelected ? '0 4px 14px rgba(79, 70, 229, 0.25)' : 'none',
+                }}
+              >
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '50%',
+                    backgroundColor: cat.color ? cat.color + '22' : 'rgba(99, 102, 241, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.4rem',
+                    marginBottom: '6px',
+                    border: isSelected ? '2px solid var(--color-primary)' : '1px solid transparent',
+                  }}
+                >
+                  {cat.icon}
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: isSelected ? 'var(--color-primary)' : 'var(--text-primary)',
+                    lineHeight: 1.15,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {isHindi ? cat.nameHi : cat.nameEn}
+                </span>
+
+                {isSelected && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-primary)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Check size={10} strokeWidth={3} />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Desktop Right Scroll Button */}
+        <button
+          type="button"
+          onClick={() => handleScroll('right')}
+          style={{
+            position: 'absolute',
+            right: '-12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: '1px solid var(--border-subtle)',
+            backgroundColor: 'var(--bg-surface)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 10,
+            color: 'var(--text-primary)',
+          }}
+          className="desktop-only-btn"
+          aria-label="Scroll right"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      {/* 4. Active Category Filter Banner */}
+      {activeMeta && (
+        <div
+          style={{
+            marginTop: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: 'rgba(79, 70, 229, 0.08)',
+            border: '1px solid rgba(79, 70, 229, 0.25)',
+            borderRadius: '14px',
+            padding: '8px 14px',
+            fontSize: '0.8rem',
+            color: 'var(--text-primary)',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.2rem' }}>{activeMeta.icon}</span>
+            <span>
+              {isHindi ? 'दिखा रहे हैं' : 'Filtered by'}:{' '}
+              <strong style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
+                {isHindi ? activeMeta.nameHi : activeMeta.nameEn}
+              </strong>
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onSelectCategory(undefined)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              border: 'none',
+              backgroundColor: 'rgba(79, 70, 229, 0.15)',
+              color: 'var(--color-primary)',
+              borderRadius: '8px',
+              padding: '4px 10px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+          >
+            <X size={13} />
+            <span>{isHindi ? 'फ़िल्टर हटाएं' : 'Clear'}</span>
           </button>
         </div>
       )}
+
+      {/* 5. Full Searchable Category Explorer Modal */}
+      <CategoryExplorerModal
+        isOpen={isExplorerOpen}
+        onClose={() => setIsExplorerOpen(false)}
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={onSelectCategory}
+      />
     </div>
   );
 }

@@ -178,9 +178,17 @@ export const ExploreShopsScreen = () => {
         (s.city || '').toLowerCase().includes(term) ||
         (s.address || '').toLowerCase().includes(term);
       const matchesOpen = openNowOnly ? Boolean(s.is_active) : true;
-      return matchesSearch && matchesOpen;
+      
+      let matchesCat = true;
+      if (selectedCategory && selectedCategory !== 'All') {
+        const catKey = selectedCategory.toLowerCase();
+        const sCat = (s.category || '').toLowerCase();
+        matchesCat = sCat.includes(catKey) || catKey.includes(sCat);
+      }
+
+      return matchesSearch && matchesOpen && matchesCat;
     });
-  }, [shops, debouncedSearch, openNowOnly]);
+  }, [shops, debouncedSearch, openNowOnly, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -199,9 +207,17 @@ export const ExploreShopsScreen = () => {
         0
       );
       const matchesStock = inStockOnly ? prodStock > 0 : true;
-      return matchesSearch && matchesStock;
+
+      let matchesCat = true;
+      if (selectedCategory && selectedCategory !== 'All') {
+        const catKey = selectedCategory.toLowerCase();
+        const pCat = (p.category_id || p.category_slug || p.category_name || p.category?.name || p.category?.slug || '').toLowerCase();
+        matchesCat = pCat.includes(catKey) || catKey.includes(pCat);
+      }
+
+      return matchesSearch && matchesStock && matchesCat;
     });
-  }, [products, debouncedSearch, inStockOnly]);
+  }, [products, debouncedSearch, inStockOnly, selectedCategory]);
 
   return (
     <AppLayout title={isHindi ? "शॉपमी हाइपरलोकल बाज़ार" : "QuickPick Local"} subtitle={isHindi ? "अपने आस-पास उपलब्ध सामान व दुकानें खोजें" : "Find In-Stock Products Around You"}>
