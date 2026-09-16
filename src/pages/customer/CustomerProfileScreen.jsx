@@ -1,271 +1,143 @@
-/**
- * Dedicated Customer Profile Screen
- * 
- * Professional English localization.
- */
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User,
   Phone,
   Mail,
-  ShoppingBag,
-  Store,
-  BookOpen,
+  MapPin,
+  ShieldCheck,
+  Globe,
+  Sun,
+  Moon,
   LogOut,
-  Camera,
   ChevronRight,
-  Shield,
-  HelpCircle,
+  ShieldAlert,
+  Award,
+  BookOpen,
+  FileText,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { uploadApi } from '../../api/upload.api';
 import { AppLayout } from '../../components/layout/AppLayout';
-import { getImageUrl } from '../../utils/imageUrl';
+import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { ThemeLanguageBar } from '../../components/common/ThemeLanguageBar';
+import { AddressesModal } from '../../components/customer/AddressesModal';
+import { ReportModal } from '../../components/customer/ReportModal';
+import { PrivacyPolicyModal } from '../../components/customer/PrivacyPolicyModal';
+import { getImageUrl } from '../../utils/imageUrl';
 
 export const CustomerProfileScreen = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUser } = useAuth();
-  const [avatarUploading, setAvatarUploading] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const { t, isHindi } = useLanguage();
 
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [showAddresses, setShowAddresses] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Image size must be less than 2MB.');
-      return;
-    }
-
-    try {
-      setAvatarUploading(true);
-      const data = await uploadApi.uploadUserAvatar(file);
-      updateUser({ avatar_url: data.avatar_url });
-      alert('Profile photo updated successfully!');
-    } catch (err) {
-      console.error('Avatar upload error:', err);
-      alert('Failed to upload avatar: ' + (err.message || 'Error'));
-    } finally {
-      setAvatarUploading(false);
-    }
-  };
+  if (!isAuthenticated || !user) {
+    return (
+      <AppLayout title={t('profile.my_profile')}>
+        <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+          <User size={48} color="var(--text-muted)" />
+          <h3 style={{ margin: '16px 0 8px 0' }}>{t('auth.login_title')}</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>{t('auth.login_subtitle')}</p>
+          <button onClick={() => navigate('/login')} className="btn btn-primary">
+            {t('nav.login')}
+          </button>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
+    if (window.confirm(t('auth.logout_confirm'))) {
       logout();
       navigate('/login');
     }
   };
 
   return (
-    <AppLayout title="My Account">
-      <div className="profile-container" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        
-        {/* User Card */}
-        <div className="card profile-user-card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '1.25rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
-          <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 1rem auto' }}>
-            <div style={{
-              width: '90px',
-              height: '90px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '2rem',
-              fontWeight: 700,
-              overflow: 'hidden',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
-            }}>
-              {user?.avatar_url ? (
-                <img 
-                  src={getImageUrl(user.avatar_url)} 
-                  alt={user?.name || 'Customer'} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                user?.name ? user.name[0].toUpperCase() : 'C'
-              )}
-            </div>
-
-            <label 
-              htmlFor="customer-avatar-upload"
-              style={{
-                position: 'absolute',
-                bottom: '0',
-                right: '0',
-                background: '#2563eb',
-                color: 'white',
-                padding: '6px',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Change profile photo"
-            >
-              <Camera size={16} />
-            </label>
-            <input 
-              id="customer-avatar-upload" 
-              type="file" 
-              accept="image/*" 
-              onChange={handleAvatarChange} 
-              style={{ display: 'none' }} 
-              disabled={avatarUploading}
-            />
-          </div>
-
-          {avatarUploading && (
-            <p style={{ fontSize: '0.8rem', color: '#60a5fa', marginBottom: '0.5rem' }}>Uploading photo...</p>
+    <AppLayout title={t('profile.my_profile')} subtitle={t('profile.manage_account')}>
+      {/* Profile Card */}
+      <div style={{ backgroundColor: 'var(--bg-card, var(--bg-surface))', borderRadius: '16px', border: '1px solid var(--border-subtle)', padding: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.4rem', overflow: 'hidden' }}>
+          {user.avatar_url ? (
+            <img src={getImageUrl(user.avatar_url)} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            (user.name || user.full_name || 'U').charAt(0).toUpperCase()
           )}
+        </div>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>{user.full_name || user.name}</h3>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{user.phone || user.email}</div>
+          <span className="badge badge-primary" style={{ marginTop: '6px' }}>{isHindi ? 'सत्यापित ग्राहक' : 'Verified Customer'}</span>
+        </div>
+      </div>
 
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
-            {user?.name || 'Customer'}
-          </h2>
-          <span style={{ 
-            display: 'inline-block', 
-            background: 'rgba(59, 130, 246, 0.15)', 
-            color: '#60a5fa', 
-            fontSize: '0.75rem', 
-            padding: '2px 10px', 
-            borderRadius: '12px',
-            fontWeight: 500,
-            marginBottom: '1rem'
-          }}>
-            Customer (Buyer)
-          </span>
+      {/* Settings Sections */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Theme and Language */}
+        <ThemeLanguageBar compact={false} />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left', background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-subtle)', padding: '0.85rem', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              <Phone size={16} style={{ color: '#3b82f6' }} />
-              <span>{user?.phone || 'No phone number linked'}</span>
+        {/* Saved Addresses */}
+        <div style={{ backgroundColor: 'var(--bg-card, var(--bg-surface))', borderRadius: '16px', border: '1px solid var(--border-subtle)', padding: '6px' }}>
+          <button
+            onClick={() => setShowAddresses(true)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <MapPin size={18} color="var(--color-primary)" />
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t('profile.saved_addresses')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              <Mail size={16} style={{ color: '#3b82f6' }} />
-              <span>{user?.email || 'No email address'}</span>
-            </div>
-          </div>
+            <ChevronRight size={16} color="var(--text-muted)" />
+          </button>
         </div>
 
-        {/* Action Shortcuts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          
-          <div 
-            onClick={() => navigate('/khata')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '1rem',
-              background: 'var(--bg-surface)',
-              borderRadius: '14px',
-              cursor: 'pointer',
-              border: '1px solid var(--border-subtle)'
-            }}
+        {/* Compliance & Legal */}
+        <div style={{ backgroundColor: 'var(--bg-card, var(--bg-surface))', borderRadius: '16px', border: '1px solid var(--border-subtle)', padding: '6px' }}>
+          <button
+            onClick={() => setShowReport(true)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid var(--border-subtle)' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(217, 119, 6, 0.15)', color: '#d97706', padding: '8px', borderRadius: '10px' }}>
-                <BookOpen size={20} />
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 700 }}>My Ledger &amp; Credit Passbook</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Store credit balance, UPI payments &amp; QR code</p>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <ShieldAlert size={18} color="#dc2626" />
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t('profile.grievance_redressal')}</span>
             </div>
-            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-          </div>
+            <ChevronRight size={16} color="var(--text-muted)" />
+          </button>
 
-          <div 
-            onClick={() => navigate('/reservations')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '1rem',
-              background: 'var(--bg-surface)',
-              borderRadius: '14px',
-              cursor: 'pointer',
-              border: '1px solid var(--border-subtle)'
-            }}
+          <button
+            onClick={() => setShowPrivacy(true)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '8px', borderRadius: '10px' }}>
-                <ShoppingBag size={20} />
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>My Store Reservations &amp; Pickups</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Items held for store pickup with OTP codes</p>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <FileText size={18} color="var(--color-primary)" />
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{t('profile.privacy_policy')}</span>
             </div>
-            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-          </div>
-
-          <div 
-            onClick={() => navigate('/')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '1rem',
-              background: 'var(--bg-surface)',
-              borderRadius: '14px',
-              cursor: 'pointer',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', padding: '8px', borderRadius: '10px' }}>
-                <Store size={20} />
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Nearby Stores</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Browse certified local stores in your area</p>
-              </div>
-            </div>
-            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-          </div>
-
+            <ChevronRight size={16} color="var(--text-muted)" />
+          </button>
         </div>
 
-        {/* Theme & Language Preferences Card */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <ThemeLanguageBar />
-        </div>
-
-        {/* Logout */}
+        {/* Logout Button */}
         <button
           onClick={handleLogout}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            padding: '0.9rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            color: '#f87171',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            transition: 'all 0.2s'
-          }}
+          className="btn btn-secondary"
+          style={{ width: '100%', color: 'var(--color-danger)', fontWeight: 800, padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
         >
-          <LogOut size={18} />
-          <span>Sign Out</span>
+          <LogOut size={16} />
+          <span>{t('nav.logout')}</span>
         </button>
 
+        <div style={{ textAlign: 'center', fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+          {t('profile.app_version')}
+        </div>
       </div>
+
+      {/* Modals */}
+      {showAddresses && <AddressesModal isOpen={showAddresses} onClose={() => setShowAddresses(false)} />}
+      {showReport && <ReportModal isOpen={showReport} onClose={() => setShowReport(false)} />}
+      {showPrivacy && <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />}
     </AppLayout>
   );
 };
+export default CustomerProfileScreen;

@@ -1,42 +1,33 @@
-/**
- * Customer App Bottom Navigation Bar
- * 
- * Ported from Flutter APK (QuickPick) tabs:
- * 1. Dukaanein (Explore Nearby Shops)
- * 2. Deals (Live Offers & Discounts Near You)
- * 3. Saved (Wishlist Products & Shops)
- * 4. Bookings (Customer Reservations & Pickups)
- * 5. Profile (Account & Switch to Merchant Mode)
- */
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Store, Tag, Heart, ShoppingBag, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const BottomNav = () => {
   const { isAuthenticated } = useAuth();
   const { savedProducts, savedShops } = useSaved();
-  const totalSaved = savedProducts.length + savedShops.length;
+  const { t } = useLanguage();
+  const totalSaved = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
   return (
-    <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
+    <nav className="bottom-nav" role="navigation" aria-label="Bottom Navigation">
       <NavLink
         to="/"
         end
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
-        <Store size={20} />
-        <span>Dukaanein</span>
+        <Store size={20} aria-hidden="true" />
+        <span>{t('nav.explore')}</span>
       </NavLink>
 
       <NavLink
         to="/deals"
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
-        <Tag size={20} />
-        <span>Deals</span>
+        <Tag size={20} aria-hidden="true" />
+        <span>{t('nav.deals')}</span>
       </NavLink>
 
       <NavLink
@@ -44,8 +35,8 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         style={{ position: 'relative' }}
       >
-        <Heart size={20} />
-        <span>Saved</span>
+        <Heart size={20} aria-hidden="true" />
+        <span>{t('nav.saved')}</span>
         {totalSaved > 0 && (
           <span
             style={{
@@ -73,17 +64,18 @@ export const BottomNav = () => {
         to="/reservations"
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
-        <ShoppingBag size={20} />
-        <span>Bookings</span>
+        <ShoppingBag size={20} aria-hidden="true" />
+        <span>{t('nav.reservations')}</span>
       </NavLink>
 
       <NavLink
         to={isAuthenticated ? "/profile" : "/login"}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
-        <User size={20} />
-        <span>{isAuthenticated ? 'Profile' : 'Login'}</span>
+        <User size={20} aria-hidden="true" />
+        <span>{isAuthenticated ? t('nav.profile') : t('nav.login')}</span>
       </NavLink>
     </nav>
   );
 };
+export default BottomNav;

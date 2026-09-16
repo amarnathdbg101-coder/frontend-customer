@@ -1,12 +1,6 @@
-/**
- * Reusable Shop Card Component
- * 
- * Extracted from ExploreShopsScreen — a self-contained, memoized shop card
- * with banner, logo, open/close status, distance, timing, and action buttons.
- */
-
 import React, { memo } from 'react';
-import { Store, MapPin, Clock, Heart, Phone, ArrowRight } from 'lucide-react';
+import { Store, MapPin, Clock, Heart, Phone, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { calculateDistanceKm, formatDistance } from '../../utils/distance';
 
@@ -18,6 +12,7 @@ const ShopCardInner = ({
   onClick,
   onNavigate,
 }) => {
+  const { t, isHindi } = useLanguage();
   const s = shop;
   const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
   const hasBanner = Array.isArray(s.banners) && s.banners.length > 0 && s.banners[0];
@@ -27,7 +22,7 @@ const ShopCardInner = ({
       className="card card-clickable shop-card"
       onClick={onClick}
       role="article"
-      aria-label={`Shop: ${s.name}, ${s.is_active ? 'Open Now' : 'Closed'}`}
+      aria-label={`${s.name}, ${s.is_active ? t('common.open_now') : t('common.closed')}`}
     >
       {/* Banner Preview */}
       {hasBanner && (
@@ -62,10 +57,11 @@ const ShopCardInner = ({
               <h3 className="shop-card-name">{s.name}</h3>
               <div className="shop-card-tags">
                 <span className="shop-card-tag-category">
-                  🏪 {s.category || 'General Store'}
+                  {s.category || (isHindi ? 'जनरल स्टोर' : 'General Store')}
                 </span>
-                <span className="shop-card-tag-verified">
-                  ✓ Verified
+                <span className="shop-card-tag-verified" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                  <CheckCircle2 size={11} color="#059669" />
+                  <span>{t('common.verified_shop')}</span>
                 </span>
               </div>
             </div>
@@ -86,7 +82,7 @@ const ShopCardInner = ({
           <div className="shop-card-status-row">
             <span className={`shop-card-status ${s.is_active ? 'open' : 'closed'}`}>
               <span className="shop-card-status-dot" />
-              {s.is_active ? 'OPEN NOW' : 'CLOSED'}
+              {s.is_active ? t('common.open_now') : t('common.closed')}
             </span>
             <span className="shop-card-timing">
               <Clock size={12} color="var(--text-muted)" aria-hidden="true" />
@@ -98,7 +94,7 @@ const ShopCardInner = ({
           <div className="shop-card-location">
             <MapPin size={13} color="var(--color-primary)" style={{ flexShrink: 0 }} aria-hidden="true" />
             <span className="shop-card-address">
-              {[s.address, s.city].filter(Boolean).join(', ') || 'Local Store'}
+              {[s.address, s.city].filter(Boolean).join(', ') || (isHindi ? 'स्थानीय दुकान' : 'Local Store')}
             </span>
             {distKm != null && (
               <span className="shop-card-distance">
@@ -111,13 +107,13 @@ const ShopCardInner = ({
 
       {/* Highlights */}
       <div className="shop-card-highlights">
-        <span>⚡ 30-Min Counter Pickup</span>
+        <span>{isHindi ? '⚡ 30-मिनट काउंटर पिकअप' : '⚡ 30-Min Counter Pickup'}</span>
         <span>•</span>
-        <span>✓ Live Stock</span>
+        <span>{isHindi ? 'लाइव स्टॉक' : 'Live Stock'}</span>
         {s.phone && (
           <>
             <span>•</span>
-            <span>💬 WhatsApp</span>
+            <span>WhatsApp</span>
           </>
         )}
       </div>
@@ -130,14 +126,14 @@ const ShopCardInner = ({
             className="btn btn-secondary btn-sm shop-card-call-btn"
             aria-label={`Call ${s.name}`}
           >
-            <Phone size={13} aria-hidden="true" /> Call
+            <Phone size={13} aria-hidden="true" /> {t('common.call_shop')}
           </a>
         )}
         <button
           onClick={() => onNavigate?.(`/shop/${s.slug}`)}
           className="btn btn-primary btn-sm shop-card-storefront-btn"
         >
-          <span>Storefront</span>
+          <span>{isHindi ? 'दुकान देखें' : 'View Store'}</span>
           <ArrowRight size={14} aria-hidden="true" />
         </button>
       </div>
@@ -146,3 +142,4 @@ const ShopCardInner = ({
 };
 
 export const ShopCard = memo(ShopCardInner);
+export default ShopCard;

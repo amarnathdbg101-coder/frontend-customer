@@ -1,12 +1,6 @@
-/**
- * Reusable Product Card Component
- * 
- * Extracted from ExploreShopsScreen — a self-contained, memoized product card
- * with image, brand, price, stock status, discount, and wishlist action.
- */
-
 import React, { memo } from 'react';
 import { Package, Heart, Store, Sparkles, Eye } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 
 const ProductCardInner = ({
@@ -15,6 +9,7 @@ const ProductCardInner = ({
   onToggleSave,
   onClick,
 }) => {
+  const { t, isHindi } = useLanguage();
   const p = product;
   const stock = Number(
     p.available_quantity ??
@@ -35,7 +30,7 @@ const ProductCardInner = ({
       className="card card-clickable product-card"
       onClick={onClick}
       role="article"
-      aria-label={`Product: ${p.name}, Price: ₹${p.price}`}
+      aria-label={`${p.name}, ₹${p.price}`}
     >
       {/* Image Box */}
       <div className="product-card-image-box">
@@ -55,7 +50,9 @@ const ProductCardInner = ({
         <span
           className={`product-card-stock-badge ${inStock ? 'in-stock' : 'out-of-stock'}`}
         >
-          {inStock ? `${stock} in stock` : 'Out of stock'}
+          {inStock 
+            ? (stock <= 5 ? t('products.low_stock') : t('products.in_stock'))
+            : t('products.out_of_stock')}
         </span>
 
         {/* Save/Wishlist */}
@@ -65,7 +62,7 @@ const ProductCardInner = ({
             onToggleSave?.(p);
           }}
           className="product-card-save-btn"
-          aria-label={isSaved ? `Remove ${p.name} from saved` : `Save ${p.name}`}
+          aria-label={isSaved ? `Remove ${p.name}` : `Save ${p.name}`}
         >
           <Heart size={16} color={isSaved ? '#ef4444' : '#64748b'} fill={isSaved ? '#ef4444' : 'none'} />
         </button>
@@ -81,7 +78,7 @@ const ProductCardInner = ({
         {/* Shop Name */}
         <div className="product-card-shop">
           <Store size={12} color="var(--text-muted)" aria-hidden="true" />
-          <span>{p.shop_name || 'Verified Store'}</span>
+          <span>{p.shop_name || (isHindi ? 'प्रमाणित स्टोर' : 'Verified Store')}</span>
         </div>
 
         {/* Price */}
@@ -105,12 +102,12 @@ const ProductCardInner = ({
           {allowBargain && inStock ? (
             <>
               <Sparkles size={13} aria-hidden="true" />
-              <span>Bhav-Taav</span>
+              <span>{isHindi ? 'भाव-ताव' : 'Offer Deal'}</span>
             </>
           ) : (
             <>
               <Eye size={13} aria-hidden="true" />
-              <span>Hold / View</span>
+              <span>{t('common.view_details')}</span>
             </>
           )}
         </button>
@@ -120,3 +117,4 @@ const ProductCardInner = ({
 };
 
 export const ProductCard = memo(ProductCardInner);
+export default ProductCard;

@@ -1,15 +1,3 @@
-/**
- * Desktop Navbar Component (Screens >= 1024px)
- * 
- * Hinglish Hint:
- * Laptop & Desktop screens ke liye top navigation bar:
- * - Brand logo ("ShopMe QuickPick")
- * - GPS Location pill with live detection
- * - Quick nav links: Explore Shops, Deals & Offers, My Pickups, Saved, Mera Khata
- * - Theme Switcher (Light / Dark)
- * - User Profile Avatar or Login button
- */
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
@@ -19,23 +7,21 @@ import {
   ShoppingBag,
   Heart,
   BookOpen,
-  User,
-  Sun,
-  Moon,
   Navigation,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from '../../context/LocationContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useSaved } from '../../context/SavedContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { ThemeLanguageBar } from '../common/ThemeLanguageBar';
 import { getImageUrl } from '../../utils/imageUrl';
 
 export const DesktopNavbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { locationName, detectLocation, isDetecting } = useLocation();
-  const { isDark, toggleTheme } = useTheme();
   const { savedProducts, savedShops } = useSaved();
+  const { t, isHindi } = useLanguage();
 
   const savedCount = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
@@ -46,6 +32,10 @@ export const DesktopNavbar = () => {
         <div
           onClick={() => navigate('/')}
           style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/')}
+          aria-label="ShopMe Home"
         >
           <div
             style={{
@@ -62,14 +52,14 @@ export const DesktopNavbar = () => {
               boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)',
             }}
           >
-            <Store size={22} />
+            <Store size={22} aria-hidden="true" />
           </div>
           <div>
             <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1 }}>
               ShopMe
             </div>
             <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
-              HYPERLOCAL RETAIL
+              {isHindi ? 'हाइपरलोकल मार्केट' : 'HYPERLOCAL RETAIL'}
             </div>
           </div>
         </div>
@@ -93,48 +83,48 @@ export const DesktopNavbar = () => {
             color: 'var(--text-primary)',
             transition: 'all 0.15s ease',
           }}
-          title="GPS se aas-paas ki location update karein"
+          aria-label={isHindi ? 'वर्तमान जीपीएस स्थान का पता लगाएं' : 'Detect GPS location'}
         >
-          <MapPin size={16} color="var(--color-primary)" />
+          <MapPin size={16} color="var(--color-primary)" aria-hidden="true" />
           <span style={{ maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {isDetecting ? 'Detecting GPS...' : locationName || 'Darbhanga, Bihar'}
+            {isDetecting ? (isHindi ? 'स्थान खोजा जा रहा है...' : 'Detecting GPS...') : locationName || (isHindi ? 'स्थानीय बाजार' : 'Nearby Market')}
           </span>
-          <Navigation size={12} color="var(--text-muted)" />
+          <Navigation size={12} color="var(--text-muted)" aria-hidden="true" />
         </button>
 
         {/* Navigation Links */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }} aria-label="Desktop Navigation">
           <NavLink
             to="/"
             end
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
-            <Store size={18} />
-            <span>Explore Shops</span>
+            <Store size={18} aria-hidden="true" />
+            <span>{t('nav.explore')}</span>
           </NavLink>
 
           <NavLink
             to="/deals"
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
-            <Tag size={18} />
-            <span>Deals & Offers</span>
+            <Tag size={18} aria-hidden="true" />
+            <span>{t('nav.deals')}</span>
           </NavLink>
 
           <NavLink
             to="/reservations"
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
-            <ShoppingBag size={18} />
-            <span>My Pickups</span>
+            <ShoppingBag size={18} aria-hidden="true" />
+            <span>{t('nav.reservations')}</span>
           </NavLink>
 
           <NavLink
             to="/saved"
             className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
           >
-            <Heart size={18} />
-            <span>Saved</span>
+            <Heart size={18} aria-hidden="true" />
+            <span>{t('nav.saved')}</span>
             {savedCount > 0 && <span className="nav-badge" style={{ position: 'static', marginLeft: '4px' }}>{savedCount}</span>}
           </NavLink>
 
@@ -143,32 +133,15 @@ export const DesktopNavbar = () => {
               to="/khata"
               className={({ isActive }) => `desktop-nav-link ${isActive ? 'active' : ''}`}
             >
-              <BookOpen size={18} />
-              <span>Mera Khata</span>
+              <BookOpen size={18} aria-hidden="true" />
+              <span>{t('nav.khata')}</span>
             </NavLink>
           )}
         </nav>
 
-        {/* Utilities: Theme switch & Profile */}
+        {/* Compact Theme & Language Bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: '16px' }}>
-          <button
-            onClick={toggleTheme}
-            style={{
-              background: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '50%',
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-primary)',
-            }}
-            title={isDark ? 'Light Mode' : 'Dark Mode'}
-          >
-            {isDark ? <Sun size={17} color="#fbbf24" /> : <Moon size={17} />}
-          </button>
+          <ThemeLanguageBar compact={true} />
 
           {isAuthenticated && user ? (
             <button
@@ -183,6 +156,7 @@ export const DesktopNavbar = () => {
                 borderRadius: 'var(--radius-full)',
                 cursor: 'pointer',
               }}
+              aria-label={t('nav.profile')}
             >
               <div
                 style={{
@@ -210,7 +184,7 @@ export const DesktopNavbar = () => {
                 )}
               </div>
               <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {user.name || user.full_name || 'My Account'}
+                {user.name || user.full_name || t('nav.profile')}
               </span>
             </button>
           ) : (
@@ -219,7 +193,7 @@ export const DesktopNavbar = () => {
               className="btn btn-primary btn-sm"
               style={{ padding: '7px 16px', fontWeight: 700 }}
             >
-              Login
+              {t('nav.login')}
             </button>
           )}
         </div>
@@ -227,3 +201,4 @@ export const DesktopNavbar = () => {
     </header>
   );
 };
+export default DesktopNavbar;

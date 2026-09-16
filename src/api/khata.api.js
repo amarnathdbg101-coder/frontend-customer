@@ -1,4 +1,4 @@
-﻿import client from "./client";
+import client from "./client";
 
 export const customerKhataApi = {
   getSummary: async () => {
@@ -28,6 +28,12 @@ export const customerKhataApi = {
     const res = await client.post(`/customer/khata/${khataId}/promise-date`, {
       promise_date: promiseDate,
       note,
+    });
+    return res.data;
+  },
+  setCreditOTPProtection: async (khataId, enabled) => {
+    const res = await client.post(`/customer/khata/${khataId}/otp-protection`, {
+      otp_required: enabled,
     });
     return res.data;
   },
