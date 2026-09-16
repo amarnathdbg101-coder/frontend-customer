@@ -57,6 +57,7 @@ export const ExploreShopsScreen = () => {
   const navigate = useNavigate();
   const { coords, locationName, radiusKm, setRadiusKm, detectLocation, isDetecting } = useLocation();
   const { isProductSaved, toggleSaveProduct, isShopSaved, toggleSaveShop } = useSaved();
+  const { isHindi, language, t } = useLanguage();
 
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
