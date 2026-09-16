@@ -1,0 +1,17 @@
+{
+  "name": "ShopSilo - Hyperlocal Retail Marketplace",
+  "short_name": "ShopSilo",
+  "description": "Discover neighborhood stores, real-time inventory, and instant counter pickup with ShopSilo.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
