@@ -59,7 +59,7 @@ export const RegisterScreen = () => {
   };
 
   return (
-    <AppLayout title="ShopMe" subtitle="Naya Khata Banayein" hideNav={true} showBack={true}>
+    <AppLayout title="ShopSilo" subtitle="Naya Khata Banayein" hideNav={true} showBack={true}>
       <div style={{ paddingTop: '10px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
@@ -79,7 +79,7 @@ export const RegisterScreen = () => {
           </div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Account Banayein</h1>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            ShopMe par shopping shuru karein 2 minute me
+            ShopSilo par shopping shuru karein 2 minute me
           </p>
         </div>
 

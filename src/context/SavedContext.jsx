@@ -5,7 +5,7 @@ const SavedContext = createContext(null);
 export const SavedProvider = ({ children }) => {
   const [savedProducts, setSavedProducts] = useState(() => {
     try {
-      const saved = localStorage.getItem('shopme_saved_products');
+      const saved = localStorage.getItem('shopsilo_saved_products');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -14,7 +14,7 @@ export const SavedProvider = ({ children }) => {
 
   const [savedShops, setSavedShops] = useState(() => {
     try {
-      const saved = localStorage.getItem('shopme_saved_shops');
+      const saved = localStorage.getItem('shopsilo_saved_shops');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -22,11 +22,11 @@ export const SavedProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem('shopme_saved_products', JSON.stringify(savedProducts));
+    localStorage.setItem('shopsilo_saved_products', JSON.stringify(savedProducts));
   }, [savedProducts]);
 
   useEffect(() => {
-    localStorage.setItem('shopme_saved_shops', JSON.stringify(savedShops));
+    localStorage.setItem('shopsilo_saved_shops', JSON.stringify(savedShops));
   }, [savedShops]);
 
   const toggleSaveProduct = (product) => {

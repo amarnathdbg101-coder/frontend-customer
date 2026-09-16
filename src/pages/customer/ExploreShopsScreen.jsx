@@ -220,8 +220,8 @@ export const ExploreShopsScreen = () => {
   }, [products, debouncedSearch, inStockOnly, selectedCategory]);
 
   return (
-    <AppLayout title={isHindi ? "शॉपमी हाइपरलोकल बाज़ार" : "QuickPick Local"} subtitle={isHindi ? "अपने आस-पास उपलब्ध सामान व दुकानें खोजें" : "Find In-Stock Products Around You"}>
-      <title>ShopMe — Explore Nearby Shops &amp; Products</title>
+    <AppLayout title={isHindi ? "शॉपसिलो हाइपरलोकल बाज़ार" : "QuickPick Local"} subtitle={isHindi ? "अपने आस-पास उपलब्ध सामान व दुकानें खोजें" : "Find In-Stock Products Around You"}>
+      <title>ShopSilo — Explore Nearby Shops &amp; Products</title>
 
       {/* GPS Header Bar */}
       <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', marginBottom: '14px' }}>

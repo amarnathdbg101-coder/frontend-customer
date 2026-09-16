@@ -8,7 +8,7 @@ export const CustomerKhataQRModal = ({ isOpen, onClose }) => {
   if (!isOpen || !user) return null;
 
   const phone = user.phone || '9876543210';
-  const qrData = `shopme://customer/${phone}?id=${user.id}&name=${encodeURIComponent(user.name || 'Customer')}`;
+  const qrData = `shopsilo://customer/${phone}?id=${user.id}&name=${encodeURIComponent(user.name || 'Customer')}`;
 
   return (
     <div

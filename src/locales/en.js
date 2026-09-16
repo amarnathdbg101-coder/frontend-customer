@@ -1,5 +1,5 @@
 export default {
-  "app_name": "ShopMe Hyperlocal Market",
+  "app_name": "ShopSilo Hyperlocal Market",
   "tagline": "Discover verified neighborhood shops, real-time stock & instant counter pickups",
   "nav": {
     "explore": "Explore Shops",
@@ -62,7 +62,7 @@ export default {
     "verified_shop": "Verified Merchant"
   },
   "auth": {
-    "login_title": "Welcome Back to ShopMe",
+    "login_title": "Welcome Back to ShopSilo",
     "login_subtitle": "Enter your credentials to manage your orders, saved items, and khata ledger",
     "register_title": "Create Your Account",
     "register_subtitle": "Join your local marketplace for fast reservations and exclusive discounts",
@@ -87,7 +87,7 @@ export default {
     "invalid_password": "Password must be at least 6 characters long",
     "passwords_mismatch": "Passwords do not match",
     "login_success": "Signed in successfully!",
-    "register_success": "Account created successfully! Welcome to ShopMe.",
+    "register_success": "Account created successfully! Welcome to ShopSilo.",
     "logout_confirm": "Are you sure you want to sign out?"
   },
   "products": {
@@ -204,7 +204,7 @@ export default {
     "grievance_redressal": "Grievance Redressal (IT Rules 2021)",
     "privacy_policy": "Privacy Policy",
     "terms_of_service": "Terms of Service",
-    "app_version": "ShopMe Hyperlocal Web App v2.5.0"
+    "app_version": "ShopSilo Hyperlocal Web App v2.5.0"
   },
   "reviews": {
     "store_reviews": "Store Reviews",
@@ -220,8 +220,8 @@ export default {
     "title": "Grievance Redressal Mechanism",
     "subtitle": "Under Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021",
     "officer_name": "Grievance Officer: Vikramaditya Sharma",
-    "officer_email": "grievance@shopme.market",
-    "officer_address": "ShopMe Technologies India Pvt. Ltd., Tech Corridor, Sector 62, Noida, UP 201309",
+    "officer_email": "grievance@shopsilo.in",
+    "officer_address": "ShopSilo Technologies India Pvt. Ltd., Tech Corridor, Sector 62, Noida, UP 201309",
     "report_issue": "File a Formal Grievance",
     "reason_label": "Subject / Category of Concern",
     "reason_counterfeit": "Counterfeit / Expired Product",

@@ -221,7 +221,7 @@ export const CustomerKhataScreen = () => {
 
   return (
     <AppLayout title="Mera Khata (Passbook)" subtitle="Aapke Udhar aur Jama Ka Hisaab">
-      <title>Mera Khata & Udhar Passbook — ShopMe</title>
+      <title>Mera Khata & Udhar Passbook — ShopSilo</title>
 
       {/* Top Banner & Summary Card */}
       <div
@@ -1054,7 +1054,7 @@ export const CustomerKhataScreen = () => {
                 boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
               }}
             >
-              <RealQRCode value={"SHOPME-CUSTOMER-KHATA:" + (user?.phone || user?.id || "")} size={200} logoText="KHATA" showDownload={true} downloadFilename={"my-khata-qr-" + (user?.phone || "")} />
+              <RealQRCode value={"SHOPSILO-CUSTOMER-KHATA:" + (user?.phone || user?.id || "")} size={200} logoText="KHATA" showDownload={true} downloadFilename={"my-khata-qr-" + (user?.phone || "")} />
             </div>
 
             <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>

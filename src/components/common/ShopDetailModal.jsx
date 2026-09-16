@@ -47,7 +47,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
       navigator
         .share({
           title: shop.name,
-          text: `Check out ${shop.name} on ShopMe Local!`,
+          text: `Check out ${shop.name} on ShopSilo Local!`,
           url: shopUrl,
         })
         .catch(() => {});
@@ -268,7 +268,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                     gap: '4px',
                   }}
                 >
-                  <ShieldCheck size={12} /> Verified ShopMe Partner
+                  <ShieldCheck size={12} /> Verified ShopSilo Partner
                 </span>
                 <span
                   style={{
@@ -330,7 +330,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
 
             {shop.phone && (
               <a
-                href={`https://wa.me/91${shop.phone.replace(/[^0-9]/g, '')}?text=Namaste%20${encodeURIComponent(shop.name)}%2C%20ShopMe%20se%20sampark%20kar%20raha%20hu.`}
+                href={`https://wa.me/91${shop.phone.replace(/[^0-9]/g, '')}?text=Namaste%20${encodeURIComponent(shop.name)}%2C%20ShopSilo%20se%20sampark%20kar%20raha%20hu.`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn"
@@ -514,7 +514,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
             }}
           >
             <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e40af', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Sparkles size={14} /> SHOPME CUSTOMER ASSURANCE
+              <Sparkles size={14} /> SHOPSILO CUSTOMER ASSURANCE
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem', color: '#1e3a8a' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

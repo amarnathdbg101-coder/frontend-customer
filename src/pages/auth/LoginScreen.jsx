@@ -75,7 +75,7 @@ export const LoginScreen = () => {
   };
 
   return (
-    <AppLayout title="ShopMe" subtitle="Apni Dukan Ka Smart App" hideNav={true}>
+    <AppLayout title="ShopSilo" subtitle="Apni Dukan Ka Smart App" hideNav={true}>
       <div style={{ paddingTop: '20px' }}>
         {/* Brand Banner */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>

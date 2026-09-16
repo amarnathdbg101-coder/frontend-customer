@@ -190,7 +190,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
             </button>
           )}
           <div style={{ textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '10px' }}>
-            ShopMe Customer Portal • v1.0
+            ShopSilo Customer Portal • v1.0
           </div>
         </div>
       </aside>

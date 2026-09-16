@@ -1,5 +1,5 @@
 /**
- * ShopMe Customer Web Application Router
+ * ShopSilo Customer Web Application Router
  * 
  * Ported from Flutter APK (QuickPick) routes:
  * - '/'             -> Nearby discovery with GPS & Radius slider

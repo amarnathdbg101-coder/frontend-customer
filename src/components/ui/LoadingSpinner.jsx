@@ -1,7 +1,7 @@
 /**
  * Branded Loading Spinner
  * 
- * Centered full-height spinner with ShopMe branding.
+ * Centered full-height spinner with ShopSilo branding.
  * Used as Suspense fallback and route-level loading state.
  */
 

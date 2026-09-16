@@ -61,7 +61,7 @@ export const DesktopNavbar = () => {
           </div>
           <div>
             <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1 }}>
-              ShopMe
+              ShopSilo
             </div>
             <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
               {isHindi ? 'हाइपरलोकल बाज़ार' : 'HYPERLOCAL RETAIL'}

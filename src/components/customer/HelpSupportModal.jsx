@@ -60,7 +60,7 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Customer Support &amp; Help Desk</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>24x7 Assistant for ShopMe Shoppers</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>24x7 Assistant for ShopSilo Shoppers</span>
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
@@ -70,7 +70,7 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <a
-            href="https://wa.me/919876543210?text=Namaste%20ShopMe%20Support%20mujhe%20madad%20chahiye"
+            href="https://wa.me/919876543210?text=Namaste%20ShopSilo%20Support%20mujhe%20madad%20chahiye"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -155,7 +155,7 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '10px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
           <ShieldCheck size={16} color="#3b82f6" />
-          <span>Grievance Officer: support@shopme.in | IT Rules 2021 Compliance</span>
+          <span>Grievance Officer: support@shopsilo.in | IT Rules 2021 Compliance</span>
         </div>
       </div>
     </div>

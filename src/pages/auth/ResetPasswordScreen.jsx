@@ -48,7 +48,7 @@ export const ResetPasswordScreen = () => {
   };
 
   return (
-    <AppLayout title="ShopMe" subtitle="Reset Password" hideNav={true}>
+    <AppLayout title="ShopSilo" subtitle="Reset Password" hideNav={true}>
       <div style={{ paddingTop: '20px' }}>
         {/* Banner */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>

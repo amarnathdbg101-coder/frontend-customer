@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Home, Briefcase, Plus, CheckCircle2, Trash2 } from 'lucide-react';
 import { AddAddressForm } from './AddAddressForm';
 
-const STORAGE_KEY = 'shopme_customer_addresses';
+const STORAGE_KEY = 'shopsilo_customer_addresses';
 
 export const AddressesModal = ({ isOpen, onClose }) => {
   const [addresses, setAddresses] = useState([]);

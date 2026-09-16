@@ -49,7 +49,7 @@ export const PrivacyPolicyModal = ({ isOpen, onClose }) => {
           <div>
             <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)', fontSize: '0.9rem' }}>1. Data Protection &amp; Security</h4>
             <p style={{ margin: 0 }}>
-              ShopMe values your privacy. Your phone number, name, and address are strictly used for in-store pickup reservations and Digital Khata records with local shopkeepers.
+              ShopSilo values your privacy. Your phone number, name, and address are strictly used for in-store pickup reservations and Digital Khata records with local shopkeepers.
             </p>
           </div>
 
@@ -69,7 +69,7 @@ export const PrivacyPolicyModal = ({ isOpen, onClose }) => {
 
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              Last updated: September 2026 | ShopMe Hyperlocal Commerce Network
+              Last updated: September 2026 | ShopSilo Hyperlocal Commerce Network
             </span>
           </div>
         </div>

@@ -61,7 +61,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
 
           <div>
             <div className="header-title">
-              {title || (shop ? shop.name : (isHindi ? 'शॉपमी' : 'ShopMe'))}
+              {title || (shop ? shop.name : (isHindi ? 'शॉपसिलो' : 'ShopSilo'))}
             </div>
             {subtitle ? (
               <div className="header-subtitle">{subtitle}</div>

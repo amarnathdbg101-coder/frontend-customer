@@ -6,7 +6,7 @@ const DEFAULT_COORDS = { lat: 26.1542, lng: 85.8918 }; // Default city coordinat
 
 export const LocationProvider = ({ children }) => {
   const [coords, setCoords] = useState(() => {
-    const saved = localStorage.getItem('shopme_customer_coords');
+    const saved = localStorage.getItem('shopsilo_customer_coords');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -16,11 +16,11 @@ export const LocationProvider = ({ children }) => {
   });
 
   const [locationName, setLocationName] = useState(() => {
-    return localStorage.getItem('shopme_customer_loc_name') || 'Local Area';
+    return localStorage.getItem('shopsilo_customer_loc_name') || 'Local Area';
   });
 
   const [radiusKm, setRadiusKm] = useState(() => {
-    const saved = localStorage.getItem('shopme_customer_radius');
+    const saved = localStorage.getItem('shopsilo_customer_radius');
     return saved ? parseFloat(saved) : 5; // Default 5 km radius
   });
 
@@ -28,15 +28,15 @@ export const LocationProvider = ({ children }) => {
   const [gpsError, setGpsError] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('shopme_customer_coords', JSON.stringify(coords));
+    localStorage.setItem('shopsilo_customer_coords', JSON.stringify(coords));
   }, [coords]);
 
   useEffect(() => {
-    localStorage.setItem('shopme_customer_loc_name', locationName);
+    localStorage.setItem('shopsilo_customer_loc_name', locationName);
   }, [locationName]);
 
   useEffect(() => {
-    localStorage.setItem('shopme_customer_radius', radiusKm.toString());
+    localStorage.setItem('shopsilo_customer_radius', radiusKm.toString());
   }, [radiusKm]);
 
   // Detect location via device GPS

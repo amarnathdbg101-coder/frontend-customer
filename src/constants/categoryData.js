@@ -1,5 +1,5 @@
 /**
- * ShopMe Hyperlocal Category Taxonomy & Metadata
+ * ShopSilo Hyperlocal Category Taxonomy & Metadata
  * Comprehensive bilingual (English & Hindi) category data with departments, icons, and keyword search
  */
 
