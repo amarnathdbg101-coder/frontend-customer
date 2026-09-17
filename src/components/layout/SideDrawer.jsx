@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronRight,
   PlusCircle,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -21,7 +22,7 @@ import { getImageUrl } from '../../utils/imageUrl';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isMerchant, logout } = useAuth();
   const { isHindi } = useLanguage();
 
   if (!isOpen) return null;
@@ -29,6 +30,11 @@ export const SideDrawer = ({ isOpen, onClose }) => {
   const handleNavigate = (path) => {
     onClose();
     navigate(path);
+  };
+
+  const handleOpenMerchantDashboard = () => {
+    onClose();
+    window.open('https://shop.shopsilo.in', '_blank');
   };
 
   const handleCreateShop = () => {
@@ -128,6 +134,20 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 <div className="drawer-link-sub">{isHindi ? 'उधार बही, ऑनलाइन यूपीआई भुगतान' : 'Udhar ledger, UPI payments & balance'}</div>
               </div>
               <ChevronRight size={16} color="var(--text-muted)" />
+            </button>
+
+            {/* Merchant Dashboard / Dukan OS */}
+            <button className="drawer-link-btn" onClick={handleOpenMerchantDashboard} style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.15)' }}>
+              <div className="drawer-icon-bubble" style={{ background: 'var(--color-primary)', color: '#ffffff' }}>
+                <LayoutDashboard size={18} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div className="drawer-link-title" style={{ color: 'var(--color-primary)', fontWeight: 900 }}>
+                  {isMerchant ? (isHindi ? 'दुकानदार डैशबोर्ड' : 'Merchant Dashboard') : (isHindi ? 'दुकानदार लॉगिन / डैशबोर्ड' : 'Merchant Login / Dashboard')}
+                </div>
+                <div className="drawer-link-sub">{isHindi ? 'पीओएस बिलिंग, स्टॉक, खाता व दैनिक लाभ' : 'POS Billing, Stock, Khata & Daily Profit'}</div>
+              </div>
+              <ChevronRight size={16} color="var(--color-primary)" />
             </button>
 
             {/* Menu item: Shop bnane ka option */}

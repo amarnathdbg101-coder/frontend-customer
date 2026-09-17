@@ -55,6 +55,26 @@ const ProtectedCustomerRoute = ({ children }) => {
   return children;
 };
 
+// Direct URL Redirect Helper for Merchant OS & Admin
+const ExternalRedirect = ({ url }) => {
+  const { isHindi } = useLanguage();
+  React.useEffect(() => {
+    window.location.href = url;
+  }, [url]);
+
+  return (
+    <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-primary)' }}>
+      <LoadingSpinner message={isHindi ? "दुकानदार डैशबोर्ड पर भेजा जा रहा है..." : "Redirecting to ShopSilo Merchant OS..."} fullScreen />
+      <p style={{ marginTop: '20px', color: 'var(--text-secondary)' }}>
+        {isHindi ? 'यदि स्वतः रीडायरेक्ट नहीं होता है, तो ' : 'If not redirected automatically, '}
+        <a href={url} style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
+          {isHindi ? 'यहाँ क्लिक करें' : 'click here'}
+        </a>
+      </p>
+    </div>
+  );
+};
+
 function App() {
   return (
     <ErrorBoundary>
@@ -101,6 +121,19 @@ function App() {
                       <Route path="/login" element={<LoginScreen />} />
                       <Route path="/register" element={<RegisterScreen />} />
                       <Route path="/reset-password" element={<ResetPasswordScreen />} />
+
+                      {/* Merchant OS & Dashboard Redirects */}
+                      <Route path="/dashboard" element={<ExternalRedirect url="https://shop.shopsilo.in/merchant" />} />
+                      <Route path="/merchant" element={<ExternalRedirect url="https://shop.shopsilo.in/merchant" />} />
+                      <Route path="/merchant/*" element={<ExternalRedirect url="https://shop.shopsilo.in/merchant" />} />
+                      <Route path="/seller" element={<ExternalRedirect url="https://shop.shopsilo.in/merchant" />} />
+                      <Route path="/pos" element={<ExternalRedirect url="https://shop.shopsilo.in/pos" />} />
+                      <Route path="/inventory" element={<ExternalRedirect url="https://shop.shopsilo.in/inventory" />} />
+                      <Route path="/expenses" element={<ExternalRedirect url="https://shop.shopsilo.in/expenses" />} />
+
+                      {/* Admin Portal Redirects */}
+                      <Route path="/admin" element={<ExternalRedirect url="https://admin.shopsilo.in" />} />
+                      <Route path="/admin/*" element={<ExternalRedirect url="https://admin.shopsilo.in" />} />
 
                       {/* Fallback */}
                       <Route path="*" element={<Navigate to="/" replace />} />

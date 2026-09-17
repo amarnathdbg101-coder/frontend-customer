@@ -19,7 +19,9 @@ export default {
     "help": "सहायता एवं समर्थन",
     "privacy": "गोपनीयता एवं शर्तें",
     "report": "शिकायत निवारण (आईटी नियम 2021)",
-    "create_shop": "दुकान बनाएं"
+    "create_shop": "दुकान बनाएं",
+    "merchant_dashboard": "दुकानदार डैशबोर्ड",
+    "merchant_login": "दुकानदार लॉगिन"
   },
   "common": {
     "save": "सुरक्षित करें",

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Login Screen
  * 
  * Hinglish Hint:
@@ -235,6 +235,44 @@ export const LoginScreen = () => {
           >
             Yahan Register Karein
           </Link>
+        </div>
+
+        {/* Merchant Portal Direct Access Banner */}
+        <div
+          style={{
+            marginTop: '24px',
+            padding: '14px 16px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%)',
+            border: '1px solid rgba(79, 70, 229, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--color-primary)' }}>
+              🏪 क्या आप दुकानदार (Merchant) हैं?
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              POS बिलिंग व दुकान डैशबोर्ड के लिए मर्चेंट पोर्टल पर लॉगिन करें।
+            </div>
+          </div>
+          <a
+            href="https://shop.shopsilo.in/login"
+            className="btn btn-sm btn-primary"
+            style={{
+              whiteSpace: 'nowrap',
+              textDecoration: 'none',
+              padding: '6px 14px',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              borderRadius: 'var(--radius-full)',
+            }}
+          >
+            मर्चेंट लॉगिन 👉
+          </a>
         </div>
 
         {/* Forgot Password Modal */}

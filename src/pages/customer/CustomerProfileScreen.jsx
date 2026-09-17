@@ -15,6 +15,7 @@ import {
   LogOut,
   Camera,
   ChevronRight,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -25,7 +26,7 @@ import { ThemeLanguageBar } from '../../components/common/ThemeLanguageBar';
 
 export const CustomerProfileScreen = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, isMerchant } = useAuth();
   const { isHindi, t } = useLanguage();
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -178,6 +179,40 @@ export const CustomerProfileScreen = () => {
         {/* Action Shortcuts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
           
+          {/* Merchant OS Terminal Tile */}
+          <a
+            href="https://shop.shopsilo.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1.5px solid rgba(79, 70, 229, 0.25)',
+              boxShadow: 'var(--shadow-xs)',
+              textDecoration: 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'var(--color-primary)', color: '#ffffff', padding: '10px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LayoutDashboard size={20} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--color-primary)', fontWeight: 800 }}>
+                  {isMerchant ? (isHindi ? '🏪 दुकानदार डैशबोर्ड (Merchant OS)' : '🏪 Open Merchant Dashboard') : (isHindi ? '🏪 दुकानदार पोर्टल व बिलिंग काउंटर' : '🏪 Merchant Portal & Billing OS')}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {isHindi ? 'POS काउंटर, लाइव स्टॉक, डिजिटल खाता व रिपोर्ट्स' : 'Access POS Counter, Live Inventory, Khata & Analytics'}
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={18} style={{ color: 'var(--color-primary)' }} />
+          </a>
+
           <div 
             onClick={() => navigate('/khata')}
             style={{

@@ -1,4 +1,41 @@
 {
+  "redirects": [
+    {
+      "source": "/dashboard",
+      "destination": "https://shop.shopsilo.in/merchant",
+      "permanent": false
+    },
+    {
+      "source": "/merchant",
+      "destination": "https://shop.shopsilo.in/merchant",
+      "permanent": false
+    },
+    {
+      "source": "/merchant/:path*",
+      "destination": "https://shop.shopsilo.in/merchant/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/seller",
+      "destination": "https://shop.shopsilo.in/merchant",
+      "permanent": false
+    },
+    {
+      "source": "/pos",
+      "destination": "https://shop.shopsilo.in/pos",
+      "permanent": false
+    },
+    {
+      "source": "/inventory",
+      "destination": "https://shop.shopsilo.in/inventory",
+      "permanent": false
+    },
+    {
+      "source": "/expenses",
+      "destination": "https://shop.shopsilo.in/expenses",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

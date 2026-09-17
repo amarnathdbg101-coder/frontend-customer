@@ -19,7 +19,9 @@ export default {
     "help": "Help & Support",
     "privacy": "Privacy & Terms",
     "report": "Grievance Redressal (IT Rules 2021)",
-    "create_shop": "Create Shop"
+    "create_shop": "Create Shop",
+    "merchant_dashboard": "Merchant Dashboard",
+    "merchant_login": "Merchant Login"
   },
   "common": {
     "save": "Save",
