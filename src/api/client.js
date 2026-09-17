@@ -19,7 +19,7 @@ const client = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 45000,
+  timeout: 15000,
 });
 
 // Request Interceptor: Attach JWT Token automatically if user is logged in

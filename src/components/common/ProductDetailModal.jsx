@@ -18,11 +18,8 @@ import {
   ShoppingBag,
   Package,
   Layers,
-  Tag,
   CheckCircle,
-  AlertCircle,
   Copy,
-  Clock,
   ChevronLeft,
   ChevronRight,
   Store,
@@ -33,11 +30,9 @@ import {
   MessageSquare,
   Send,
   Bell,
-  ArrowRight,
   ShoppingCart,
   Plus,
   Minus,
-  Star,
 } from 'lucide-react';
 import { getCategoryEmoji } from '../../utils/categoryMeta';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -54,13 +49,10 @@ export const ProductDetailModal = ({
   onAdjustStock,
   isMerchant = false,
 }) => {
-  if (!product) return null;
-
   const { user } = useAuth();
-  const { addItem, isInCart, getItemQuantity, openCart } = useCart();
-  const { t, isHindi } = useLanguage();
+  const { addItem, openCart } = useCart();
+  const { t } = useLanguage();
 
-  const images = product.images && product.images.length > 0 ? product.images : [];
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [copiedSKU, setCopiedSKU] = useState(false);
 
@@ -76,21 +68,24 @@ export const ProductDetailModal = ({
 
   // Bargaining State
   const [showBargainBox, setShowBargainBox] = useState(false);
-  const [offerPrice, setOfferPrice] = useState(Math.round(product.price * 0.9));
+  const [offerPrice, setOfferPrice] = useState(product?.price ? Math.round(product.price * 0.9) : 0);
   const [offerQty, setOfferQty] = useState(1);
   const [offerPhone, setOfferPhone] = useState(user?.phone || '');
-  const [offerName, setOfferName] = useState(user?.name || user?.full_name || '');
+  const [offerName] = useState(user?.name || user?.full_name || '');
   const [submittingOffer, setSubmittingOffer] = useState(false);
   const [offerResult, setOfferResult] = useState(null);
   const [offerError, setOfferError] = useState(null);
 
   // Stock alert state
   const [alertPhone, setAlertPhone] = useState(user?.phone || '');
-  const [alertName, setAlertName] = useState(user?.name || user?.full_name || '');
+  const [alertName] = useState(user?.name || user?.full_name || '');
   const [subscribingAlert, setSubscribingAlert] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState(false);
   const [alertError, setAlertError] = useState(null);
 
+  if (!product) return null;
+
+  const images = product.images && product.images.length > 0 ? product.images : [];
   const currentStock = Number(
     product.available_quantity ??
     product.stock_quantity ??

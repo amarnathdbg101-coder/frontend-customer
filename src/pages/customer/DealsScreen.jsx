@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, MapPin, Store, Navigation, Sparkles, Clock } from 'lucide-react';
+import { Tag, MapPin, Store, Navigation, Sparkles } from 'lucide-react';
 import { dealsApi } from '../../api/deals.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { calculateDistanceKm, formatDistance } from '../../utils/distance';
 import { getImageUrl } from '../../utils/imageUrl';
 
@@ -12,6 +13,7 @@ const CATEGORIES = ['All', 'Electronics', 'Kirana & Grocery', 'Pharmacy', 'Fashi
 export const DealsScreen = () => {
   const navigate = useNavigate();
   const { coords } = useLocation();
+  const { isHindi, t } = useLanguage();
 
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,12 @@ export const DealsScreen = () => {
   };
 
   return (
-    <AppLayout title="Deals Near You" subtitle="Aas-Paas Ke Live Offers">
+    <AppLayout
+      title={isHindi ? 'लाइव बचत व ऑफर्स' : 'Deals & Flash Offers'}
+      subtitle={isHindi ? 'अपने आस-पास की दुकानों के विशेष डिस्काउंट' : 'Exclusive discounts from nearby stores'}
+    >
+      <title>{isHindi ? 'लाइव डील्स — शॉपसिलो' : 'Live Deals — ShopSilo'}</title>
+
       {/* Category Pills */}
       <div
         style={{
@@ -59,7 +66,7 @@ export const DealsScreen = () => {
           gap: '8px',
           overflowX: 'auto',
           paddingBottom: '8px',
-          marginBottom: '14px',
+          marginBottom: '16px',
           scrollbarWidth: 'none',
         }}
       >
@@ -72,37 +79,40 @@ export const DealsScreen = () => {
               borderRadius: '20px',
               border: 'none',
               fontSize: '0.8rem',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              background: selectedCategory === cat ? 'var(--color-primary)' : 'var(--bg-card)',
+              background: selectedCategory === cat ? 'var(--color-primary)' : 'var(--bg-surface)',
               color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
-              boxShadow: selectedCategory === cat ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
-              transition: 'all 0.2s',
+              border: selectedCategory === cat ? 'none' : '1px solid var(--border-subtle)',
+              boxShadow: selectedCategory === cat ? '0 2px 8px rgba(79, 70, 229, 0.3)' : 'none',
+              transition: 'all 0.15s ease',
             }}
           >
-            {cat}
+            {cat === 'All' ? (isHindi ? 'सभी डील्स' : 'All Deals') : cat}
           </button>
         ))}
       </div>
 
       {/* Deals Feed */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-          Live offers dhoondhe ja rahe hain...
+        <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted)' }}>
+          {isHindi ? 'आस-पास के लाइव ऑफर्स खोजे जा रहे हैं...' : 'Discovering live discounts near you...'}
         </div>
       ) : deals.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '36px 20px' }}>
-          <Tag size={44} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-            No live deals nearby right now
+        <div className="card" style={{ textAlign: 'center', padding: '48px 20px' }}>
+          <Tag size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+          <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+            {isHindi ? 'अभी कोई सक्रिय ऑफर उपलब्ध नहीं है' : 'No Active Deals Nearby Right Now'}
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-            Aas-paas ki dukaanon ke offers yahan live dikhenge. Dubara check karein!
+          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+            {isHindi
+              ? 'आस-पास की दुकानों के नए ऑफर्स यहाँ लाइव दिखेंगे। थोड़ी देर बाद पुनः देखें!'
+              : 'Special deals posted by neighborhood merchants will appear here live.'}
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="deals-grid">
           {deals.map((deal) => {
             const distKm = calculateDistanceKm(
               coords?.lat,
@@ -118,55 +128,63 @@ export const DealsScreen = () => {
                 style={{
                   margin: 0,
                   padding: '16px',
-                  borderRadius: '16px',
+                  borderRadius: 'var(--radius-lg)',
                   position: 'relative',
                   overflow: 'hidden',
-                  border: '1px solid var(--border-subtle)',
+                  border: '1.5px solid var(--border-subtle)',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                 }}
               >
-                {/* Offer Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                  <span
-                    style={{
-                      ...getBadgeStyle(deal.discount_text),
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <Sparkles size={12} /> {deal.discount_text || 'Special Deal'}
-                  </span>
-
-                  {distKm != null && (
+                <div>
+                  {/* Offer Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                     <span
                       style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)',
+                        ...getBadgeStyle(deal.discount_text),
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-sm)',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '3px',
+                        gap: '4px',
                       }}
                     >
-                      <MapPin size={12} /> {formatDistance(distKm)}
+                      <Sparkles size={13} /> {deal.discount_text || (isHindi ? 'विशेष ऑफर' : 'Special Deal')}
                     </span>
+
+                    {distKm != null && (
+                      <span
+                        style={{
+                          fontSize: '0.74rem',
+                          color: 'var(--text-muted)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <MapPin size={12} color="var(--color-primary)" /> {formatDistance(distKm)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Offer Title & Description */}
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '6px', lineHeight: 1.3 }}>
+                    {deal.title}
+                  </div>
+                  {deal.description && (
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.45 }}>
+                      {deal.description}
+                    </p>
                   )}
                 </div>
 
-                {/* Offer Title & Description */}
-                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '6px' }}>
-                  {deal.title}
-                </div>
-                {deal.description && (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.4 }}>
-                    {deal.description}
-                  </p>
-                )}
-
-                {/* Participating Shop Info */}
+                {/* Participating Shop Info & Actions */}
                 <div
                   style={{
                     display: 'flex',
@@ -174,22 +192,26 @@ export const DealsScreen = () => {
                     justifyContent: 'space-between',
                     paddingTop: '12px',
                     borderTop: '1px solid var(--border-subtle)',
+                    gap: '10px',
+                    flexWrap: 'wrap',
                   }}
                 >
                   <div
                     onClick={() => navigate(`/shop/${deal.shop_slug}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', minWidth: 0, flex: 1 }}
                   >
                     <div
                       style={{
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
                         backgroundColor: 'var(--color-primary-light)',
                         overflow: 'hidden',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        flexShrink: 0,
+                        border: '1px solid var(--border-subtle)',
                       }}
                     >
                       {deal.shop_logo_url ? (
@@ -202,16 +224,18 @@ export const DealsScreen = () => {
                         <Store size={18} color="var(--color-primary)" />
                       )}
                     </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{deal.shop_name}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {deal.shop_name}
+                      </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        {deal.shop_category || 'Local Shop'}
+                        {deal.shop_category || (isHindi ? 'स्थानीय दुकान' : 'Local Store')}
                       </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '6px' }}>
                     {deal.shop_latitude && deal.shop_longitude && (
                       <a
                         href={`https://maps.google.com/?q=${deal.shop_latitude},${deal.shop_longitude}`}
@@ -222,32 +246,24 @@ export const DealsScreen = () => {
                           color: '#3b82f6',
                           border: 'none',
                           padding: '6px 10px',
-                          borderRadius: '8px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '4px',
                           textDecoration: 'none',
                         }}
                       >
-                        <Navigation size={12} /> Directions
+                        <Navigation size={12} /> {isHindi ? 'रास्ता' : 'Directions'}
                       </a>
                     )}
                     <button
                       onClick={() => navigate(`/shop/${deal.shop_slug}`)}
-                      style={{
-                        background: 'var(--color-primary)',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
+                      className="btn btn-primary btn-sm"
+                      style={{ padding: '6px 12px', fontSize: '0.76rem', fontWeight: 700 }}
                     >
-                      Dukan Dekhein
+                      {isHindi ? 'दुकान देखें' : 'Visit Shop'}
                     </button>
                   </div>
                 </div>
@@ -259,3 +275,4 @@ export const DealsScreen = () => {
     </AppLayout>
   );
 };
+export default DealsScreen;

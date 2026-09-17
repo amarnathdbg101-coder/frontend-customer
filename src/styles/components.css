@@ -433,44 +433,36 @@
 /* ==========================================================================
    Side Drawer & Slide-out Menu
    ========================================================================== */
-.drawer-backdrop {
+.drawer-backdrop,
+.drawer-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 100;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
-}
-
-.drawer-backdrop.active {
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: var(--z-drawer-backdrop, 100);
   opacity: 1;
   visibility: visible;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.side-drawer {
+.side-drawer,
+.drawer-container {
   position: fixed;
   top: 0;
   left: 0;
-  width: 82vw;
+  width: 84vw;
   max-width: 320px;
   height: 100vh;
-  background-color: #ffffff;
-  z-index: 110;
+  background-color: var(--bg-surface, #ffffff);
+  z-index: var(--z-drawer, 110);
   display: flex;
   flex-direction: column;
-  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.25);
-  transform: translateX(-100%);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.side-drawer.open {
-  transform: translateX(0);
+  box-shadow: 12px 0 35px rgba(0, 0, 0, 0.3);
+  animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 .drawer-header {
@@ -478,13 +470,13 @@
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  background: linear-gradient(to bottom, #ffffff, #fafbfd);
+  align-items: center;
+  background: var(--bg-surface);
 }
 
 .drawer-close-btn {
-  background: #f1f5f9;
-  border: none;
+  background: var(--bg-surface-subtle, #f1f5f9);
+  border: 1px solid var(--border-subtle);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -493,20 +485,19 @@
   justify-content: center;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
   flex-shrink: 0;
-  margin-left: 8px;
 }
 
 .drawer-close-btn:hover {
-  background: #e2e8f0;
+  background: var(--border-subtle, #e2e8f0);
   color: var(--text-primary);
 }
 
 .drawer-shop-card {
   margin: 12px 14px 4px 14px;
   padding: 10px 12px;
-  background-color: #f8fafc;
+  background-color: var(--bg-surface-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
 }
@@ -537,21 +528,20 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 10px 10px;
+  padding: 10px 12px;
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
   text-decoration: none;
 }
 
 .drawer-link-btn:hover {
-  background-color: #f1f5f9;
+  background-color: var(--bg-surface-subtle, #f1f5f9);
 }
 
 .drawer-link-btn:active {
-  background-color: #e2e8f0;
   transform: scale(0.99);
 }
 

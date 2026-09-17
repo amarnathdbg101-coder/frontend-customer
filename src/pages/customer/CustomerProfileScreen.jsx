@@ -1,7 +1,6 @@
 /**
  * Dedicated Customer Profile Screen
- * 
- * Professional English localization.
+ * Bilingual, accessible, responsive customer profile dashboard
  */
 
 import React, { useState } from 'react';
@@ -16,10 +15,9 @@ import {
   LogOut,
   Camera,
   ChevronRight,
-  Shield,
-  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { uploadApi } from '../../api/upload.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -28,6 +26,7 @@ import { ThemeLanguageBar } from '../../components/common/ThemeLanguageBar';
 export const CustomerProfileScreen = () => {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
+  const { isHindi, t } = useLanguage();
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   const handleAvatarChange = async (e) => {
@@ -35,7 +34,7 @@ export const CustomerProfileScreen = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image size must be less than 2MB.');
+      alert(isHindi ? 'फ़ोटो का साइज़ 2MB से कम होना चाहिए।' : 'Image size must be less than 2MB.');
       return;
     }
 
@@ -43,42 +42,59 @@ export const CustomerProfileScreen = () => {
       setAvatarUploading(true);
       const data = await uploadApi.uploadUserAvatar(file);
       updateUser({ avatar_url: data.avatar_url });
-      alert('Profile photo updated successfully!');
+      alert(isHindi ? 'प्रोफ़ाइल फ़ोटो सफलतापूर्वक अपडेट हो गई!' : 'Profile photo updated successfully!');
     } catch (err) {
       console.error('Avatar upload error:', err);
-      alert('Failed to upload avatar: ' + (err.message || 'Error'));
+      alert((isHindi ? 'फ़ोटो अपलोड करने में त्रुटि: ' : 'Failed to upload avatar: ') + (err.message || 'Error'));
     } finally {
       setAvatarUploading(false);
     }
   };
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
+    if (window.confirm(isHindi ? 'क्या आप सचमुच लॉग आउट करना चाहते हैं?' : 'Are you sure you want to sign out?')) {
       logout();
       navigate('/login');
     }
   };
 
   return (
-    <AppLayout title="My Account">
-      <div className="profile-container" style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+    <AppLayout
+      title={isHindi ? 'मेरी प्रोफ़ाइल एवं खाता' : 'My Account & Settings'}
+      subtitle={isHindi ? 'व्यक्तिगत विवरण व प्राथमिकताएँ' : 'Personal Details & Preferences'}
+    >
+      <title>{t('nav.profile')} — ShopSilo</title>
+
+      <div className="profile-container" style={{ padding: '0', maxWidth: '640px', margin: '0 auto' }}>
         
         {/* User Card */}
-        <div className="card profile-user-card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '1.25rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
-          <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 1rem auto' }}>
+        <div
+          className="card profile-user-card"
+          style={{
+            padding: '24px 20px',
+            textAlign: 'center',
+            marginBottom: '16px',
+            background: 'var(--bg-surface)',
+            border: '1.5px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
+          <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 14px auto' }}>
             <div style={{
               width: '90px',
               height: '90px',
               borderRadius: '50%',
               backgroundColor: 'var(--color-primary)',
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              fontSize: '2rem',
-              fontWeight: 700,
+              fontSize: '2.2rem',
+              fontWeight: 900,
               overflow: 'hidden',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
+              boxShadow: '0 6px 18px rgba(79, 70, 229, 0.35)',
             }}>
               {user?.avatar_url ? (
                 <img 
@@ -100,19 +116,20 @@ export const CustomerProfileScreen = () => {
                 position: 'absolute',
                 bottom: '0',
                 right: '0',
-                background: '#2563eb',
+                background: 'var(--color-primary)',
                 color: 'white',
-                padding: '6px',
+                padding: '7px',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                border: '2px solid var(--bg-surface)',
               }}
-              title="Change profile photo"
+              title={isHindi ? 'प्रोफ़ाइल फ़ोटो बदलें' : 'Change profile photo'}
             >
-              <Camera size={16} />
+              <Camera size={15} />
             </label>
             <input 
               id="customer-avatar-upload" 
@@ -125,39 +142,41 @@ export const CustomerProfileScreen = () => {
           </div>
 
           {avatarUploading && (
-            <p style={{ fontSize: '0.8rem', color: '#60a5fa', marginBottom: '0.5rem' }}>Uploading photo...</p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>
+              {isHindi ? 'फ़ोटो अपलोड हो रही है...' : 'Uploading photo...'}
+            </p>
           )}
 
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
-            {user?.name || 'Customer'}
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
+            {user?.name || user?.full_name || (isHindi ? 'ग्राहक' : 'Customer')}
           </h2>
           <span style={{ 
             display: 'inline-block', 
-            background: 'rgba(59, 130, 246, 0.15)', 
-            color: '#60a5fa', 
-            fontSize: '0.75rem', 
-            padding: '2px 10px', 
-            borderRadius: '12px',
-            fontWeight: 500,
-            marginBottom: '1rem'
+            background: 'var(--color-primary-light)', 
+            color: 'var(--color-primary)', 
+            fontSize: '0.76rem', 
+            padding: '3px 12px', 
+            borderRadius: 'var(--radius-full)',
+            fontWeight: 800,
+            marginBottom: '1.25rem'
           }}>
-            Customer (Buyer)
+            {isHindi ? 'सत्यापित ग्राहक (Buyer)' : 'Verified Customer (Shopper)'}
           </span>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left', background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-subtle)', padding: '0.85rem', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              <Phone size={16} style={{ color: '#3b82f6' }} />
-              <span>{user?.phone || 'No phone number linked'}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', textAlign: 'left', background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-subtle)', padding: '12px 16px', borderRadius: 'var(--radius-md)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.86rem' }}>
+              <Phone size={15} style={{ color: 'var(--color-primary)' }} />
+              <span>{user?.phone || (isHindi ? 'फ़ोन नंबर लिंक नहीं है' : 'No phone number linked')}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              <Mail size={16} style={{ color: '#3b82f6' }} />
-              <span>{user?.email || 'No email address'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.86rem' }}>
+              <Mail size={15} style={{ color: 'var(--color-primary)' }} />
+              <span>{user?.email || (isHindi ? 'ईमेल दर्ज नहीं है' : 'No email address linked')}</span>
             </div>
           </div>
         </div>
 
         {/* Action Shortcuts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
           
           <div 
             onClick={() => navigate('/khata')}
@@ -165,20 +184,26 @@ export const CustomerProfileScreen = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '1rem',
+              padding: '14px 16px',
               background: 'var(--bg-surface)',
-              borderRadius: '14px',
+              borderRadius: 'var(--radius-lg)',
               cursor: 'pointer',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              boxShadow: 'var(--shadow-xs)',
+              transition: 'all 0.15s ease',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(217, 119, 6, 0.15)', color: '#d97706', padding: '8px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'rgba(217, 119, 6, 0.15)', color: '#d97706', padding: '10px', borderRadius: '12px' }}>
                 <BookOpen size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 700 }}>My Ledger &amp; Credit Passbook</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Store credit balance, UPI payments &amp; QR code</p>
+                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                  {isHindi ? 'मेरा डिजिटल खाता एवं पासबुक' : 'My Khata & Credit Passbook'}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {isHindi ? 'उधार बही, ऑनलाइन यूपीआई भुगतान व क्यूआर' : 'Store credit balances, UPI payments & passbook'}
+                </p>
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -190,20 +215,26 @@ export const CustomerProfileScreen = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '1rem',
+              padding: '14px 16px',
               background: 'var(--bg-surface)',
-              borderRadius: '14px',
+              borderRadius: 'var(--radius-lg)',
               cursor: 'pointer',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              boxShadow: 'var(--shadow-xs)',
+              transition: 'all 0.15s ease',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '8px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '10px', borderRadius: '12px' }}>
                 <ShoppingBag size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>My Store Reservations &amp; Pickups</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Items held for store pickup with OTP codes</p>
+                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                  {isHindi ? 'मेरी बुकिंग्स एवं पिकअप ऑर्डर्स' : 'My Store Pickups & Reservations'}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {isHindi ? 'दुकान से पिकअप हेतु आरक्षित सामान व ओटीपी' : 'Reserved items held for store pickup with OTP codes'}
+                </p>
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -215,20 +246,26 @@ export const CustomerProfileScreen = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '1rem',
+              padding: '14px 16px',
               background: 'var(--bg-surface)',
-              borderRadius: '14px',
+              borderRadius: 'var(--radius-lg)',
               cursor: 'pointer',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              boxShadow: 'var(--shadow-xs)',
+              transition: 'all 0.15s ease',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', padding: '8px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'rgba(79, 70, 229, 0.15)', color: 'var(--color-primary)', padding: '10px', borderRadius: '12px' }}>
                 <Store size={20} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600 }}>Nearby Stores</h4>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Browse certified local stores in your area</p>
+                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                  {isHindi ? 'आस-पास की दुकानें खोजें' : 'Explore Neighborhood Stores'}
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {isHindi ? 'अपने इलाके की प्रमाणित दुकानों का लाइव स्टॉक देखें' : 'Browse certified local stores & live inventory'}
+                </p>
               </div>
             </div>
             <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
@@ -237,7 +274,7 @@ export const CustomerProfileScreen = () => {
         </div>
 
         {/* Theme & Language Preferences Card */}
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '16px' }}>
           <ThemeLanguageBar />
         </div>
 
@@ -250,22 +287,23 @@ export const CustomerProfileScreen = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
-            padding: '0.9rem',
+            padding: '12px',
             background: 'rgba(239, 68, 68, 0.1)',
-            color: '#f87171',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            borderRadius: '12px',
+            color: '#ef4444',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            borderRadius: 'var(--radius-md)',
             cursor: 'pointer',
-            fontWeight: 600,
+            fontWeight: 800,
             fontSize: '0.95rem',
-            transition: 'all 0.2s'
+            transition: 'all 0.15s ease',
           }}
         >
           <LogOut size={18} />
-          <span>Sign Out</span>
+          <span>{isHindi ? 'लॉग आउट करें' : 'Sign Out'}</span>
         </button>
 
       </div>
     </AppLayout>
   );
 };
+export default CustomerProfileScreen;

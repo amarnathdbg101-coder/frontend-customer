@@ -42,8 +42,8 @@ export const DesktopNavbar = () => {
   const savedCount = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
   return (
-    <header className="desktop-nav-header">
-      <div className="desktop-nav-container">
+    <header className="desktop-navbar" role="banner">
+      <div className="desktop-navbar-inner">
         {/* Brand Logo */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <div

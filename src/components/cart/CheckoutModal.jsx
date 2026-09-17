@@ -17,12 +17,8 @@ import {
   ShoppingBag,
   Store,
   Clock,
-  MapPin,
-  QrCode,
-  ArrowRight,
   ShieldCheck,
   AlertCircle,
-  Phone,
   User,
   FileText,
 } from 'lucide-react';
@@ -34,8 +30,8 @@ import { RealQRCode } from '../common/RealQRCode';
 
 export const CheckoutModal = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const { items, subtotal, totalSavings, isCheckoutOpen, closeCheckout, clearCart } = useCart();
+  const { user } = useAuth();
+  const { items, subtotal, isCheckoutOpen, closeCheckout, clearCart } = useCart();
   const { t } = useLanguage();
 
   const [step, setStep] = useState(1); // 1: Details & Review, 2: Confirmation

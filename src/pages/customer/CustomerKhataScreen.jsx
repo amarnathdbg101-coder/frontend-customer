@@ -1,4 +1,3 @@
-import { printKhataStatement } from '../../utils/pdfGenerator';
 import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
@@ -8,19 +7,13 @@ import {
   ArrowUpRight,
   QrCode,
   AlertCircle,
-  CheckCircle2,
   FileText,
   Calendar,
-  IndianRupee,
-  ShieldCheck,
   X,
   Search,
-  ChevronRight,
   RefreshCw,
   ExternalLink,
-  Download,
   Image as ImageIcon,
-  Sparkles,
 } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -28,19 +21,22 @@ import { customerKhataApi } from '../../api/khata.api';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { getImageUrl } from '../../utils/imageUrl';
 import { RealQRCode } from '../../components/common/RealQRCode';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const CustomerKhataScreen = () => {
   const { user } = useAuth();
+  const { isHindi, t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Passbook modal
+  // Passbook modal & desktop selection
   const [selectedKhata, setSelectedKhata] = useState(null);
   const [passbookLoading, setPassbookLoading] = useState(false);
   const [passbookData, setPassbookData] = useState(null);
+  const [showMobilePassbookModal, setShowMobilePassbookModal] = useState(false);
 
   // My Khata QR Modal
   const [showQrModal, setShowQrModal] = useState(false);
@@ -66,36 +62,48 @@ export const CustomerKhataScreen = () => {
   const [ptpNote, setPtpNote] = useState('');
   const [ptpLoading, setPtpLoading] = useState(false);
 
-  const fetchSummary = async () => {
+  const loadPassbookForAccount = useCallback(async (khataId) => {
+    setPassbookLoading(true);
+    setPassbookData(null);
+    try {
+      const data = await customerKhataApi.getPassbook(khataId);
+      setPassbookData(data);
+    } catch (err) {
+      console.error('Failed to load passbook:', err);
+    } finally {
+      setPassbookLoading(false);
+    }
+  }, []);
+
+  const fetchSummary = useCallback(async () => {
     try {
       setError(null);
       const data = await customerKhataApi.getSummary();
       setSummary(data);
+      const accountsList = data?.accounts || data?.khatas || [];
+      if (accountsList.length > 0 && !selectedKhata) {
+        // Auto-select first account for desktop passbook view
+        setSelectedKhata(accountsList[0]);
+        loadPassbookForAccount(accountsList[0].id);
+      }
     } catch (err) {
       console.error('Failed to load khata summary:', err);
-      setError(err.response?.data?.message || err.message || 'Khata summary load karne me dikkat aayi.');
+      setError(err.response?.data?.message || err.message || (isHindi ? 'खाता सारांश लोड करने में समस्या आई।' : 'Failed to load Khata summary.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [isHindi, selectedKhata, loadPassbookForAccount]);
 
   useEffect(() => {
     fetchSummary();
-  }, []);
+  }, [fetchSummary]);
 
-  const openPassbook = async (khata) => {
+  const handleSelectKhata = (khata, isMobileTrigger = false) => {
     setSelectedKhata(khata);
-    setPassbookLoading(true);
-    setPassbookData(null);
-    try {
-      const data = await customerKhataApi.getPassbook(khata.id);
-      setPassbookData(data);
-    } catch (err) {
-      console.error('Failed to load passbook:', err);
-      alert('Passbook load karne me error: ' + (err.message || 'Network error'));
-    } finally {
-      setPassbookLoading(false);
+    loadPassbookForAccount(khata.id);
+    if (isMobileTrigger) {
+      setShowMobilePassbookModal(true);
     }
   };
 
@@ -123,13 +131,12 @@ export const CustomerKhataScreen = () => {
     try {
       setDisputeLoading(true);
       await customerKhataApi.disputeTransaction(selectedKhata.id, disputeTx.id, disputeReason);
-      alert('Dispute safaltapoorvak bhej diya gaya hai. Dukaandaar iska samadhan karenge.');
+      alert(isHindi ? 'विवाद सफलतापूर्वक भेजा गया।' : 'Dispute submitted successfully. The merchant has been notified.');
       setDisputeTx(null);
       setDisputeReason('');
-      // Reload passbook
-      openPassbook(selectedKhata);
+      if (selectedKhata) loadPassbookForAccount(selectedKhata.id);
     } catch (err) {
-      alert('Dispute bhejne me error: ' + (err.response?.data?.message || err.message));
+      alert((isHindi ? 'विवाद दर्ज करने में त्रुटि: ' : 'Error submitting dispute: ') + (err.response?.data?.message || err.message));
     } finally {
       setDisputeLoading(false);
     }
@@ -138,26 +145,26 @@ export const CustomerKhataScreen = () => {
   const handleUpiPaymentSubmit = async (e) => {
     e.preventDefault();
     if (!upiAmount || Number(upiAmount) <= 0) {
-      alert('Valid payment amount likhein');
+      alert(isHindi ? 'वैध भुगतान राशि लिखें' : 'Please enter a valid payment amount');
       return;
     }
     const cleanUtr = upiUtr.trim();
     if (cleanUtr.length < 6) {
-      alert('Kripya valid 12-digit UPI Reference / UTR Number daalein');
+      alert(isHindi ? 'कृपया वैध 12-अंकों का UPI UTR / Reference नंबर दर्ज करें' : 'Please enter a valid 12-digit UPI UTR reference number');
       return;
     }
 
     try {
       setUpiLoading(true);
       await customerKhataApi.submitUPIPayment(selectedKhata.id, upiAmount, cleanUtr, upiNote);
-      alert('UPI payment proof safaltapoorvak submit ho gaya hai!');
+      alert(isHindi ? 'UPI भुगतान प्रमाण सफलतापूर्वक सबमिट हो गया है!' : 'UPI payment proof submitted successfully!');
       setShowUpiModal(false);
       setUpiUtr('');
       setUpiNote('');
       fetchSummary();
-      if (selectedKhata) openPassbook(selectedKhata);
+      if (selectedKhata) loadPassbookForAccount(selectedKhata.id);
     } catch (err) {
-      alert('Payment proof submit karne me error: ' + (err.response?.data?.message || err.message));
+      alert((isHindi ? 'भुगतान प्रमाण सबमिट करने में त्रुटि: ' : 'Error submitting payment: ') + (err.response?.data?.message || err.message));
     } finally {
       setUpiLoading(false);
     }
@@ -166,18 +173,18 @@ export const CustomerKhataScreen = () => {
   const handlePtpSubmit = async (e) => {
     e.preventDefault();
     if (!ptpDate) {
-      alert('Promise date chunein');
+      alert(isHindi ? 'तारीख चुनें' : 'Please select a date');
       return;
     }
 
     try {
       setPtpLoading(true);
       await customerKhataApi.setPromiseToPay(selectedKhata.id, ptpDate, ptpNote);
-      alert('Promise to Pay date set ho gayi hai. Dukaandaar ko notify kar diya gaya hai.');
+      alert(isHindi ? 'भुगतान की वादा तारीख दर्ज हो गई है।' : 'Promise to pay date set successfully.');
       setShowPtpModal(false);
       fetchSummary();
     } catch (err) {
-      alert('Promise date set karne me error: ' + (err.response?.data?.message || err.message));
+      alert((isHindi ? 'वादा तारीख सेट करने में त्रुटि: ' : 'Error setting promise date: ') + (err.response?.data?.message || err.message));
     } finally {
       setPtpLoading(false);
     }
@@ -219,271 +226,532 @@ export const CustomerKhataScreen = () => {
     );
   }
 
+  // Helper component to render passbook statement list
+  const renderPassbookTransactions = () => {
+    if (passbookLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '40px 10px' }}>
+          <RefreshCw size={24} className="spin" style={{ margin: '0 auto 8px auto', color: 'var(--color-primary)' }} />
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            {isHindi ? 'पासबुक लोड हो रही है...' : 'Loading statement...'}
+          </div>
+        </div>
+      );
+    }
+
+    if (!passbookData?.transactions || passbookData.transactions.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+          <FileText size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
+          <div style={{ fontSize: '0.85rem' }}>
+            {isHindi ? 'इस खाते में अभी कोई लेन-देन नहीं है।' : 'No transactions recorded in this ledger yet.'}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {passbookData.transactions.map((tx) => {
+          const isCredit = tx.type === 'GIVE_CREDIT' || tx.type === 'credit';
+          const isDisputed = tx.status === 'DISPUTED';
+
+          return (
+            <div
+              key={tx.id}
+              style={{
+                padding: '12px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--bg-surface-subtle)',
+                border: isDisputed ? '1px dashed var(--color-danger)' : '1px solid var(--border-subtle)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: isCredit ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                      color: isCredit ? 'var(--color-danger)' : 'var(--color-success)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isCredit ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                      {isCredit
+                        ? (isHindi ? 'उधार लिया (Credit Taken)' : 'Credit / Purchase')
+                        : (isHindi ? 'उधार चुकाया (Payment Paid)' : 'Payment / Settlement')}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {new Date(tx.created_at).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div
+                    style={{
+                      fontWeight: 900,
+                      fontSize: '1rem',
+                      color: isCredit ? 'var(--color-danger)' : 'var(--color-success)',
+                    }}
+                  >
+                    {isCredit ? '-' : '+'}₹{Number(tx.amount).toLocaleString('en-IN')}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    Bal: ₹{tx.balance_after}
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {tx.notes && (
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '6px', paddingLeft: '36px' }}>
+                  Note: {tx.notes}
+                </div>
+              )}
+
+              {/* Parchi Photo & Dispute */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingLeft: '36px', fontSize: '0.74rem' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {tx.parchi_image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setViewParchiUrl(getImageUrl(tx.parchi_image_url))}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-primary)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                      }}
+                    >
+                      <ImageIcon size={12} />
+                      <span>{isHindi ? 'बिल पर्ची देखें' : 'View Bill Slip'}</span>
+                    </button>
+                  )}
+                  {tx.bill_number && (
+                    <span style={{ color: 'var(--text-muted)' }}>Bill #{tx.bill_number}</span>
+                  )}
+                </div>
+
+                {/* Dispute Trigger */}
+                {isCredit && !isDisputed && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDisputeTx(tx);
+                      setDisputeReason('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      fontSize: '0.72rem',
+                      padding: 0,
+                    }}
+                    title="Dispute if this amount is wrong"
+                  >
+                    {isHindi ? 'विवाद?' : 'Dispute?'}
+                  </button>
+                )}
+
+                {isDisputed && (
+                  <span style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: '0.72rem' }}>
+                    ⚠️ {isHindi ? 'विवादित' : 'Disputed'}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <AppLayout title={t('khata.ledger_title')} subtitle={t('khata.ledger_subtitle')}>
       <title>{t('khata.ledger_title')} — ShopSilo</title>
 
-      {/* Top Banner & Summary Card */}
-      <div
-        className="card"
-        style={{
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
-          color: '#ffffff',
-          padding: '22px 20px',
-          marginBottom: '16px',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 10px 25px -5px rgba(49, 46, 129, 0.4)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Kul Baki Udhar (Total Payable)
-            </div>
-            <div style={{ fontSize: '2.2rem', fontWeight: 900, marginTop: '4px', letterSpacing: '-0.5px' }}>
-              ₹{Number(totalOutstanding).toLocaleString('en-IN')}
-            </div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.85, marginTop: '4px' }}>
-              {accounts.length} {accounts.length === 1 ? 'dukan' : 'dukano'} par aapka khata chalu hai
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => setShowQrModal(true)}
-              className="btn btn-sm"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                fontWeight: 700,
-                gap: '6px',
-                backdropFilter: 'blur(4px)',
-              }}
-              title="Show my personal khata QR code to shopkeeper"
-            >
-              <QrCode size={16} />
-              <span>My Khata QR</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setRefreshing(true);
-                fetchSummary();
-              }}
-              disabled={refreshing}
-              className="btn btn-sm"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                padding: '0 10px',
-              }}
-              title="Refresh balances"
-            >
-              <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Search Filter */}
-      {accounts.length > 2 && (
-        <div className="search-box" style={{ marginBottom: '14px' }}>
-          <Search size={18} color="var(--text-muted)" />
-          <input
-            type="search"
-            placeholder="Dukan ka naam ya phone number se filter karein..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
-            color: 'var(--color-danger)',
-            fontSize: '0.85rem',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <AlertCircle size={18} style={{ flexShrink: 0 }} />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Shop Khata Cards List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {filteredAccounts.length === 0 ? (
+      <div className="khata-screen-layout">
+        {/* Left / Main Column */}
+        <div>
+          {/* Top Banner & Summary Card */}
           <div
             className="card"
             style={{
-              padding: '40px 20px',
-              textAlign: 'center',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
+              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
+              color: '#ffffff',
+              padding: '20px',
+              marginBottom: '16px',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: '0 10px 25px -5px rgba(49, 46, 129, 0.4)',
             }}
           >
-            <BookOpen size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-              Koi Khata Record Nahi Mila
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 0 auto' }}>
-              Aap jab kisi dukan par udhar saman lete hain, to aapka digital hisaab yahan live dikhayi deta hai.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isHindi ? 'कुल बाकी उधार (Total Payable)' : 'Total Outstanding Balance'}
+                </div>
+                <div style={{ fontSize: '2.2rem', fontWeight: 900, marginTop: '4px', letterSpacing: '-0.5px' }}>
+                  ₹{Number(totalOutstanding).toLocaleString('en-IN')}
+                </div>
+                <div style={{ fontSize: '0.78rem', opacity: 0.85, marginTop: '4px' }}>
+                  {accounts.length} {accounts.length === 1 ? (isHindi ? 'दुकान' : 'store') : (isHindi ? 'दुकानों पर सक्रिय खाता' : 'active store ledgers')}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal(true)}
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    fontWeight: 700,
+                    gap: '6px',
+                    backdropFilter: 'blur(4px)',
+                  }}
+                  title="Show my personal khata QR code to shopkeeper"
+                >
+                  <QrCode size={16} />
+                  <span>{isHindi ? 'मेरा QR' : 'My Khata QR'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRefreshing(true);
+                    fetchSummary();
+                  }}
+                  disabled={refreshing}
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    padding: '0 10px',
+                  }}
+                  title="Refresh balances"
+                >
+                  <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
+                </button>
+              </div>
             </div>
           </div>
-        ) : (
-          filteredAccounts.map((acc) => {
-            const balance = Number(acc.current_balance ?? acc.balance ?? 0);
-            const shopName = acc.shop_name || acc.shop?.name || 'Local Dukan';
-            const shopPhone = acc.shop_phone || acc.shop?.phone || '';
-            const promiseDate = acc.promise_to_pay_date;
 
-            return (
+          {/* Search Filter */}
+          {accounts.length > 2 && (
+            <div className="search-box" style={{ marginBottom: '14px' }}>
+              <Search size={18} color="var(--text-muted)" />
+              <input
+                type="search"
+                placeholder={isHindi ? "दुकान का नाम या फोन नंबर से खोजें..." : "Search by store name or phone..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: 'var(--color-danger)',
+                fontSize: '0.85rem',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Shop Khata Cards List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {filteredAccounts.length === 0 ? (
               <div
-                key={acc.id}
                 className="card"
                 style={{
+                  padding: '40px 20px',
+                  textAlign: 'center',
                   backgroundColor: 'var(--bg-surface)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-lg)',
-                  padding: '16px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                 }}
               >
-                {/* Header: Shop Info & Balance */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                <BookOpen size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+                <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                  {isHindi ? 'कोई खाता रिकॉर्ड नहीं मिला' : 'No Khata Records Found'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 0 auto' }}>
+                  {isHindi
+                    ? 'आप जब किसी दुकान पर उधार सामान लेते हैं, तो आपका डिजिटल हिसाब यहाँ लाइव दिखाई देता है।'
+                    : 'When you take goods on store credit, your digital balance and ledger appears here in real-time.'}
+                </div>
+              </div>
+            ) : (
+              filteredAccounts.map((acc) => {
+                const balance = Number(acc.current_balance ?? acc.balance ?? 0);
+                const shopName = acc.shop_name || acc.shop?.name || (isHindi ? 'स्थानीय दुकान' : 'Local Store');
+                const shopPhone = acc.shop_phone || acc.shop?.phone || '';
+                const promiseDate = acc.promise_to_pay_date;
+                const isSelected = selectedKhata?.id === acc.id;
+
+                return (
+                  <div
+                    key={acc.id}
+                    className="card"
+                    style={{
+                      backgroundColor: 'var(--bg-surface)',
+                      border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: '16px',
+                      boxShadow: isSelected ? '0 4px 16px rgba(79, 70, 229, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
+                      transition: 'all 0.15s ease',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => handleSelectKhata(acc, false)}
+                  >
+                    {/* Header: Shop Info & Balance */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(99, 102, 241, 0.2) 100%)',
+                            color: 'var(--color-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Store size={22} />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {shopName}
+                          </div>
+                          {shopPhone && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                              <Phone size={12} />
+                              <span>{shopPhone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                          {isHindi ? 'बाकी उधार' : 'NET BALANCE'}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 900,
+                            color: balance > 0 ? 'var(--color-danger)' : 'var(--color-success)',
+                          }}
+                        >
+                          ₹{balance.toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Promise Date Badge */}
+                    {promiseDate && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          padding: '6px 10px',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                          border: '1px solid rgba(99, 102, 241, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.75rem',
+                          color: 'var(--color-primary)',
+                        }}
+                      >
+                        <Calendar size={13} />
+                        <span>
+                          {isHindi ? 'भुगतान वादा तारीख: ' : 'Promise to pay: '}
+                          <strong>{new Date(promiseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong>
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
                     <div
                       style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(99, 102, 241, 0.2) 100%)',
-                        color: 'var(--color-primary)',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
+                        gap: '8px',
+                        marginTop: '14px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid var(--border-subtle)',
+                        flexWrap: 'wrap',
                       }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Store size={22} />
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {shopName}
-                      </div>
-                      {shopPhone && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                          <Phone size={12} />
-                          <span>{shopPhone}</span>
-                        </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectKhata(acc, true)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ flex: 1, minWidth: '110px', gap: '5px', fontWeight: 700, fontSize: '0.78rem' }}
+                      >
+                        <BookOpen size={14} />
+                        <span>{isHindi ? 'पासबुक देखें' : 'View Passbook'}</span>
+                      </button>
+
+                      {balance > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenUpiModal(acc)}
+                            className="btn btn-primary btn-sm"
+                            style={{ flex: 1, minWidth: '100px', gap: '5px', fontWeight: 800, fontSize: '0.78rem' }}
+                          >
+                            <QrCode size={14} />
+                            <span>UPI Pay</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPtpModal(acc)}
+                            className="btn btn-outline btn-sm"
+                            style={{ gap: '5px', fontSize: '0.76rem' }}
+                            title="Set promise to pay date"
+                          >
+                            <Calendar size={13} />
+                            <span>{isHindi ? 'वादा तारीख' : 'Promise Date'}</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
+                );
+              })
+            )}
+          </div>
+        </div>
 
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>BAKI UDHAR</div>
-                    <div
-                      style={{
-                        fontSize: '1.25rem',
-                        fontWeight: 900,
-                        color: balance > 0 ? 'var(--color-danger)' : 'var(--color-success)',
-                      }}
-                    >
-                      ₹{balance.toLocaleString('en-IN')}
-                    </div>
+        {/* Right Column: Desktop Passbook & Statement Panel */}
+        <div className="desktop-only" style={{ display: 'none' }}>
+          {selectedKhata ? (
+            <div
+              className="card khata-screen-sidebar"
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1.5px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '20px',
+                boxShadow: 'var(--shadow-md)',
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '14px', borderBottom: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                    {selectedKhata.shop_name || selectedKhata.shop?.name}
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    {isHindi ? 'डिजिटल पासबुक एवं खाता विवरण' : 'Live Passbook & Statement'}
                   </div>
                 </div>
 
-                {/* Promise Date Badge (if any) */}
-                {promiseDate && (
-                  <div
-                    style={{
-                      marginTop: '10px',
-                      padding: '6px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(99, 102, 241, 0.08)',
-                      border: '1px solid rgba(99, 102, 241, 0.2)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '0.75rem',
-                      color: 'var(--color-primary)',
-                    }}
-                  >
-                    <Calendar size={13} />
-                    <span>Aapne <strong>{new Date(promiseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong> tak payment ka vada kiya hai</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    {isHindi ? 'शुद्ध बाकी' : 'NET BALANCE'}
                   </div>
-                )}
-
-                {/* Action Buttons */}
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '8px',
-                    marginTop: '14px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid var(--border-subtle)',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => openPassbook(acc)}
-                    className="btn btn-secondary btn-sm"
-                    style={{ flex: 1, minWidth: '110px', gap: '5px', fontWeight: 700, fontSize: '0.78rem' }}
-                  >
-                    <BookOpen size={14} />
-                    <span>Passbook Dekhein</span>
-                  </button>
-
-                  {balance > 0 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenUpiModal(acc)}
-                        className="btn btn-primary btn-sm"
-                        style={{ flex: 1, minWidth: '100px', gap: '5px', fontWeight: 800, fontSize: '0.78rem' }}
-                      >
-                        <QrCode size={14} />
-                        <span>UPI Pay</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenPtpModal(acc)}
-                        className="btn btn-outline btn-sm"
-                        style={{ gap: '5px', fontSize: '0.76rem' }}
-                        title="Set promise to pay date"
-                      >
-                        <Calendar size={13} />
-                        <span>Promise Date</span>
-                      </button>
-                    </>
-                  )}
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-danger)' }}>
+                    ₹{Number(selectedKhata.current_balance || selectedKhata.balance || 0).toLocaleString('en-IN')}
+                  </div>
                 </div>
               </div>
-            );
-          })
-        )}
+
+              {/* Quick Actions in Desktop Sidebar */}
+              <div style={{ display: 'flex', gap: '8px', margin: '14px 0' }}>
+                <button
+                  type="button"
+                  onClick={() => handleOpenUpiModal(selectedKhata)}
+                  className="btn btn-primary btn-sm btn-block"
+                  style={{ gap: '6px', fontWeight: 800 }}
+                >
+                  <QrCode size={15} />
+                  <span>{isHindi ? 'UPI भुगतान करें' : 'Pay via UPI'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenPtpModal(selectedKhata)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ gap: '5px', fontWeight: 700, whiteSpace: 'nowrap' }}
+                >
+                  <Calendar size={14} />
+                  <span>{isHindi ? 'वादा तारीख' : 'Set Promise'}</span>
+                </button>
+              </div>
+
+              {/* Transactions Statement */}
+              <div style={{ maxHeight: '460px', overflowY: 'auto', paddingRight: '4px' }}>
+                {renderPassbookTransactions()}
+              </div>
+            </div>
+          ) : (
+            <div
+              className="card"
+              style={{
+                textAlign: 'center',
+                padding: '60px 24px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px dashed var(--border-subtle)',
+                borderRadius: 'var(--radius-xl)',
+              }}
+            >
+              <BookOpen size={48} color="var(--color-primary)" style={{ opacity: 0.4, margin: '0 auto 12px auto' }} />
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                {isHindi ? 'दुकान चुनें' : 'Select a Store Ledger'}
+              </div>
+              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                {isHindi ? 'पासबुक और लेन-देन स्टेटमेंट देखने के लिए बाईं ओर से किसी भी दुकान पर क्लिक करें।' : 'Click any store from the left list to inspect its passbook, history, and UPI payment.'}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ================= MODAL 1: PASSBOOK LEDGER ================= */}
-      {selectedKhata && (
-        <div className="modal-backdrop" onClick={() => setSelectedKhata(null)}>
+      {/* ================= MODAL 1: PASSBOOK LEDGER (Mobile Bottom Sheet) ================= */}
+      {showMobilePassbookModal && selectedKhata && (
+        <div className="modal-backdrop" onClick={() => setShowMobilePassbookModal(false)}>
           <div
             className="bottom-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -498,7 +766,7 @@ export const CustomerKhataScreen = () => {
                   {selectedKhata.shop_name || selectedKhata.shop?.name}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Digital Khata Statement • Live Passbook
+                  {isHindi ? 'डिजिटल खाता विवरण • लाइव पासबुक' : 'Digital Khata Statement • Live Passbook'}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -511,170 +779,30 @@ export const CustomerKhataScreen = () => {
 
             {/* Passbook Body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '14px 0' }}>
-              {passbookLoading ? (
-                <div style={{ textAlign: 'center', padding: '40px 10px' }}>
-                  <RefreshCw size={24} className="spin" style={{ margin: '0 auto 8px auto', color: 'var(--color-primary)' }} />
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Passbook load ho rahi hai...</div>
-                </div>
-              ) : !passbookData?.transactions || passbookData.transactions.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
-                  <FileText size={32} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
-                  <div style={{ fontSize: '0.85rem' }}>Is khate me abhi koi transaction nahi hai.</div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {passbookData.transactions.map((tx) => {
-                    const isCredit = tx.type === 'GIVE_CREDIT' || tx.type === 'credit';
-                    const isDisputed = tx.status === 'DISPUTED';
-
-                    return (
-                      <div
-                        key={tx.id}
-                        style={{
-                          padding: '12px',
-                          borderRadius: 'var(--radius-md)',
-                          backgroundColor: 'var(--bg-surface-subtle)',
-                          border: isDisputed ? '1px dashed var(--color-danger)' : '1px solid var(--border-subtle)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div
-                              style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                backgroundColor: isCredit ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                                color: isCredit ? 'var(--color-danger)' : 'var(--color-success)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}
-                            >
-                              {isCredit ? <ArrowUpRight size={16} /> : <ArrowDownLeft size={16} />}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                                {isCredit ? 'उधार लिया (Udhar Taken)' : 'उधार वापस किया (Payment Paid)'}
-                              </div>
-                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                {new Date(tx.created_at).toLocaleDateString('en-IN', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ textAlign: 'right' }}>
-                            <div
-                              style={{
-                                fontWeight: 900,
-                                fontSize: '1rem',
-                                color: isCredit ? 'var(--color-danger)' : 'var(--color-success)',
-                              }}
-                            >
-                              {isCredit ? '-' : '+'}₹{Number(tx.amount).toLocaleString('en-IN')}
-                            </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                              Bal: ₹{tx.balance_after}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Notes / Details */}
-                        {tx.notes && (
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '6px', paddingLeft: '36px' }}>
-                            Note: {tx.notes}
-                          </div>
-                        )}
-
-                        {/* Parchi Photo Link & Dispute trigger */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingLeft: '36px', fontSize: '0.74rem' }}>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            {tx.parchi_image_url && (
-                              <button
-                                type="button"
-                                onClick={() => setViewParchiUrl(getImageUrl(tx.parchi_image_url))}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: 'var(--color-primary)',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  padding: 0,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                }}
-                              >
-                                <ImageIcon size={12} />
-                                <span>View Bill Slip</span>
-                              </button>
-                            )}
-                            {tx.bill_number && (
-                              <span style={{ color: 'var(--text-muted)' }}>Bill #{tx.bill_number}</span>
-                            )}
-                          </div>
-
-                          {/* Dispute Button */}
-                          {isCredit && !isDisputed && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setDisputeTx(tx);
-                                setDisputeReason('');
-                              }}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--text-muted)',
-                                cursor: 'pointer',
-                                fontSize: '0.72rem',
-                                padding: 0,
-                              }}
-                              title="Dispute if this amount is wrong"
-                            >
-                              Dispute?
-                            </button>
-                          )}
-
-                          {isDisputed && (
-                            <span style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: '0.72rem' }}>
-                              ⚠️ Disputed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {renderPassbookTransactions()}
             </div>
 
             {/* Passbook Footer Actions */}
             <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: '8px' }}>
               <button
                 type="button"
-                onClick={() => setSelectedKhata(null)}
+                onClick={() => setShowMobilePassbookModal(false)}
                 className="btn btn-secondary btn-block"
               >
-                Band Karein
+                {isHindi ? 'बंद करें' : 'Close'}
               </button>
               {Number(selectedKhata.current_balance || selectedKhata.balance || 0) > 0 && (
                 <button
                   type="button"
                   onClick={() => {
+                    setShowMobilePassbookModal(false);
                     handleOpenUpiModal(selectedKhata);
                   }}
                   className="btn btn-primary btn-block"
                   style={{ gap: '6px', fontWeight: 800 }}
                 >
                   <QrCode size={16} />
-                  <span>UPI Payment Karein</span>
+                  <span>{isHindi ? 'UPI भुगतान करें' : 'Pay via UPI'}</span>
                 </button>
               )}
             </div>
@@ -695,7 +823,7 @@ export const CustomerKhataScreen = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                  Pay via UPI
+                  {isHindi ? 'UPI से भुगतान करें' : 'Pay via UPI'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   To: <strong>{selectedKhata.shop_name || selectedKhata.shop?.name}</strong>
@@ -735,8 +863,14 @@ export const CustomerKhataScreen = () => {
                 if (!shopVpa) {
                   return (
                     <div style={{ padding: '14px', backgroundColor: '#fffbeb', borderRadius: '10px', border: '1px solid #fde68a', color: '#92400e', fontSize: '0.82rem', textAlign: 'left' }}>
-                      <div style={{ fontWeight: 800, marginBottom: '4px' }}>⚠️ Dukaandaar ne direct UPI ID set nahi ki hai</div>
-                      <div>Dukan par direct payment karne ke baad, payment screenshot se 12-digit UTR Ref Number niche daal kar proof submit karein.</div>
+                      <div style={{ fontWeight: 800, marginBottom: '4px' }}>
+                        {isHindi ? '⚠️ दुकानदार ने डायरेक्ट UPI ID सेट नहीं की है' : '⚠️ Direct UPI ID is not configured by merchant'}
+                      </div>
+                      <div>
+                        {isHindi
+                          ? 'दुकान पर पेमेंट करने के बाद, पेमेंट स्क्रीनशॉट से 12-अंकों का UTR Ref Number नीचे डालकर प्रूफ सबमिट करें।'
+                          : 'After completing payment in-store, enter the 12-digit UTR reference number from your payment receipt to submit proof.'}
+                      </div>
                     </div>
                   );
                 }
@@ -755,7 +889,7 @@ export const CustomerKhataScreen = () => {
                         type="button"
                         onClick={() => {
                           navigator.clipboard?.writeText(shopVpa);
-                          alert(`UPI ID copy ho gayi: ${shopVpa}`);
+                          alert(`UPI ID copied: ${shopVpa}`);
                         }}
                         style={{
                           background: 'rgba(99, 102, 241, 0.1)',
@@ -790,7 +924,7 @@ export const CustomerKhataScreen = () => {
             <form onSubmit={handleUpiPaymentSubmit}>
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Payment Amount (₹)
+                  {isHindi ? 'भुगतान राशि (₹)' : 'Payment Amount (₹)'}
                 </label>
                 <input
                   type="number"
@@ -804,7 +938,7 @@ export const CustomerKhataScreen = () => {
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  12-Digit UPI UTR / Ref No. (Payment ke baad screenshot me se daalein)
+                  {isHindi ? '12-अंकों का UPI UTR / Ref No.' : '12-Digit UPI UTR / Reference No.'}
                 </label>
                 <input
                   type="text"
@@ -818,11 +952,11 @@ export const CustomerKhataScreen = () => {
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Optional Note
+                  {isHindi ? 'टिप्पणी (वैकल्पिक)' : 'Optional Note'}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. GPay se ₹500 bheje"
+                  placeholder={isHindi ? "जैसे: GPay से ₹500 भेजे" : "e.g. Paid ₹500 via GPay"}
                   className="form-input"
                   value={upiNote}
                   onChange={(e) => setUpiNote(e.target.value)}
@@ -850,19 +984,19 @@ export const CustomerKhataScreen = () => {
           <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '8px' }}>
-              Promise to Pay (Bhugtan Ka Vada)
+              {isHindi ? 'भुगतान का वादा (Promise to Pay)' : 'Promise to Pay'}
             </h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-              Dukaandaar ko batayein ki aap kab tak hisaab chukta kar denge. Isse dukaandaar ka bharosa bana rahta hai.
+              {isHindi ? 'दुकानदार को सूचित करें कि आप कब तक बकाया भुगतान कर देंगे।' : 'Inform the merchant when you plan to settle your credit ledger.'}
             </p>
 
             {/* Quick Preset Chips */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
               {[
-                { label: '3 Din Me', days: 3 },
-                { label: '1 Hafte Me', days: 7 },
-                { label: '15 Din Me', days: 15 },
-                { label: 'Agle Mahine 1 Ko', days: 30 },
+                { label: isHindi ? '3 दिन में' : 'In 3 Days', days: 3 },
+                { label: isHindi ? '1 हफ्ते में' : 'In 1 Week', days: 7 },
+                { label: isHindi ? '15 दिन में' : 'In 15 Days', days: 15 },
+                { label: isHindi ? 'अगले माह 1 को' : 'Next Month 1st', days: 30 },
               ].map((p, idx) => (
                 <button
                   key={idx}
@@ -890,7 +1024,7 @@ export const CustomerKhataScreen = () => {
             <form onSubmit={handlePtpSubmit}>
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Promise Date
+                  {isHindi ? 'तारीख चुनें' : 'Promise Date'}
                 </label>
                 <input
                   type="date"
@@ -903,11 +1037,11 @@ export const CustomerKhataScreen = () => {
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Message for Dukaandar (Optional)
+                  {isHindi ? 'संदेश (वैकल्पिक)' : 'Message for Merchant (Optional)'}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Salary aate hi 1 tareekh ko de dunga"
+                  placeholder={isHindi ? "जैसे: सैलरी आते ही भुगतान कर दूँगा" : "e.g. Will settle on salary day"}
                   className="form-input"
                   value={ptpNote}
                   onChange={(e) => setPtpNote(e.target.value)}
@@ -942,7 +1076,7 @@ export const CustomerKhataScreen = () => {
           <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-danger)' }}>
-              Transaction Dispute Karein
+              {isHindi ? 'लेन-देन विवाद दर्ज करें' : 'Dispute Transaction'}
             </h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
               Amount: <strong>₹{disputeTx.amount}</strong> ({new Date(disputeTx.created_at).toLocaleDateString('en-IN')})
@@ -951,10 +1085,10 @@ export const CustomerKhataScreen = () => {
             {/* Quick Reason Chips */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
               {[
-                'Saman wapas kar diya tha',
-                'Galat amount likha hai',
-                'Pehle hi cash me de chuka hoon',
-                'Maine yeh saman nahi liya',
+                isHindi ? 'सामान वापस कर दिया था' : 'Returned goods',
+                isHindi ? 'गलत राशि दर्ज है' : 'Incorrect amount',
+                isHindi ? 'पहले ही नकद भुगतान कर दिया था' : 'Already paid in cash',
+                isHindi ? 'मैंने यह सामान नहीं लिया' : 'Did not purchase this item',
               ].map((r, i) => (
                 <button
                   key={i}
@@ -978,12 +1112,12 @@ export const CustomerKhataScreen = () => {
             <form onSubmit={handleDisputeSubmit}>
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Karan / Reason
+                  {isHindi ? 'विवाद का कारण' : 'Reason for dispute'}
                 </label>
                 <textarea
                   rows={3}
                   required
-                  placeholder="Karan likhein taaki dukaandaar check karke hisaab theek karein..."
+                  placeholder={isHindi ? "विवाद का कारण लिखें..." : "Explain why this transaction is incorrect..."}
                   className="form-input"
                   value={disputeReason}
                   onChange={(e) => setDisputeReason(e.target.value)}
@@ -997,14 +1131,14 @@ export const CustomerKhataScreen = () => {
                   className="btn btn-danger btn-block"
                   style={{ fontWeight: 800 }}
                 >
-                  {disputeLoading ? 'Dispute Bhej Rahe Hain...' : 'Dispute Submit Karein'}
+                  {disputeLoading ? t('common.processing') : (isHindi ? 'विवाद सबमिट करें' : 'Submit Dispute')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setDisputeTx(null)}
                   className="btn btn-secondary"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -1038,10 +1172,10 @@ export const CustomerKhataScreen = () => {
             </div>
 
             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-              Mera Khata QR Code
+              {isHindi ? 'मेरा डिजिटल खाता QR कोड' : 'My Khata QR Code'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              Dukan ke counter par yeh QR scan karwayein
+              {isHindi ? 'दुकान के काउंटर पर यह QR स्कैन करवाएँ' : 'Show this QR code at merchant counter for quick identification'}
             </p>
 
             <div
@@ -1058,7 +1192,7 @@ export const CustomerKhataScreen = () => {
             </div>
 
             <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-              {user?.name || user?.full_name || 'Grahak'}
+              {user?.name || user?.full_name || 'Customer'}
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
               {user?.phone || 'Phone verified'}
@@ -1070,7 +1204,7 @@ export const CustomerKhataScreen = () => {
               className="btn btn-secondary btn-block"
               style={{ marginTop: '20px' }}
             >
-              Band Karein
+              {isHindi ? 'बंद करें' : 'Close'}
             </button>
           </div>
         </div>
@@ -1123,3 +1257,4 @@ export const CustomerKhataScreen = () => {
     </AppLayout>
   );
 };
+export default CustomerKhataScreen;

@@ -45,10 +45,10 @@ export const SideDrawer = ({ isOpen, onClose }) => {
   return (
     <>
       {/* Backdrop */}
-      <div className="drawer-overlay" onClick={onClose} />
+      <div className="drawer-backdrop active" onClick={onClose} />
 
       {/* Drawer Container */}
-      <aside className="drawer-container" aria-label="Customer Navigation Drawer">
+      <aside className="side-drawer open" aria-label="Customer Navigation Drawer" role="dialog" aria-modal="true">
         {/* Header Profile Section */}
         <div className="drawer-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

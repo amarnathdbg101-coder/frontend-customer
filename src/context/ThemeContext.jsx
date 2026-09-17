@@ -7,7 +7,7 @@
  * - HTML root tag par data-theme="dark" / data-theme="light" set karta hai
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 const ThemeContext = createContext();
 
@@ -21,18 +21,28 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem('shopsilo_theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  }, []);
 
-  const setTheme = (newTheme) => {
+  const setTheme = useCallback((newTheme) => {
     if (newTheme === 'dark' || newTheme === 'light') {
       setThemeState(newTheme);
     }
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      theme,
+      isDark: theme === 'dark',
+      toggleTheme,
+      setTheme,
+    }),
+    [theme, toggleTheme, setTheme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark: theme === 'dark', toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );
@@ -45,3 +55,5 @@ export const useTheme = () => {
   }
   return context;
 };
+
+export default ThemeContext;

@@ -27,16 +27,15 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    if (isOpen && activeTab === 'camera') {
-      startCamera();
-    } else {
-      stopCamera();
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     }
-    return () => stopCamera();
-  }, [isOpen, activeTab]);
+    setCameraActive(false);
+  }, []);
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     try {
       setErrorMsg('');
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -56,15 +55,16 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
       console.warn('Camera access denied or unavailable:', err);
       setCameraActive(false);
     }
-  };
+  }, []);
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+  useEffect(() => {
+    if (isOpen && activeTab === 'camera') {
+      startCamera();
+    } else {
+      stopCamera();
     }
-    setCameraActive(false);
-  };
+    return () => stopCamera();
+  }, [isOpen, activeTab, startCamera, stopCamera]);
 
   const captureFrame = () => {
     if (!videoRef.current) return null;

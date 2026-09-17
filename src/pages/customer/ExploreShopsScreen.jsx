@@ -96,11 +96,7 @@ export const ExploreShopsScreen = () => {
     }
   }, [t]);
 
-  useEffect(() => {
-    loadData();
-  }, [selectedCategory, radiusKm, openNowOnly, searchMode]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -119,7 +115,7 @@ export const ExploreShopsScreen = () => {
             radius_km: radiusKm < 999 ? radiusKm : 15,
             category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
             open_now: openNowOnly,
-            q: searchTerm || undefined,
+            q: debouncedSearch || undefined,
             limit: 60,
           }).catch(() => productApi.listProducts({ limit: 60 }))
         : productApi.listProducts({ limit: 60 });
@@ -130,7 +126,15 @@ export const ExploreShopsScreen = () => {
       ]);
 
       let shopList = shopData.status === 'fulfilled'
-        ? Array.isArray(shopData.value?.shops) ? shopData.value.shops : (Array.isArray(shopData.value) ? shopData.value : [])
+        ? Array.isArray(shopData.value?.shops)
+          ? shopData.value.shops
+          : Array.isArray(shopData.value?.data?.shops)
+          ? shopData.value.data.shops
+          : Array.isArray(shopData.value?.data)
+          ? shopData.value.data
+          : Array.isArray(shopData.value)
+          ? shopData.value
+          : []
         : [];
 
       if (shopList.length === 0 && params.radius_km) {
@@ -140,7 +144,15 @@ export const ExploreShopsScreen = () => {
             lng: coords?.lng,
             category_id: selectedCategory && selectedCategory !== 'All' ? selectedCategory : undefined,
           });
-          shopList = Array.isArray(fallbackShops?.shops) ? fallbackShops.shops : (Array.isArray(fallbackShops) ? fallbackShops : []);
+          shopList = Array.isArray(fallbackShops?.shops)
+            ? fallbackShops.shops
+            : Array.isArray(fallbackShops?.data?.shops)
+            ? fallbackShops.data.shops
+            : Array.isArray(fallbackShops?.data)
+            ? fallbackShops.data
+            : Array.isArray(fallbackShops)
+            ? fallbackShops
+            : [];
         } catch (e) {
           console.warn('Fallback shops fetch error:', e);
         }
@@ -150,7 +162,13 @@ export const ExploreShopsScreen = () => {
       const prodRaw = prodData.status === 'fulfilled' ? prodData.value : null;
       const prodList = Array.isArray(prodRaw?.products)
         ? prodRaw.products
-        : (Array.isArray(prodRaw?.data) ? prodRaw.data : (Array.isArray(prodRaw) ? prodRaw : []));
+        : Array.isArray(prodRaw?.data?.products)
+        ? prodRaw.data.products
+        : Array.isArray(prodRaw?.data)
+        ? prodRaw.data
+        : Array.isArray(prodRaw)
+        ? prodRaw
+        : [];
       const normalizedProds = prodList.map((p) => {
         const qty = Number(
           p.available_quantity ??
@@ -173,7 +191,11 @@ export const ExploreShopsScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [coords?.lat, coords?.lng, radiusKm, selectedCategory, openNowOnly, debouncedSearch]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const filteredShops = useMemo(() => {
     return shops.filter((s) => {
@@ -537,30 +559,10 @@ export const ExploreShopsScreen = () => {
 
       {/* Floating AI Co-Pilot Button */}
       <button
+        type="button"
         onClick={() => setIsCopilotOpen(true)}
-        className="btn"
+        className="floating-ai-copilot-btn"
         aria-label="Open AI Shopping Assistant"
-        style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '20px',
-          background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '30px',
-          padding: '10px 18px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '0.88rem',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 6px 20px rgba(79, 70, 229, 0.45)',
-          zIndex: 90,
-          transition: 'transform 0.2s',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
       >
         <Bot size={18} aria-hidden="true" />
         <span>Ask Pick (AI)</span>
@@ -588,3 +590,5 @@ export const ExploreShopsScreen = () => {
     </AppLayout>
   );
 };
+
+export default ExploreShopsScreen;

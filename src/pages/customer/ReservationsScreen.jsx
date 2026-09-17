@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Clock, CheckCircle, XCircle, AlertCircle, QrCode, X, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle, XCircle, QrCode, X, Store, Package } from 'lucide-react';
 import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -92,13 +92,13 @@ export const ReservationsScreen = () => {
   if (!isAuthenticated) {
     return (
       <AppLayout title={t('nav.reservations')} subtitle={t('checkout.reservation_title')} showBack={true}>
-        <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <ShoppingBag size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{t('auth.login_title')}</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '48px 20px' }}>
+          <ShoppingBag size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>{t('auth.login_title')}</h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', maxWidth: '360px', margin: '8px auto 20px auto' }}>
             {t('auth.login_required_reserve')}
           </p>
-          <button className="btn btn-primary" onClick={() => navigate('/login')} style={{ padding: '10px 24px', fontWeight: 700 }}>
+          <button className="btn btn-primary" onClick={() => navigate('/login')} style={{ padding: '10px 28px', fontWeight: 700, borderRadius: 'var(--radius-full)' }}>
             {t('nav.login')}
           </button>
         </div>
@@ -108,20 +108,23 @@ export const ReservationsScreen = () => {
 
   return (
     <AppLayout title={t('nav.reservations')} subtitle={t('checkout.reservation_subtitle')} showBack={true}>
+      <title>{t('nav.reservations')} — ShopSilo</title>
+
       {/* Status Tabs */}
       <div
         style={{
           display: 'flex',
           background: 'var(--bg-surface)',
-          borderRadius: '12px',
+          borderRadius: 'var(--radius-lg)',
           padding: '4px',
-          marginBottom: '16px',
+          marginBottom: '18px',
           border: '1px solid var(--border-subtle)',
           overflowX: 'auto',
+          boxShadow: 'var(--shadow-xs)',
         }}
       >
         {[
-          { id: 'all', label: t('common.view_all') },
+          { id: 'all', label: `${t('common.view_all')} (${reservations.length})` },
           { id: 'active', label: t('checkout.status_pending') },
           { id: 'completed', label: t('checkout.status_completed') },
           { id: 'cancelled', label: t('checkout.status_cancelled') },
@@ -131,11 +134,11 @@ export const ReservationsScreen = () => {
             onClick={() => setActiveStatusTab(tab.id)}
             style={{
               flex: 1,
-              padding: '8px 12px',
-              borderRadius: '8px',
+              padding: '9px 12px',
+              borderRadius: 'var(--radius-md)',
               border: 'none',
               fontSize: '0.8rem',
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               background: activeStatusTab === tab.id ? 'var(--color-primary)' : 'transparent',
@@ -148,68 +151,108 @@ export const ReservationsScreen = () => {
         ))}
       </div>
 
-      <div className="card" style={{ padding: '12px 16px' }}>
-        <div style={{ padding: '4px 0 12px 0', fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between' }}>
-          <span>{t('checkout.order_items')}</span>
-          <span>({filteredReservations.length})</span>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          {t('common.loading')}
         </div>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            {t('common.loading')}
+      ) : filteredReservations.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
+          <ShoppingBag size={48} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+          <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '4px' }}>
+            {t('common.no_results')}
           </div>
-        ) : filteredReservations.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            <ShoppingBag size={40} style={{ margin: '0 auto 10px auto', opacity: 0.4 }} />
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-              {t('common.no_results')}
-            </div>
-            <p style={{ margin: 0 }}>
-              {t('common.try_adjusting_search')}
-            </p>
-          </div>
-        ) : (
-          filteredReservations.map((r) => {
+          <p style={{ margin: 0, fontSize: '0.84rem' }}>
+            {t('common.try_adjusting_search')}
+          </p>
+        </div>
+      ) : (
+        <div className="reservations-grid">
+          {filteredReservations.map((r) => {
             const displayId =
               r.pickup_code ||
               r.reservation_number ||
               (typeof r.id === 'string' ? r.id.slice(0, 8) : r.id) ||
               'PKP-892';
 
+            const isActive = r.status === 'active' || r.status === 'pending' || !r.status || r.status === 'ready';
+            const isDone = r.status === 'completed' || r.status === 'verified';
+            const isCancelled = r.status === 'cancelled';
+
             return (
               <div
                 key={r.id || Math.random()}
-                className="list-item"
+                className="card"
                 style={{
-                  padding: '14px 0',
-                  borderBottom: '1px solid var(--border-subtle)',
+                  margin: 0,
+                  padding: '16px',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1.5px solid var(--border-subtle)',
+                  boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
+                  flexDirection: 'column',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
+                  gap: '12px',
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                    {r.product?.name || `Reservation #${displayId}`}
-                  </div>
-                  {r.shop?.name && (
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 600, marginTop: '2px' }}>
-                      🏪 {r.shop.name}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                        {r.product?.name || `Reservation #${displayId}`}
+                      </div>
+                      {r.shop?.name && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Store size={12} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.shop.name}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                    {t('cart.quantity')}: {r.quantity || 1} • {t('products.hold_hours')}: {formatExpiry(r.expires_at)}
+
+                    <span
+                      className={`badge ${
+                        isDone
+                          ? 'badge-success'
+                          : isCancelled
+                          ? 'badge-danger'
+                          : 'badge-warning'
+                      }`}
+                      style={{ flexShrink: 0 }}
+                    >
+                      {isDone ? t('checkout.status_completed') : isCancelled ? t('checkout.status_cancelled') : t('checkout.status_pending')}
+                    </span>
                   </div>
 
-                  <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{t('cart.quantity')}: <strong>{r.quantity || 1}</strong></span>
+                    <span>•</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <Clock size={12} color="var(--text-muted)" />
+                      {t('products.hold_hours')}: {formatExpiry(r.expires_at)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pickup Code & Actions */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: '12px',
+                    borderTop: '1px solid var(--border-subtle)',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span
                       style={{
                         backgroundColor: 'var(--color-primary-light)',
                         color: 'var(--color-primary)',
                         fontWeight: 900,
-                        padding: '3px 10px',
+                        padding: '4px 10px',
                         borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.85rem',
+                        fontSize: '0.88rem',
                         letterSpacing: '1px',
                         display: 'inline-block',
                       }}
@@ -221,57 +264,45 @@ export const ReservationsScreen = () => {
                       type="button"
                       onClick={() => setInspectToken(r)}
                       className="btn btn-secondary btn-sm"
-                      style={{ padding: '3px 8px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}
+                      style={{ padding: '4px 10px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}
                     >
                       <QrCode size={13} />
                       <span>{t('checkout.view_token')}</span>
                     </button>
                   </div>
-                </div>
 
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <span
-                    className={`badge ${
-                      r.status === 'verified' || r.status === 'completed'
-                        ? 'badge-success'
-                        : r.status === 'cancelled'
-                        ? 'badge-danger'
-                        : 'badge-warning'
-                    }`}
-                  >
-                    {r.status === 'completed' ? t('checkout.status_completed') : r.status === 'cancelled' ? t('checkout.status_cancelled') : t('checkout.status_pending')}
-                  </span>
-
-                  {(r.status === 'active' || r.status === 'pending' || !r.status) && (
-                    <div style={{ marginTop: '10px' }}>
-                      <button
-                        onClick={() => handleCancel(r.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--color-danger, #ef4444)',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {t('checkout.cancel_reservation')}
-                      </button>
-                    </div>
+                  {isActive && (
+                    <button
+                      onClick={() => handleCancel(r.id)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--color-danger, #ef4444)',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                      }}
+                    >
+                      {t('checkout.cancel_reservation')}
+                    </button>
                   )}
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       {/* Inspect QR Code Modal */}
       {inspectToken && (
         <div className="modal-backdrop" onClick={() => setInspectToken(null)}>
-          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px', margin: '0 auto' }}>
+            <div className="sheet-handle" />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>{t('checkout.pickup_otp')}</h3>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {t('checkout.pickup_otp')}
+              </h3>
               <button
                 type="button"
                 onClick={() => setInspectToken(null)}
@@ -285,7 +316,10 @@ export const ReservationsScreen = () => {
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
                 <RealQRCode
                   value={`SHOP-PICKUP:${inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id}`}
-                  size={160}
+                  size={180}
+                  logoText="PICKUP"
+                  showDownload={true}
+                  downloadFilename={"pickup-code-" + (inspectToken.pickup_code || inspectToken.id)}
                 />
               </div>
 
@@ -293,7 +327,7 @@ export const ReservationsScreen = () => {
                 {inspectToken.pickup_code || inspectToken.reservation_number || 'PKP-789'}
               </div>
 
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
                 {t('checkout.pickup_instructions')}
               </p>
 
@@ -312,3 +346,4 @@ export const ReservationsScreen = () => {
     </AppLayout>
   );
 };
+export default ReservationsScreen;

@@ -81,6 +81,17 @@
   --bottom-nav-height: 64px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-top: env(safe-area-inset-top, 0px);
+
+  /* Z-Index Hierarchy */
+  --z-header: 40;
+  --z-desktop-nav: 50;
+  --z-floating-btn: 90;
+  --z-bottom-nav: 95;
+  --z-drawer-backdrop: 100;
+  --z-drawer: 110;
+  --z-modal-backdrop: 120;
+  --z-modal: 130;
+  --z-toast: 150;
 }
 
 /* Dark Theme Variables */

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 const LocationContext = createContext(null);
 
@@ -28,19 +28,25 @@ export const LocationProvider = ({ children }) => {
   const [gpsError, setGpsError] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('shopsilo_customer_coords', JSON.stringify(coords));
+    try {
+      localStorage.setItem('shopsilo_customer_coords', JSON.stringify(coords));
+    } catch (e) {}
   }, [coords]);
 
   useEffect(() => {
-    localStorage.setItem('shopsilo_customer_loc_name', locationName);
+    try {
+      localStorage.setItem('shopsilo_customer_loc_name', locationName);
+    } catch (e) {}
   }, [locationName]);
 
   useEffect(() => {
-    localStorage.setItem('shopsilo_customer_radius', radiusKm.toString());
+    try {
+      localStorage.setItem('shopsilo_customer_radius', radiusKm.toString());
+    } catch (e) {}
   }, [radiusKm]);
 
   // Detect location via device GPS
-  const detectLocation = () => {
+  const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setGpsError('Geolocation is not supported by your browser');
       return;
@@ -65,26 +71,29 @@ export const LocationProvider = ({ children }) => {
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
-  };
+  }, []);
 
-  const setManualLocation = (name, lat, lng) => {
+  const setManualLocation = useCallback((name, lat, lng) => {
     setCoords({ lat, lng });
     setLocationName(name);
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      coords,
+      locationName,
+      radiusKm,
+      setRadiusKm,
+      detectLocation,
+      setManualLocation,
+      isDetecting,
+      gpsError,
+    }),
+    [coords, locationName, radiusKm, detectLocation, setManualLocation, isDetecting, gpsError]
+  );
 
   return (
-    <LocationContext.Provider
-      value={{
-        coords,
-        locationName,
-        radiusKm,
-        setRadiusKm,
-        detectLocation,
-        setManualLocation,
-        isDetecting,
-        gpsError,
-      }}
-    >
+    <LocationContext.Provider value={contextValue}>
       {children}
     </LocationContext.Provider>
   );

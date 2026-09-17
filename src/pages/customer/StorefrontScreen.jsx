@@ -276,7 +276,7 @@ export const StorefrontScreen = () => {
       </div>
 
       {/* Products Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+      <div className="customer-product-grid">
         {filteredProducts.map((p) => {
           const stock = Number(
             p.available_quantity ??

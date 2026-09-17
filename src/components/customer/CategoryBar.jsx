@@ -134,7 +134,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }) {
           onClick={() => handleScroll('left')}
           style={{
             position: 'absolute',
-            left: '-12px',
+            left: '2px',
             top: '50%',
             transform: 'translateY(-50%)',
             width: '32px',
@@ -142,7 +142,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }) {
             borderRadius: '50%',
             border: '1px solid var(--border-subtle)',
             backgroundColor: 'var(--bg-surface)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -312,7 +312,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }) {
           onClick={() => handleScroll('right')}
           style={{
             position: 'absolute',
-            right: '-12px',
+            right: '2px',
             top: '50%',
             transform: 'translateY(-50%)',
             width: '32px',
@@ -320,7 +320,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }) {
             borderRadius: '50%',
             border: '1px solid var(--border-subtle)',
             backgroundColor: 'var(--bg-surface)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

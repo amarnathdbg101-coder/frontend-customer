@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 const SavedContext = createContext(null);
 
@@ -22,14 +22,18 @@ export const SavedProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem('shopsilo_saved_products', JSON.stringify(savedProducts));
+    try {
+      localStorage.setItem('shopsilo_saved_products', JSON.stringify(savedProducts));
+    } catch (e) {}
   }, [savedProducts]);
 
   useEffect(() => {
-    localStorage.setItem('shopsilo_saved_shops', JSON.stringify(savedShops));
+    try {
+      localStorage.setItem('shopsilo_saved_shops', JSON.stringify(savedShops));
+    } catch (e) {}
   }, [savedShops]);
 
-  const toggleSaveProduct = (product) => {
+  const toggleSaveProduct = useCallback((product) => {
     if (!product || !product.id) return;
     setSavedProducts((prev) => {
       const exists = prev.some((p) => p.id === product.id);
@@ -39,13 +43,16 @@ export const SavedProvider = ({ children }) => {
         return [...prev, product];
       }
     });
-  };
+  }, []);
 
-  const isProductSaved = (productId) => {
-    return savedProducts.some((p) => p.id === productId);
-  };
+  const isProductSaved = useCallback(
+    (productId) => {
+      return savedProducts.some((p) => p.id === productId);
+    },
+    [savedProducts]
+  );
 
-  const toggleSaveShop = (shop) => {
+  const toggleSaveShop = useCallback((shop) => {
     if (!shop || !shop.id) return;
     setSavedShops((prev) => {
       const exists = prev.some((s) => s.id === shop.id);
@@ -55,23 +62,29 @@ export const SavedProvider = ({ children }) => {
         return [...prev, shop];
       }
     });
-  };
+  }, []);
 
-  const isShopSaved = (shopId) => {
-    return savedShops.some((s) => s.id === shopId);
-  };
+  const isShopSaved = useCallback(
+    (shopId) => {
+      return savedShops.some((s) => s.id === shopId);
+    },
+    [savedShops]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      savedProducts,
+      savedShops,
+      toggleSaveProduct,
+      isProductSaved,
+      toggleSaveShop,
+      isShopSaved,
+    }),
+    [savedProducts, savedShops, toggleSaveProduct, isProductSaved, toggleSaveShop, isShopSaved]
+  );
 
   return (
-    <SavedContext.Provider
-      value={{
-        savedProducts,
-        savedShops,
-        toggleSaveProduct,
-        isProductSaved,
-        toggleSaveShop,
-        isShopSaved,
-      }}
-    >
+    <SavedContext.Provider value={contextValue}>
       {children}
     </SavedContext.Provider>
   );
@@ -84,3 +97,5 @@ export const useSaved = () => {
   }
   return context;
 };
+
+export default SavedContext;
