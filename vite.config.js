@@ -1,11 +1,34 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { compression } from 'vite-plugin-compression2'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Cloudflare Pages SPA fallback helper (generates 200.html and 404.html from index.html)
+function spaFallbackPlugin() {
+  return {
+    name: 'spa-fallback-plugin',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist')
+      const indexPath = path.join(distDir, 'index.html')
+      const fallback200 = path.join(distDir, '200.html')
+      const fallback404 = path.join(distDir, '404.html')
+      if (fs.existsSync(indexPath)) {
+        fs.copyFileSync(indexPath, fallback200)
+        fs.copyFileSync(indexPath, fallback404)
+      }
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    spaFallbackPlugin(),
     compression({ algorithm: 'gzip', threshold: 1024 }),
   ],
   server: {

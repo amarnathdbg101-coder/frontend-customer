@@ -1,4 +1,4 @@
-# Cloudflare Pages Redirects & SPA Rewrite
+# Cloudflare Pages Redirects
 /dashboard    https://shop.shopsilo.in/merchant    302
 /merchant/*   https://shop.shopsilo.in/merchant/:splat 302
 /merchant     https://shop.shopsilo.in/merchant    302
@@ -7,5 +7,3 @@
 /inventory    https://shop.shopsilo.in/inventory   302
 /expenses     https://shop.shopsilo.in/expenses    302
 
-# Single Page Application (SPA) fallback
-/*            /index.html                          200
