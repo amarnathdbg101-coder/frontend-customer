@@ -225,14 +225,14 @@ export const StorefrontScreen = () => {
 
                 <span
                   style={{
-                    backgroundColor: shop.is_active ? '#10b981' : '#ef4444',
+                    backgroundColor: (shop.is_currently_open ?? shop.is_open ?? shop.is_active) ? '#10b981' : '#ef4444',
                     color: '#ffffff',
                     padding: '2px 8px',
                     borderRadius: 'var(--radius-full)',
                     fontWeight: 700,
                   }}
                 >
-                  {shop.is_active ? t('common.open_now') : t('common.closed')}
+                  {(shop.is_currently_open ?? shop.is_open ?? shop.is_active) ? t('common.open_now') : t('common.closed')}
                 </span>
               </div>
             </div>

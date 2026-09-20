@@ -19,6 +19,7 @@ const ShopCardInner = ({
 }) => {
   const { isHindi } = useLanguage();
   const s = shop;
+  const isShopOpen = Boolean(s.is_currently_open ?? s.is_open ?? s.is_active);
   const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
   const hasBanner = Array.isArray(s.banners) && s.banners.length > 0 && s.banners[0];
 
@@ -27,7 +28,7 @@ const ShopCardInner = ({
       className="card card-clickable shop-card"
       onClick={onClick}
       role="article"
-      aria-label={`Shop: ${s.name}, ${s.is_active ? 'Open Now' : 'Closed'}`}
+      aria-label={`Shop: ${s.name}, ${isShopOpen ? 'Open Now' : 'Closed'}`}
     >
       {/* Banner Preview */}
       {hasBanner && (
@@ -84,9 +85,9 @@ const ShopCardInner = ({
 
           {/* Status */}
           <div className="shop-card-status-row">
-            <span className={`shop-card-status ${s.is_active ? 'open' : 'closed'}`}>
+            <span className={`shop-card-status ${isShopOpen ? 'open' : 'closed'}`}>
               <span className="shop-card-status-dot" />
-              {s.is_active ? (isHindi ? 'खुली है' : 'OPEN NOW') : (isHindi ? 'बंद है' : 'CLOSED')}
+              {isShopOpen ? (isHindi ? 'खुली है' : 'OPEN NOW') : (isHindi ? 'बंद है' : 'CLOSED')}
             </span>
             <span className="shop-card-timing">
               <Clock size={12} color="var(--text-muted)" aria-hidden="true" />

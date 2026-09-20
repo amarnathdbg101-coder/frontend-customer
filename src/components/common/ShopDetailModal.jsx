@@ -38,6 +38,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
 
   if (!shop) return null;
 
+  const isShopOpen = Boolean(shop.is_currently_open ?? shop.is_open ?? shop.is_active);
   const banners = Array.isArray(shop.banners) && shop.banners.length > 0 ? shop.banners : [];
   const fullAddress = [shop.address, shop.city, shop.pincode].filter(Boolean).join(', ');
 
@@ -274,8 +275,8 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                   style={{
                     fontSize: '0.72rem',
                     fontWeight: 700,
-                    backgroundColor: shop.is_active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    color: shop.is_active ? '#065f46' : '#991b1b',
+                    backgroundColor: isShopOpen ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    color: isShopOpen ? '#065f46' : '#991b1b',
                     padding: '2px 8px',
                     borderRadius: '6px',
                     display: 'inline-flex',
@@ -288,10 +289,10 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                       width: '6px',
                       height: '6px',
                       borderRadius: '50%',
-                      backgroundColor: shop.is_active ? '#10b981' : '#ef4444',
+                      backgroundColor: isShopOpen ? '#10b981' : '#ef4444',
                     }}
                   />
-                  {shop.is_active ? 'OPEN ABHI' : 'BAND HAI'}
+                  {isShopOpen ? 'OPEN ABHI' : 'BAND HAI'}
                 </span>
               </div>
 
