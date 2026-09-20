@@ -99,7 +99,7 @@ export const CustomerProfileScreen = () => {
               boxShadow: '0 6px 18px rgba(79, 70, 229, 0.35)',
             }}>
               {user?.avatar_url ? (
-                <img 
+                <img loading="lazy" decoding="async"  
                   src={getImageUrl(user.avatar_url)} 
                   alt={user?.name || 'Customer'} 
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} 

@@ -149,7 +149,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
               title={isHindi ? 'प्रोफ़ाइल' : 'Profile'}
             >
               {user.avatar_url ? (
-                <img
+                <img loading="lazy" decoding="async" 
                   src={getImageUrl(user.avatar_url)}
                   alt={user?.name || user?.full_name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}

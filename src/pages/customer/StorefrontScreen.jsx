@@ -121,7 +121,7 @@ export const StorefrontScreen = () => {
         >
           {shop.banners && shop.banners.length > 0 && (
             <div style={{ width: '100%', height: '120px', overflow: 'relative', position: 'relative' }}>
-              <img
+              <img loading="lazy" decoding="async" 
                 src={getImageUrl(shop.banners[0])}
                 alt={shop.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -154,7 +154,7 @@ export const StorefrontScreen = () => {
                 }}
               >
                 {shop.logo_url ? (
-                  <img
+                  <img loading="lazy" decoding="async" 
                     src={getImageUrl(shop.logo_url)}
                     alt={shop.name}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -341,7 +341,7 @@ export const StorefrontScreen = () => {
                   }}
                 >
                   {p.images && p.images.length > 0 ? (
-                    <img
+                    <img loading="lazy" decoding="async" 
                       src={getImageUrl(p.images[0])}
                       alt={p.name}
                       style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }}

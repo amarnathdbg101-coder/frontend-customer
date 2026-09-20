@@ -266,7 +266,7 @@ export const CartDrawer = () => {
                       }}
                     >
                       {item.image ? (
-                        <img
+                        <img loading="lazy" decoding="async" 
                           src={getImageUrl(item.image)}
                           alt={item.name}
                           style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}

@@ -247,7 +247,7 @@ export const ProductDetailModal = ({
               }}
             >
               {images.length > 0 ? (
-                <img
+                <img loading="lazy" decoding="async" 
                   src={getImageUrl(images[selectedImageIdx] || images[0])}
                   alt={product.name}
                   style={{
@@ -317,7 +317,7 @@ export const ProductDetailModal = ({
             {images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
                 {images.map((img, idx) => (
-                  <img
+                  <img loading="lazy" decoding="async" 
                     key={idx}
                     src={getImageUrl(img)}
                     alt={`Thumb ${idx + 1}`}

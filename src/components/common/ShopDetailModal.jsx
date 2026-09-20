@@ -164,7 +164,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
             }}
           >
             {banners.length > 0 ? (
-              <img
+              <img loading="lazy" decoding="async" 
                 src={getImageUrl(banners[selectedBannerIdx] || banners[0])}
                 alt={shop.name}
                 style={{ width: '100%', height: '180px', objectFit: 'cover' }}
@@ -241,7 +241,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
               }}
             >
               {shop.logo_url ? (
-                <img
+                <img loading="lazy" decoding="async" 
                   src={getImageUrl(shop.logo_url)}
                   alt={shop.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}

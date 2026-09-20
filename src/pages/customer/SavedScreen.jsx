@@ -146,7 +146,7 @@ export const SavedScreen = () => {
                     }}
                   >
                     {p.images && p.images[0] ? (
-                      <img
+                      <img loading="lazy" decoding="async" 
                         src={getImageUrl(p.images[0])}
                         alt={p.name}
                         style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
@@ -281,7 +281,7 @@ export const SavedScreen = () => {
                       }}
                     >
                       {s.logo_url ? (
-                        <img
+                        <img loading="lazy" decoding="async" 
                           src={getImageUrl(s.logo_url)}
                           alt={s.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}

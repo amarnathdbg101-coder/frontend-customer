@@ -1246,7 +1246,7 @@ export const CustomerKhataScreen = () => {
             >
               <X size={20} />
             </button>
-            <img
+            <img loading="lazy" decoding="async" 
               src={viewParchiUrl}
               alt="Physical Parchi Slip"
               style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', display: 'block' }}

@@ -215,7 +215,7 @@ export const DealsScreen = () => {
                       }}
                     >
                       {deal.shop_logo_url ? (
-                        <img
+                        <img loading="lazy" decoding="async" 
                           src={getImageUrl(deal.shop_logo_url)}
                           alt={deal.shop_name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
