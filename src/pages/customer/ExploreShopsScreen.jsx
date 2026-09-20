@@ -19,10 +19,7 @@ import {
   Search,
   MapPin,
   Crosshair,
-  Bot,
   Package,
-  Sparkles,
-  Camera,
   ArrowUpDown,
   Filter,
 } from 'lucide-react';
@@ -39,11 +36,8 @@ import { ShopCard } from '../../components/cards/ShopCard';
 import { ProductCard } from '../../components/cards/ProductCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skeleton';
-import { CustomerCopilotModal } from '../../components/common/CustomerCopilotModal';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
-import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
-import { ProductScannerModal } from '../../components/customer/ProductScannerModal';
 import { CategoryBar } from '../../components/customer/CategoryBar';
 
 const RADIUS_OPTIONS = [
@@ -73,9 +67,6 @@ export const ExploreShopsScreen = () => {
   const [priceFilter, setPriceFilter] = useState('all'); // 'all', 'under_100', '100_500', '500_2000', 'above_2000'
   const [displayLimit, setDisplayLimit] = useState(12);
 
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
-  const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [inspectedShop, setInspectedShop] = useState(null);
 
@@ -330,44 +321,15 @@ export const ExploreShopsScreen = () => {
 
       {/* Search Bar & Mode Switcher */}
       <div style={{ marginBottom: '14px' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-          <div className="search-box" style={{ flex: 1, marginBottom: 0 }}>
-            <Search size={18} color="var(--text-muted)" aria-hidden="true" />
-            <input
-              type="search"
-              placeholder={searchMode === 'shops' ? t('nav.search_placeholder') : "Search product name, brand, or in-stock items..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label={t('common.search')}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsSmartSearchOpen(true)}
-            className="btn btn-secondary"
-            title="AI Smart Search"
-            style={{
-              padding: '0 12px',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)',
-              borderColor: 'rgba(99, 102, 241, 0.25)',
-              color: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <Sparkles size={16} />
-            <span style={{ fontSize: '0.78rem', fontWeight: 800 }}>AI Search</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsScannerOpen(true)}
-            className="btn btn-secondary"
-            title="Scan Barcode"
-            style={{ padding: '0 12px', color: 'var(--text-primary)' }}
-          >
-            <Camera size={17} />
-          </button>
+        <div className="search-box" style={{ width: '100%', marginBottom: '10px' }}>
+          <Search size={18} color="var(--text-muted)" aria-hidden="true" />
+          <input
+            type="search"
+            placeholder={searchMode === 'shops' ? t('nav.search_placeholder') : (isHindi ? "सामान, ब्रांड या उपलब्ध उत्पाद खोजें..." : "Search product name, brand, or in-stock items...")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label={t('common.search')}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }} role="tablist" aria-label="View mode">
@@ -556,37 +518,6 @@ export const ExploreShopsScreen = () => {
           onClose={() => setInspectedShop(null)}
         />
       )}
-
-      {/* Floating AI Co-Pilot Button */}
-      <button
-        type="button"
-        onClick={() => setIsCopilotOpen(true)}
-        className="floating-ai-copilot-btn"
-        aria-label="Open AI Shopping Assistant"
-      >
-        <Bot size={18} aria-hidden="true" />
-        <span>Ask Pick (AI)</span>
-      </button>
-
-      {/* Co-Pilot Modal */}
-      <CustomerCopilotModal
-        isOpen={isCopilotOpen}
-        onClose={() => setIsCopilotOpen(false)}
-      />
-
-      {/* AI Smart Search Modal */}
-      <SmartSearchModal
-        isOpen={isSmartSearchOpen}
-        onClose={() => setIsSmartSearchOpen(false)}
-        onSelectProduct={(p) => setInspectedProduct(p)}
-      />
-
-      {/* Camera / Barcode Scanner Modal */}
-      <ProductScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onSelectProduct={(p) => setInspectedProduct(p)}
-      />
     </AppLayout>
   );
 };

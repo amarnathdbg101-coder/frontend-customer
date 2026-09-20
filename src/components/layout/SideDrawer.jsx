@@ -136,33 +136,34 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               <ChevronRight size={16} color="var(--text-muted)" />
             </button>
 
-            {/* Merchant Dashboard / Dukan OS */}
-            <button className="drawer-link-btn" onClick={handleOpenMerchantDashboard} style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.15)' }}>
-              <div className="drawer-icon-bubble" style={{ background: 'var(--color-primary)', color: '#ffffff' }}>
-                <LayoutDashboard size={18} />
-              </div>
-              <div style={{ flex: 1, textAlign: 'left' }}>
-                <div className="drawer-link-title" style={{ color: 'var(--color-primary)', fontWeight: 900 }}>
-                  {isMerchant ? (isHindi ? 'दुकानदार डैशबोर्ड' : 'Merchant Dashboard') : (isHindi ? 'दुकानदार लॉगिन / डैशबोर्ड' : 'Merchant Login / Dashboard')}
+            {/* Merchant Dashboard or Create Shop (Role-based conditional) */}
+            {isMerchant ? (
+              <button className="drawer-link-btn" onClick={handleOpenMerchantDashboard} style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.15)' }}>
+                <div className="drawer-icon-bubble" style={{ background: 'var(--color-primary)', color: '#ffffff' }}>
+                  <LayoutDashboard size={18} />
                 </div>
-                <div className="drawer-link-sub">{isHindi ? 'पीओएस बिलिंग, स्टॉक, खाता व दैनिक लाभ' : 'POS Billing, Stock, Khata & Daily Profit'}</div>
-              </div>
-              <ChevronRight size={16} color="var(--color-primary)" />
-            </button>
-
-            {/* Menu item: Shop bnane ka option */}
-            <button className="drawer-link-btn" onClick={handleCreateShop}>
-              <div className="drawer-icon-bubble" style={{ background: '#ede9fe', color: '#6d28d9' }}>
-                <PlusCircle size={18} />
-              </div>
-              <div style={{ flex: 1, textAlign: 'left' }}>
-                <div className="drawer-link-title" style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
-                  {isHindi ? 'दुकान बनाएं' : 'Create Shop'}
+                <div style={{ flex: 1, textAlign: 'left' }}>
+                  <div className="drawer-link-title" style={{ color: 'var(--color-primary)', fontWeight: 900 }}>
+                    {isHindi ? 'दुकानदार डैशबोर्ड' : 'Merchant Dashboard'}
+                  </div>
+                  <div className="drawer-link-sub">{isHindi ? 'पीओएस बिलिंग, स्टॉक, खाता व दैनिक लाभ' : 'POS Billing, Stock, Khata & Daily Profit'}</div>
                 </div>
-                <div className="drawer-link-sub">{isHindi ? 'नई दुकान रजिस्टर करें और बिलिंग शुरू करें' : 'Register store & start billing'}</div>
-              </div>
-              <ChevronRight size={16} color="var(--text-muted)" />
-            </button>
+                <ChevronRight size={16} color="var(--color-primary)" />
+              </button>
+            ) : (
+              <button className="drawer-link-btn" onClick={handleCreateShop}>
+                <div className="drawer-icon-bubble" style={{ background: '#ede9fe', color: '#6d28d9' }}>
+                  <PlusCircle size={18} />
+                </div>
+                <div style={{ flex: 1, textAlign: 'left' }}>
+                  <div className="drawer-link-title" style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
+                    {isHindi ? 'दुकान बनाएं' : 'Create Shop'}
+                  </div>
+                  <div className="drawer-link-sub">{isHindi ? 'नई दुकान रजिस्टर करें और बिलिंग शुरू करें' : 'Register store & start billing'}</div>
+                </div>
+                <ChevronRight size={16} color="var(--text-muted)" />
+              </button>
+            )}
 
             <button className="drawer-link-btn" onClick={() => handleNavigate(isAuthenticated ? '/profile' : '/login')}>
               <div className="drawer-icon-bubble" style={{ background: '#f1f5f9', color: '#334155' }}>

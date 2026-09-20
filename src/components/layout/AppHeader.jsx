@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Menu, Sun, Moon, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Menu, Sun, Moon, ShoppingCart, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -27,41 +27,24 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
           {showBack ? (
             <button
               onClick={() => navigate(-1)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '6px',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-              }}
+              className="header-icon-btn"
               title={t('nav.back')}
+              aria-label={t('nav.back')}
             >
               <ArrowLeft size={20} />
             </button>
           ) : (
             <button
               onClick={() => setDrawerOpen(true)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6px',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-              }}
+              className="header-icon-btn"
               title={t('nav.menu')}
+              aria-label={t('nav.menu')}
             >
               <Menu size={22} />
             </button>
           )}
 
-          <div>
+          <div className="header-title-container">
             <div className="header-title">
               {title || (shop ? shop.name : (isHindi ? 'शॉपसिलो' : 'ShopSilo'))}
             </div>
@@ -71,11 +54,12 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
               <div className="header-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span
                   style={{
-                    width: '7px',
-                    height: '7px',
+                    width: '6px',
+                    height: '6px',
                     borderRadius: '50%',
                     backgroundColor: shop.is_active ? 'var(--color-success)' : 'var(--color-danger)',
                     display: 'inline-block',
+                    flexShrink: 0,
                   }}
                 />
                 <span style={{ fontWeight: 600, color: shop.is_active ? '#065f46' : '#991b1b' }}>
@@ -90,33 +74,22 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="header-actions">
           {/* Cart Trigger */}
           <button
             type="button"
             onClick={openCart}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-primary)',
-              position: 'relative',
-            }}
+            className="header-action-btn"
             title={t('nav.cart')}
             aria-label={t('nav.cart')}
           >
-            <ShoppingCart size={20} />
+            <ShoppingCart size={18} />
             {cartCount > 0 && (
               <span
                 style={{
                   position: 'absolute',
-                  top: '1px',
-                  right: '1px',
+                  top: '-2px',
+                  right: '-2px',
                   backgroundColor: 'var(--color-primary)',
                   color: '#ffffff',
                   fontSize: '0.62rem',
@@ -127,65 +100,41 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                 }}
               >
-                {cartCount}
+                {cartCount > 9 ? '9+' : cartCount}
               </span>
             )}
           </button>
 
-          {/* Language Switcher Pill */}
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-full)',
-              padding: '2px',
-            }}
+          {/* Language Switcher Pill (1-tap toggle) */}
+          <button
+            onClick={() => setLanguage(isHindi ? 'en' : 'hi')}
+            className="header-lang-btn"
+            title={isHindi ? 'Switch to English' : 'हिंदी भाषा चुनें'}
+            aria-label={isHindi ? 'Switch to English' : 'हिंदी भाषा चुनें'}
           >
-            <button
-              onClick={() => setLanguage(isHindi ? 'en' : 'hi')}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--color-primary)',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                padding: '3px 8px',
-                cursor: 'pointer',
-              }}
-              title={isHindi ? 'Switch to English' : 'हिंदी भाषा चुनें'}
-            >
-              {isHindi ? 'EN' : 'हिंदी'}
-            </button>
-          </div>
+            {isHindi ? 'EN' : 'हिंदी'}
+          </button>
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-primary)',
-            }}
+            className="header-action-btn header-theme-toggle"
             title={isDark ? t('profile.light_mode') : t('profile.dark_mode')}
+            aria-label={isDark ? t('profile.light_mode') : t('profile.dark_mode')}
           >
-            {isDark ? <Sun size={19} color="#fbbf24" /> : <Moon size={19} />}
+            {isDark ? <Sun size={17} color="#fbbf24" /> : <Moon size={17} />}
           </button>
 
+          {/* User Profile / Compact Login Button */}
           {user ? (
             <button
               onClick={() => navigate('/profile')}
               style={{
-                width: '34px',
-                height: '34px',
+                width: '32px',
+                height: '32px',
                 borderRadius: '50%',
                 background: user.avatar_url ? 'transparent' : 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
                 color: '#ffffff',
@@ -195,12 +144,14 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: '0.85rem',
-                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+                fontSize: '0.8rem',
+                boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)',
                 overflow: 'hidden',
                 padding: 0,
+                flexShrink: 0,
               }}
               title={t('nav.profile')}
+              aria-label={t('nav.profile')}
             >
               {user.avatar_url ? (
                 <img
@@ -215,9 +166,12 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="btn btn-primary btn-sm"
+              className="header-login-btn"
+              title={t('nav.login')}
+              aria-label={t('nav.login')}
             >
-              {t('nav.login')}
+              <User size={14} />
+              <span>{isHindi ? 'लॉगिन' : 'Login'}</span>
             </button>
           )}
         </div>

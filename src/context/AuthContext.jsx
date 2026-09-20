@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Authentication Context
  * 
  * Hinglish Hint:
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
         // Agar user dukaandar hai, toh uski shop fetch kar lo
-        if (parsedUser.role === 'shop' || parsedUser.role === 'admin') {
+        if (parsedUser.role === 'shop' || parsedUser.role === 'merchant' || parsedUser.role === 'admin') {
           fetchShopDetails();
         }
       } catch (e) {
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('shopsilo_token', res.access_token);
     localStorage.setItem('shopsilo_user', JSON.stringify(res.user));
 
-    if (res.user?.role === 'shop' || res.user?.role === 'admin') {
+    if (res.user?.role === 'shop' || res.user?.role === 'merchant' || res.user?.role === 'admin') {
       try {
         const shopData = await shopApi.getMyShop();
         setShop(shopData);
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         isAuthenticated: !!token,
-        isMerchant: user?.role === 'shop' || user?.role === 'admin',
+        isMerchant: user?.role === 'shop' || user?.role === 'merchant' || user?.role === 'admin' || !!shop,
         login,
         loginWithGoogle,
         register,

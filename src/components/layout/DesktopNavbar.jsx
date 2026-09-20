@@ -120,52 +120,54 @@ export const DesktopNavbar = () => {
             </NavLink>
           )}
 
-          {/* Merchant Dashboard & Shop Registration */}
-          <a
-            href="https://shop.shopsilo.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-sm btn-secondary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              borderRadius: 'var(--radius-full)',
-              padding: '6px 12px',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              marginLeft: '6px',
-              textDecoration: 'none',
-              border: '1px solid var(--border-subtle)',
-            }}
-            title={t('nav.merchant_dashboard')}
-          >
-            <LayoutDashboard size={14} />
-            <span>{isMerchant ? t('nav.merchant_dashboard') : (isHindi ? 'दुकानदार पोर्टल' : 'Merchant Portal')}</span>
-          </a>
-
-          <a
-            href="https://shop.shopsilo.in/register"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-sm btn-primary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              borderRadius: 'var(--radius-full)',
-              padding: '6px 14px',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              marginLeft: '4px',
-              textDecoration: 'none',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
-            }}
-            title={t('nav.create_shop')}
-          >
-            <PlusCircle size={15} />
-            <span>{t('nav.create_shop')}</span>
-          </a>
+          {/* Merchant Dashboard / Shop Registration (Conditional) */}
+          {isMerchant ? (
+            <a
+              href="https://shop.shopsilo.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm btn-secondary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderRadius: 'var(--radius-full)',
+                padding: '6px 14px',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                marginLeft: '6px',
+                textDecoration: 'none',
+                border: '1px solid var(--border-subtle)',
+              }}
+              title={t('nav.merchant_dashboard')}
+            >
+              <LayoutDashboard size={15} />
+              <span>{t('nav.merchant_dashboard')}</span>
+            </a>
+          ) : (
+            <a
+              href="https://shop.shopsilo.in/register"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderRadius: 'var(--radius-full)',
+                padding: '6px 14px',
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                marginLeft: '6px',
+                textDecoration: 'none',
+                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+              }}
+              title={t('nav.create_shop')}
+            >
+              <PlusCircle size={15} />
+              <span>{t('nav.create_shop')}</span>
+            </a>
+          )}
         </nav>
 
         {/* Utilities: Cart, Language Selector, Theme Switch & Profile */}

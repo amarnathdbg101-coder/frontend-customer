@@ -16,6 +16,7 @@ import {
   Camera,
   ChevronRight,
   LayoutDashboard,
+  PlusCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -179,9 +180,9 @@ export const CustomerProfileScreen = () => {
         {/* Action Shortcuts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
           
-          {/* Merchant OS Terminal Tile */}
+          {/* Merchant OS Terminal Tile / Create Shop Tile (Role-based conditional) */}
           <a
-            href="https://shop.shopsilo.in"
+            href={isMerchant ? "https://shop.shopsilo.in" : "https://shop.shopsilo.in/register"}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -199,14 +200,16 @@ export const CustomerProfileScreen = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ background: 'var(--color-primary)', color: '#ffffff', padding: '10px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <LayoutDashboard size={20} />
+                {isMerchant ? <LayoutDashboard size={20} /> : <PlusCircle size={20} />}
               </div>
               <div>
                 <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--color-primary)', fontWeight: 800 }}>
-                  {isMerchant ? (isHindi ? '🏪 दुकानदार डैशबोर्ड (Merchant OS)' : '🏪 Open Merchant Dashboard') : (isHindi ? '🏪 दुकानदार पोर्टल व बिलिंग काउंटर' : '🏪 Merchant Portal & Billing OS')}
+                  {isMerchant ? (isHindi ? '🏪 दुकानदार डैशबोर्ड (Merchant OS)' : '🏪 Open Merchant Dashboard') : (isHindi ? '🏪 दुकान बनाएं / सेलर बनें' : '🏪 Start Selling / Create Shop')}
                 </h4>
                 <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {isHindi ? 'POS काउंटर, लाइव स्टॉक, डिजिटल खाता व रिपोर्ट्स' : 'Access POS Counter, Live Inventory, Khata & Analytics'}
+                  {isMerchant
+                    ? (isHindi ? 'POS काउंटर, लाइव स्टॉक, डिजिटल खाता व रिपोर्ट्स' : 'Access POS Counter, Live Inventory, Khata & Analytics')
+                    : (isHindi ? 'अपनी दुकान रजिस्टर करें, डिजिटल बिलिंग व खाता शुरू करें' : 'Register your store on ShopSilo and start billing')}
                 </p>
               </div>
             </div>
