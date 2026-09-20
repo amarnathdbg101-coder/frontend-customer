@@ -1,11 +1,11 @@
 /**
  * Customer App Bottom Navigation Bar
- * Matches Shopsilo Native Mobile OS: Explore, Saved & Orders, Profile
+ * Features: Explore, Deals/Offers, Saved & Orders, Profile
  */
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, User } from 'lucide-react';
+import { Home, Flame, Heart, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -28,12 +28,20 @@ export const BottomNav = () => {
       </NavLink>
 
       <NavLink
+        to="/deals"
+        className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+      >
+        <Flame size={20} color="#f97316" />
+        <span>{isHindi ? 'ऑफर्स / डील्स' : 'Deals'}</span>
+      </NavLink>
+
+      <NavLink
         to="/saved"
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         style={{ position: 'relative' }}
       >
         <Heart size={20} />
-        <span>{isHindi ? 'सेव्ड व ऑर्डर्स' : 'Saved & Orders'}</span>
+        <span>{isHindi ? 'सेव्ड' : 'Saved'}</span>
         {totalSaved > 0 && (
           <span
             style={{
@@ -62,7 +70,7 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <User size={20} />
-        <span>{isAuthenticated ? (isHindi ? 'प्रोफ़ाइल' : 'Profile') : (isHindi ? 'लॉगिन' : 'Profile')}</span>
+        <span>{isAuthenticated ? (isHindi ? 'प्रोफ़ाइल' : 'Profile') : (isHindi ? 'लॉगिन' : 'Login')}</span>
       </NavLink>
     </nav>
   );

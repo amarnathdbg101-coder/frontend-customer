@@ -20,6 +20,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { CheckoutModal } from './components/cart/CheckoutModal';
+import { FloatingCartBar } from './components/cart/FloatingCartBar';
 
 // Code-split / Lazy-loaded Customer Pages
 const ExploreShopsScreen = lazy(() =>
@@ -103,6 +104,7 @@ function App() {
                   <BrowserRouter>
                     <CartDrawer />
                     <CheckoutModal />
+                    <FloatingCartBar />
                     <Suspense fallback={<LoadingSpinner fullScreen />}>
                       <Routes>
                         {/* Public Store Discovery, Deals & Shopping */}
