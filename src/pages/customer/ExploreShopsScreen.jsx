@@ -1,14 +1,7 @@
 /**
  * Customer Explore & Marketplace Screen
- * 
- * Pixel-Perfect Match with Shopsilo Native Mobile OS:
- * - Search local shops, products, brands input bar
- * - Horizontal swipeable Smart Bargain / Instant Pickup promo carousel
- * - 2x2 Feature Grid: Instant Pickup, Local Shops, Mera Khata, Live Deals
- * - Category Filter Header ("📂 CATEGORY FILTER • All Categories • 44+ ⌵")
- * - Horizontal scrollable Category Pills
- * - "🔥 Trending in Local Stores" 2-Column Product Grid with Reserve Buttons
- * - Full interactive modals (Product details, Shop details, Category explorer)
+ * Clean, modern, responsive layout with location discovery, search, promo carousel, 
+ * 44-category system, and responsive shop & product feeds.
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -21,34 +14,52 @@ import {
   Tag,
   Folder,
   ChevronDown,
-  ChevronRight,
-  Flame,
+  MapPin,
   X,
-  Sparkles,
-  ExternalLink,
   Package,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
+import { reservationApi } from '../../api/reservation.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { ProductCard } from '../../components/cards/ProductCard';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { SkeletonProductGrid } from '../../components/ui/Skeleton';
+import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skeleton';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
-import { ALL_CATEGORIES } from '../../constants/categoryData';
+
+const RADIUS_OPTIONS = [
+  { label: '1 km', value: 1 },
+  { label: '3 km', value: 3 },
+  { label: '5 km', value: 5 },
+  { label: '10 km', value: 10 },
+  { label: 'All', value: 999 },
+];
+
+function extractArray(response, fieldName) {
+  if (!response) return [];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response[fieldName])) return response[fieldName];
+  if (Array.isArray(response.data)) return response.data;
+  if (response.data && Array.isArray(response.data[fieldName])) return response.data[fieldName];
+  if (Array.isArray(response.results)) return response.results;
+  if (Array.isArray(response.items)) return response.items;
+  return [];
+}
 
 export const ExploreShopsScreen = () => {
   const navigate = useNavigate();
-  const { coords, radiusKm } = useLocation();
+  const { coords, locationName, radiusKm, setRadiusKm, detectLocation, isDetecting } = useLocation();
   const { isProductSaved, toggleSaveProduct, isShopSaved, toggleSaveShop } = useSaved();
-  const { isHindi } = useLanguage();
+  const { isHindi, t } = useLanguage();
+  const { openCart, cartCount } = useCart();
 
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
@@ -68,22 +79,63 @@ export const ExploreShopsScreen = () => {
   const loadMarketplaceData = useCallback(async () => {
     try {
       setLoading(true);
-      const [shopsRes, prodsRes] = await Promise.all([
-        shopApi.listShops({
-          lat: coords?.lat,
-          lng: coords?.lng,
-          radius: radiusKm === 999 ? undefined : radiusKm,
-        }).catch(() => ({ data: [] })),
-        productApi.listProducts({
-          limit: 100,
-        }).catch(() => ({ data: [] })),
+      const params = {
+        lat: coords?.lat,
+        lng: coords?.lng,
+        radius_km: radiusKm === 999 ? undefined : radiusKm,
+      };
+
+      const [shopsRes, prodsRes] = await Promise.allSettled([
+        shopApi.listPublicShops(params).catch(() => shopApi.listPublicShops({})),
+        (coords?.lat && coords?.lng)
+          ? productApi.findNearbyProducts({
+              lat: coords.lat,
+              lng: coords.lng,
+              radius_km: radiusKm === 999 ? 20 : radiusKm,
+              limit: 100,
+            }).catch(() => productApi.listProducts({ limit: 100 }))
+          : productApi.listProducts({ limit: 100 }),
       ]);
 
-      const fetchedShops = Array.isArray(shopsRes?.data) ? shopsRes.data : (Array.isArray(shopsRes) ? shopsRes : []);
-      const fetchedProducts = Array.isArray(prodsRes?.data) ? prodsRes.data : (Array.isArray(prodsRes) ? prodsRes : []);
+      let shopList = shopsRes.status === 'fulfilled' ? extractArray(shopsRes.value, 'shops') : [];
+      if (shopList.length === 0 && params.radius_km) {
+        try {
+          const fallbackShops = await shopApi.listPublicShops({});
+          shopList = extractArray(fallbackShops, 'shops');
+        } catch (e) {
+          console.warn('Fallback shops fetch error:', e);
+        }
+      }
 
-      setShops(fetchedShops);
-      setProducts(fetchedProducts);
+      let rawProdList = prodsRes.status === 'fulfilled' ? extractArray(prodsRes.value, 'products') : [];
+      if (rawProdList.length === 0) {
+        try {
+          const fallbackProds = await productApi.listProducts({ limit: 100 });
+          rawProdList = extractArray(fallbackProds, 'products');
+        } catch (e) {
+          console.warn('Fallback products fetch error:', e);
+        }
+      }
+
+      const normalizedProds = rawProdList.map((p) => {
+        const qty = Number(
+          p.available_quantity ??
+          p.stock_quantity ??
+          p.inventory?.available_quantity ??
+          p.inventory?.quantity ??
+          p.stock ??
+          0
+        );
+        return {
+          ...p,
+          id: p.id || p.product_id,
+          stock_quantity: qty,
+          available_quantity: qty,
+        };
+      });
+
+      setShops(shopList);
+      setProducts(normalizedProds);
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
     } finally {
@@ -98,20 +150,19 @@ export const ExploreShopsScreen = () => {
   // 2. Filter Products
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      // Search filter
       if (debouncedSearch.trim()) {
         const query = debouncedSearch.toLowerCase();
         const matchesName = (p.name || '').toLowerCase().includes(query);
-        const matchesBrand = (p.attributes?.brand || '').toLowerCase().includes(query);
+        const matchesBrand = (p.attributes?.brand || p.brand || '').toLowerCase().includes(query);
         const matchesShop = (p.shop_name || '').toLowerCase().includes(query);
-        if (!matchesName && !matchesBrand && !matchesShop) return false;
+        const matchesDesc = (p.description || '').toLowerCase().includes(query);
+        if (!matchesName && !matchesBrand && !matchesShop && !matchesDesc) return false;
       }
 
-      // Category filter
       if (selectedCategory && selectedCategory !== 'All') {
         const catLower = selectedCategory.toLowerCase();
-        const matchesCat = (p.category_name || '').toLowerCase().includes(catLower) ||
-          (p.category_id || '').toLowerCase() === catLower;
+        const pCat = (p.category_name || p.category_id || p.category_slug || p.category?.name || p.category?.slug || '').toLowerCase();
+        const matchesCat = pCat.includes(catLower) || catLower.includes(pCat) || (p.name || '').toLowerCase().includes(catLower);
         if (!matchesCat) return false;
       }
 
@@ -126,16 +177,119 @@ export const ExploreShopsScreen = () => {
         const query = debouncedSearch.toLowerCase();
         const matchesName = (s.name || '').toLowerCase().includes(query);
         const matchesAddr = (s.address || '').toLowerCase().includes(query);
-        if (!matchesName && !matchesAddr) return false;
+        const matchesCity = (s.city || '').toLowerCase().includes(query);
+        const matchesCat = (s.category || '').toLowerCase().includes(query);
+        if (!matchesName && !matchesAddr && !matchesCity && !matchesCat) return false;
       }
+
+      if (selectedCategory && selectedCategory !== 'All') {
+        const catLower = selectedCategory.toLowerCase();
+        const sCat = (s.category || '').toLowerCase();
+        const matchesCat = sCat.includes(catLower) || catLower.includes(sCat) || (s.name || '').toLowerCase().includes(catLower);
+        if (!matchesCat) return false;
+      }
+
       return true;
     });
-  }, [shops, debouncedSearch]);
+  }, [shops, debouncedSearch, selectedCategory]);
+
+  const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
+    try {
+      const res = await reservationApi.createReservation({
+        product_id: product.id,
+        quantity,
+        hold_hours,
+        notes,
+      });
+      alert(`${isHindi ? 'सामान रिज़र्व हो गया!' : 'Item Reserved!'} ${isHindi ? 'पिकअप OTP' : 'Pickup OTP'}: ${res.pickup_code || res.reservation_number || 'OK'}`);
+      setInspectedProduct(null);
+    } catch (err) {
+      alert(err.message || (isHindi ? 'रिज़र्वेशन में त्रुटि' : 'Reservation Error'));
+    }
+  }, [isHindi]);
+
+  const handleSelectShopTab = () => {
+    setActiveTab('shops');
+    const el = document.getElementById('marketplace-feed-header');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleSelectProductsTab = () => {
+    setActiveTab('products');
+    const el = document.getElementById('marketplace-feed-header');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <AppLayout>
-      {/* 1. SEARCH INPUT BAR */}
-      <div style={{ margin: '14px 0 16px 0', position: 'relative' }}>
+      {/* 1. LOCATION & GPS BAR */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 0 6px 0',
+          gap: '8px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          type="button"
+          onClick={detectLocation}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'transparent',
+            border: 'none',
+            padding: '2px 0',
+            cursor: 'pointer',
+            color: 'var(--text-primary)',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            maxWidth: '220px',
+            textAlign: 'left',
+          }}
+          title={isHindi ? 'GPS लोकेशन अपडेट करें' : 'Update GPS Location'}
+        >
+          <MapPin size={16} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {isDetecting ? (isHindi ? 'लोकेशन खोज रहे हैं...' : 'Detecting...') : (locationName || 'Local Area')}
+          </span>
+          <ChevronDown size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+        </button>
+
+        {/* Radius Selector Pills */}
+        <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '2px' }}>
+          {RADIUS_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setRadiusKm(opt.value)}
+              style={{
+                padding: '3px 8px',
+                borderRadius: 'var(--radius-full)',
+                border: radiusKm === opt.value ? 'none' : '1px solid var(--border-subtle)',
+                backgroundColor: radiusKm === opt.value ? 'var(--color-primary, #4f46e5)' : 'var(--bg-surface)',
+                color: radiusKm === opt.value ? '#ffffff' : 'var(--text-secondary)',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. SIMPLE, CLEAN SEARCH INPUT BAR */}
+      <div style={{ margin: '8px 0 16px 0' }}>
         <div
           style={{
             display: 'flex',
@@ -148,10 +302,10 @@ export const ExploreShopsScreen = () => {
             gap: '10px',
           }}
         >
-          <Search size={18} color="#6366f1" style={{ flexShrink: 0 }} />
+          <Search size={18} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
           <input
             type="search"
-            placeholder={isHindi ? 'स्थानीय दुकानें, सामान या ब्रांड खोजें...' : 'Search local shops, products, brands...'}
+            placeholder={isHindi ? 'दुकानें, सामान या ब्रांड खोजें...' : 'Search local shops, products, brands...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -176,7 +330,7 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 2. BANNER CAROUSEL */}
+      {/* 3. PROMO CAROUSEL */}
       <div
         style={{
           display: 'flex',
@@ -203,16 +357,11 @@ export const ExploreShopsScreen = () => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            position: 'relative',
-            overflow: 'hidden',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
                 backgroundColor: 'rgba(245, 158, 11, 0.2)',
                 border: '1px solid rgba(245, 158, 11, 0.4)',
                 color: '#f59e0b',
@@ -220,7 +369,6 @@ export const ExploreShopsScreen = () => {
                 fontWeight: 800,
                 padding: '3px 8px',
                 borderRadius: '8px',
-                letterSpacing: '0.3px',
               }}
             >
               ✨ {isHindi ? 'स्मार्ट बार्गेन' : 'SMART BARGAIN'}
@@ -282,7 +430,7 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 3. QUICK 2x2 FEATURE GRID */}
+      {/* 4. QUICK 2x2 FEATURE GRID */}
       <div
         style={{
           display: 'grid',
@@ -293,7 +441,7 @@ export const ExploreShopsScreen = () => {
       >
         {/* Box 1: Instant Pickup */}
         <div
-          onClick={() => navigate('/reservations')}
+          onClick={() => navigate('/saved')}
           style={{
             backgroundColor: 'var(--bg-surface, #ffffff)',
             borderRadius: '16px',
@@ -304,6 +452,7 @@ export const ExploreShopsScreen = () => {
             gap: '10px',
             cursor: 'pointer',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            transition: 'transform 0.15s ease',
           }}
         >
           <div
@@ -326,24 +475,25 @@ export const ExploreShopsScreen = () => {
               {isHindi ? 'इंस्टेंट पिकअप' : 'Instant Pickup'}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              15-Min OTP
+              {isHindi ? 'ऑर्डर व कोड' : 'Orders & OTP'}
             </div>
           </div>
         </div>
 
         {/* Box 2: Local Shops */}
         <div
-          onClick={() => setActiveTab(activeTab === 'shops' ? 'products' : 'shops')}
+          onClick={handleSelectShopTab}
           style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
+            backgroundColor: activeTab === 'shops' ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-surface, #ffffff)',
             borderRadius: '16px',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
+            border: activeTab === 'shops' ? '1.5px solid #3b82f6' : '1px solid var(--border-subtle, #e2e8f0)',
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
             cursor: 'pointer',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            transition: 'transform 0.15s ease',
           }}
         >
           <div
@@ -366,7 +516,7 @@ export const ExploreShopsScreen = () => {
               {isHindi ? 'आस-पास दुकानें' : 'Local Shops'}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              {isHindi ? 'Near You' : 'Near You'}
+              {filteredShops.length} {isHindi ? 'स्टोर्स' : 'Stores'}
             </div>
           </div>
         </div>
@@ -384,6 +534,7 @@ export const ExploreShopsScreen = () => {
             gap: '10px',
             cursor: 'pointer',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            transition: 'transform 0.15s ease',
           }}
         >
           <div
@@ -406,7 +557,7 @@ export const ExploreShopsScreen = () => {
               {isHindi ? 'मेरा खाता' : 'Mera Khata'}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              Udhar Passbook
+              {isHindi ? 'उधार पासबुक' : 'Udhar Passbook'}
             </div>
           </div>
         </div>
@@ -424,6 +575,7 @@ export const ExploreShopsScreen = () => {
             gap: '10px',
             cursor: 'pointer',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            transition: 'transform 0.15s ease',
           }}
         >
           <div
@@ -446,13 +598,13 @@ export const ExploreShopsScreen = () => {
               {isHindi ? 'लाइव ऑफर्स' : 'Live Deals'}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              Store Offers
+              {isHindi ? 'दुकान डिस्काउंट' : 'Store Offers'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 4. CATEGORY FILTER SECTION */}
+      {/* 5. CATEGORY FILTER SECTION */}
       <div style={{ marginBottom: '20px' }}>
         {/* Category Header Card */}
         <div
@@ -492,7 +644,7 @@ export const ExploreShopsScreen = () => {
               </div>
               <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {selectedCategory === 'All'
-                  ? (isHindi ? 'सभी कैटेगरीज (चुनने के लिए टैप करें)' : 'All Categories (Tap to choose/s...')
+                  ? (isHindi ? 'सभी कैटेगरीज (चुनने के लिए टैप करें)' : 'All Categories (Tap to choose/search)')
                   : selectedCategory}
               </div>
             </div>
@@ -501,7 +653,7 @@ export const ExploreShopsScreen = () => {
           <div
             style={{
               backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              color: '#4f46e5',
+              color: 'var(--color-primary, #4f46e5)',
               padding: '4px 10px',
               borderRadius: '12px',
               fontSize: '0.74rem',
@@ -535,7 +687,7 @@ export const ExploreShopsScreen = () => {
               padding: '7px 16px',
               borderRadius: '20px',
               border: selectedCategory === 'All' ? 'none' : '1px solid var(--border-subtle, #cbd5e1)',
-              backgroundColor: selectedCategory === 'All' ? '#4f46e5' : 'var(--bg-surface, #ffffff)',
+              backgroundColor: selectedCategory === 'All' ? 'var(--color-primary, #4f46e5)' : 'var(--bg-surface, #ffffff)',
               color: selectedCategory === 'All' ? '#ffffff' : 'var(--text-primary, #0f172a)',
               fontSize: '0.78rem',
               fontWeight: 800,
@@ -571,7 +723,7 @@ export const ExploreShopsScreen = () => {
                   padding: '7px 14px',
                   borderRadius: '20px',
                   border: isSelected ? 'none' : '1px solid var(--border-subtle, #cbd5e1)',
-                  backgroundColor: isSelected ? '#4f46e5' : 'var(--bg-surface, #ffffff)',
+                  backgroundColor: isSelected ? 'var(--color-primary, #4f46e5)' : 'var(--bg-surface, #ffffff)',
                   color: isSelected ? '#ffffff' : 'var(--text-primary, #0f172a)',
                   fontSize: '0.78rem',
                   fontWeight: 700,
@@ -591,33 +743,95 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 5. TRENDING IN LOCAL STORES SECTION */}
-      <div style={{ marginBottom: '28px' }}>
-        <div
+      {/* 6. TAB SELECTOR: PRODUCTS vs LOCAL SHOPS */}
+      <div
+        id="marketplace-feed-header"
+        style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '16px',
+          backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+          padding: '4px',
+          borderRadius: '16px',
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleSelectProductsTab}
           style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '12px',
+            border: 'none',
+            backgroundColor: activeTab === 'products' ? 'var(--bg-surface, #ffffff)' : 'transparent',
+            color: activeTab === 'products' ? 'var(--color-primary, #4f46e5)' : 'var(--text-secondary, #64748b)',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '12px',
+            justifyContent: 'center',
+            gap: '6px',
+            boxShadow: activeTab === 'products' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+            transition: 'all 0.15s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '1.1rem' }}>🔥</span>
-            <span style={{ fontSize: '0.98rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-              {activeTab === 'shops'
-                ? (isHindi ? 'आस-पास की दुकानें' : 'Local Stores Near You')
-                : (isHindi ? 'लोकल स्टोर्स में ट्रेंडिंग' : 'Trending in Local Stores')}
-            </span>
-          </div>
-
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-            {activeTab === 'shops' ? `${filteredShops.length} shops` : `${filteredProducts.length} items`}
+          <Package size={16} />
+          <span>{isHindi ? 'ट्रेंडिंग सामान' : 'Products'}</span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              backgroundColor: activeTab === 'products' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(0,0,0,0.05)',
+              padding: '1px 6px',
+              borderRadius: '8px',
+            }}
+          >
+            {filteredProducts.length}
           </span>
-        </div>
+        </button>
 
-        {/* FEED CONTENT */}
+        <button
+          type="button"
+          onClick={handleSelectShopTab}
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '12px',
+            border: 'none',
+            backgroundColor: activeTab === 'shops' ? 'var(--bg-surface, #ffffff)' : 'transparent',
+            color: activeTab === 'shops' ? 'var(--color-primary, #4f46e5)' : 'var(--text-secondary, #64748b)',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            boxShadow: activeTab === 'shops' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Store size={16} />
+          <span>{isHindi ? 'लोकल दुकानें' : 'Local Shops'}</span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              backgroundColor: activeTab === 'shops' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(0,0,0,0.05)',
+              padding: '1px 6px',
+              borderRadius: '8px',
+            }}
+          >
+            {filteredShops.length}
+          </span>
+        </button>
+      </div>
+
+      {/* 7. RESPONSIVE FEED CONTENT */}
+      <div style={{ marginBottom: '40px' }}>
         {loading ? (
-          <SkeletonProductGrid count={6} />
+          activeTab === 'shops' ? <SkeletonShopGrid count={4} /> : <SkeletonProductGrid count={6} />
         ) : activeTab === 'shops' ? (
           filteredShops.length === 0 ? (
             <EmptyState
@@ -647,13 +861,7 @@ export const ExploreShopsScreen = () => {
             description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
           />
         ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '12px',
-            }}
-          >
+          <div className="customer-product-grid">
             {filteredProducts.map((p) => (
               <ProductCard
                 key={p.id}
@@ -672,7 +880,7 @@ export const ExploreShopsScreen = () => {
         <ProductDetailModal
           product={inspectedProduct}
           onClose={() => setInspectedProduct(null)}
-          onReserve={() => setInspectedProduct(null)}
+          onReserve={handleReserveFromModal}
         />
       )}
 
