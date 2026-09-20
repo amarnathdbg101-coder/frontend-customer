@@ -1,11 +1,11 @@
 /**
  * Customer App Bottom Navigation Bar
- * Fully bilingual with live saved badges and active highlight
+ * Matches Shopsilo Native Mobile OS: Explore, Saved & Orders, Profile
  */
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Store, Tag, Heart, ShoppingBag, User } from 'lucide-react';
+import { Home, Heart, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -17,22 +17,14 @@ export const BottomNav = () => {
   const totalSaved = (savedProducts?.length || 0) + (savedShops?.length || 0);
 
   return (
-    <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
+    <nav className="bottom-nav" role="navigation" aria-label="Customer Navigation">
       <NavLink
         to="/"
         end
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
-        <Store size={20} />
-        <span>{isHindi ? 'दुकानें' : 'Shops'}</span>
-      </NavLink>
-
-      <NavLink
-        to="/deals"
-        className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
-      >
-        <Tag size={20} />
-        <span>{isHindi ? 'डील्स' : 'Deals'}</span>
+        <Home size={20} />
+        <span>{isHindi ? 'एक्सप्लोर' : 'Explore'}</span>
       </NavLink>
 
       <NavLink
@@ -41,19 +33,19 @@ export const BottomNav = () => {
         style={{ position: 'relative' }}
       >
         <Heart size={20} />
-        <span>{isHindi ? 'पसंदीदा' : 'Saved'}</span>
+        <span>{isHindi ? 'सेव्ड व ऑर्डर्स' : 'Saved & Orders'}</span>
         {totalSaved > 0 && (
           <span
             style={{
               position: 'absolute',
               top: '4px',
-              right: '18px',
+              right: '20px',
               background: '#ef4444',
               color: '#fff',
-              fontSize: '0.65rem',
+              fontSize: '0.62rem',
               fontWeight: 800,
-              width: '16px',
-              height: '16px',
+              width: '15px',
+              height: '15px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -66,20 +58,14 @@ export const BottomNav = () => {
       </NavLink>
 
       <NavLink
-        to="/reservations"
-        className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
-      >
-        <ShoppingBag size={20} />
-        <span>{isHindi ? 'बुकिंग्स' : 'Bookings'}</span>
-      </NavLink>
-
-      <NavLink
         to={isAuthenticated ? "/profile" : "/login"}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <User size={20} />
-        <span>{isAuthenticated ? (isHindi ? 'प्रोफ़ाइल' : 'Profile') : (isHindi ? 'लॉगिन' : 'Login')}</span>
+        <span>{isAuthenticated ? (isHindi ? 'प्रोफ़ाइल' : 'Profile') : (isHindi ? 'लॉगिन' : 'Profile')}</span>
       </NavLink>
     </nav>
   );
 };
+
+export default BottomNav;

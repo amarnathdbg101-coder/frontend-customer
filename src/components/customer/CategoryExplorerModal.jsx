@@ -1,15 +1,15 @@
+/**
+ * Category Explorer Modal / Bottom Sheet
+ * Pixel-Perfect Match with Shopsilo Native Mobile OS (Screenshot_2026_0920_142033.jpg):
+ * - Header: "Choose Category" + "44 categories available • Tap to filter products" + 'X' Close button
+ * - Search bar: "🔍 Search category (e.g. Doodh, Tel, Atta, Soap..."
+ * - Top card: "✨ All Categories (Show Everything)" - "View all trending products across all departments" with '✓'
+ * - Single-column vertical scrollable list of 44 clean rounded category cards with icons, titles, and descriptions.
+ */
+
 import React, { useState, useMemo } from 'react';
-import {
-  X,
-  Search,
-  Check,
-  Sparkles,
-  Layers,
-  ArrowRight,
-  ChevronRight,
-  Filter,
-} from 'lucide-react';
-import { ALL_CATEGORIES, CATEGORY_DEPARTMENTS, getCategoryMeta } from '../../constants/categoryData';
+import { Search, X, Check, Sparkles } from 'lucide-react';
+import { ALL_CATEGORIES } from '../../constants/categoryData';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const CategoryExplorerModal = ({
@@ -19,26 +19,25 @@ export const CategoryExplorerModal = ({
   onSelectCategory,
 }) => {
   const { isHindi } = useLanguage();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeDept, setActiveDept] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // Filter Categories by search term (English, Hindi, keywords)
   const filteredCategories = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    if (!searchQuery.trim()) return ALL_CATEGORIES;
+    const q = searchQuery.toLowerCase().trim();
     return ALL_CATEGORIES.filter((cat) => {
-      const matchesDept = activeDept === 'all' || cat.department === activeDept;
-      if (!matchesDept) return false;
-      if (!term) return true;
-
-      const nameEnMatch = cat.nameEn.toLowerCase().includes(term);
-      const nameHiMatch = cat.nameHi.includes(term);
-      const descMatch = (cat.descriptionEn + ' ' + cat.descriptionHi).toLowerCase().includes(term);
-      const keywordMatch = cat.keywords.some((k) => k.includes(term) || term.includes(k));
-
-      return nameEnMatch || nameHiMatch || descMatch || keywordMatch;
+      const matchEn = cat.nameEn.toLowerCase().includes(q);
+      const matchHi = (cat.nameHi || '').toLowerCase().includes(q);
+      const matchDesc = (cat.descriptionEn || '').toLowerCase().includes(q) ||
+        (cat.descriptionHi || '').toLowerCase().includes(q);
+      const matchKeywords = Array.isArray(cat.keywords) && cat.keywords.some(k => k.includes(q));
+      return matchEn || matchHi || matchDesc || matchKeywords;
     });
-  }, [searchTerm, activeDept]);
+  }, [searchQuery]);
 
   if (!isOpen) return null;
+
+  const isAllSelected = !selectedCategoryId || selectedCategoryId === 'All';
 
   return (
     <div
@@ -46,157 +45,129 @@ export const CategoryExplorerModal = ({
         position: 'fixed',
         inset: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(6px)',
-        zIndex: 1000,
+        backdropFilter: 'blur(5px)',
+        WebkitBackdropFilter: 'blur(5px)',
+        zIndex: 9999,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'center',
-        padding: '16px',
         animation: 'fadeIn 0.2s ease-out',
       }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="category-explorer-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         style={{
+          backgroundColor: 'var(--bg-surface, #ffffff)',
+          borderTopLeftRadius: '24px',
+          borderTopRightRadius: '24px',
           width: '100%',
-          maxWidth: '860px',
+          maxWidth: '620px',
           maxHeight: '90vh',
-          backgroundColor: 'var(--bg-surface)',
-          borderRadius: '24px',
-          border: '1px solid var(--border-subtle)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           display: 'flex',
           flexDirection: 'column',
+          boxShadow: '0 -20px 40px rgba(0, 0, 0, 0.25)',
+          border: '1px solid var(--border-subtle, #e2e8f0)',
           overflow: 'hidden',
-          animation: 'slideUp 0.25s ease-out',
+          animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Header */}
+        {/* =========================================================================
+            1. TOP HEADER (Title, Subtitle, Close Button)
+           ========================================================================= */}
         <div
           style={{
-            padding: '20px 24px 16px 24px',
-            borderBottom: '1px solid var(--border-subtle)',
+            padding: '18px 20px 14px 20px',
+            borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
-            background: 'var(--bg-surface-subtle)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
+          <div>
+            <h3
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                margin: 0,
+                fontSize: '1.25rem',
+                fontWeight: 900,
+                color: 'var(--text-primary, #0f172a)',
+                letterSpacing: '-0.3px',
               }}
             >
-              <Layers size={22} />
-            </div>
-            <div>
-              <h2
-                id="category-explorer-title"
-                style={{
-                  fontSize: '1.25rem',
-                  fontWeight: 900,
-                  color: 'var(--text-primary)',
-                  margin: 0,
-                  lineHeight: 1.2,
-                }}
-              >
-                {isHindi ? 'सभी श्रेणियां एवं विभाग' : 'Explore All Categories'}
-              </h2>
-              <p
-                style={{
-                  fontSize: '0.8rem',
-                  color: 'var(--text-secondary)',
-                  margin: '3px 0 0 0',
-                  fontWeight: 600,
-                }}
-              >
-                {isHindi
-                  ? 'अपनी पसंदीदा श्रेणी चुनें और आस-पास की दुकानों में लाइव स्टॉक खोजें'
-                  : 'Select a category to discover live in-stock products and local stores'}
-              </p>
-            </div>
+              {isHindi ? 'कैटेगरी चुनें (Choose Category)' : 'Choose Category'}
+            </h3>
+            <p
+              style={{
+                margin: '3px 0 0 0',
+                fontSize: '0.78rem',
+                color: 'var(--text-secondary, #64748b)',
+                fontWeight: 500,
+              }}
+            >
+              {isHindi
+                ? `${ALL_CATEGORIES.length} कैटेगरीज उपलब्ध • सामान फ़िल्टर करने के लिए टैप करें`
+                : `${ALL_CATEGORIES.length} categories available • Tap to filter products`}
+            </p>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            aria-label="Close category modal"
             style={{
-              width: '36px',
-              height: '36px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
-              border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-surface)',
+              backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary, #64748b)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
             }}
+            aria-label="Close category explorer"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div style={{ padding: '16px 24px 12px 24px', background: 'var(--bg-surface)' }}>
+        {/* =========================================================================
+            2. SEARCH INPUT BOX
+           ========================================================================= */}
+        <div style={{ padding: '12px 20px' }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
+              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+              borderRadius: '14px',
+              border: '1px solid var(--border-subtle, #cbd5e1)',
+              padding: '10px 14px',
               gap: '10px',
-              backgroundColor: 'var(--bg-surface-subtle)',
-              border: '1.5px solid var(--border-subtle)',
-              borderRadius: '16px',
-              padding: '10px 16px',
-              transition: 'border-color 0.15s ease',
             }}
           >
-            <Search size={20} color="var(--text-muted)" />
+            <Search size={18} color="#6366f1" style={{ flexShrink: 0 }} />
             <input
-              type="text"
-              placeholder={
-                isHindi
-                  ? 'श्रेणी खोजें (जैसे: दाल, आटा, तेल, बिस्कुट, दूध, शैम्पू, दवाएं)...'
-                  : 'Search category (e.g. Rice, Dal, Milk, Biscuit, Medicine, Cables)...'
-              }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              type="search"
+              placeholder={isHindi ? 'कैटेगरी खोजें (उदा. दूध, तेल, आटा, साबुन)...' : 'Search category (e.g. Doodh, Tel, Atta, Soap)...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 border: 'none',
-                background: 'transparent',
                 outline: 'none',
+                background: 'transparent',
+                fontSize: '0.86rem',
+                color: 'var(--text-primary, #0f172a)',
                 width: '100%',
-                fontSize: '0.92rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
+                fontWeight: 500,
               }}
-              autoFocus
             />
-            {searchTerm && (
+            {searchQuery && (
               <button
-                onClick={() => setSearchTerm('')}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '2px',
-                }}
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)' }}
               >
                 <X size={16} />
               </button>
@@ -204,119 +175,99 @@ export const CategoryExplorerModal = ({
           </div>
         </div>
 
-        {/* Department Filter Strip */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '0 24px 14px 24px',
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {CATEGORY_DEPARTMENTS.map((dept) => {
-            const isDeptActive = activeDept === dept.id;
-            return (
-              <button
-                key={dept.id}
-                onClick={() => setActiveDept(dept.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  border: isDeptActive ? '1.5px solid var(--color-primary)' : '1px solid var(--border-subtle)',
-                  backgroundColor: isDeptActive ? 'var(--color-primary)' : 'var(--bg-surface-subtle)',
-                  color: isDeptActive ? '#ffffff' : 'var(--text-primary)',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  boxShadow: isDeptActive ? '0 4px 12px rgba(79, 70, 229, 0.25)' : 'none',
-                }}
-              >
-                <span>{dept.icon}</span>
-                <span>{isHindi ? dept.nameHi : dept.nameEn}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Category Cards Grid */}
+        {/* =========================================================================
+            3. VERTICAL CATEGORY CARDS LIST
+           ========================================================================= */}
         <div
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '12px 24px 24px 24px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: '12px',
+            padding: '0 20px 24px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
           }}
         >
-          {/* Option: View All / Clear Filter */}
+          {/* Top Option: All Categories (Show Everything) */}
           <div
             onClick={() => {
-              onSelectCategory(undefined);
+              onSelectCategory('All');
               onClose();
             }}
             style={{
               padding: '14px 16px',
               borderRadius: '16px',
-              border: !selectedCategoryId ? '2px solid var(--color-primary)' : '1px solid var(--border-subtle)',
-              backgroundColor: !selectedCategoryId ? 'rgba(79, 70, 229, 0.08)' : 'var(--bg-surface-subtle)',
+              border: isAllSelected
+                ? '1.5px solid rgba(99, 102, 241, 0.4)'
+                : '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: isAllSelected
+                ? 'rgba(99, 102, 241, 0.08)'
+                : 'var(--bg-surface, #ffffff)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: '14px',
               transition: 'all 0.15s ease',
             }}
           >
             <div
               style={{
-                width: '44px',
-                height: '44px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '12px',
-                backgroundColor: !selectedCategoryId ? 'var(--color-primary)' : 'var(--border-subtle)',
-                color: !selectedCategoryId ? '#ffffff' : 'var(--text-secondary)',
+                backgroundColor: isAllSelected ? '#6366f1' : 'var(--bg-surface-subtle, #f1f5f9)',
+                color: isAllSelected ? '#ffffff' : '#6366f1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.2rem',
-                fontWeight: 900,
+                flexShrink: 0,
               }}
             >
               ✨
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {isHindi ? 'सभी सामान व श्रेणियां' : 'All Products & Categories'}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {isHindi ? 'पूरा हाइपरलोकल बाज़ार' : 'View full catalog without filters'}
-              </div>
-            </div>
-            {!selectedCategoryId && (
+
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
-                  width: '22px',
-                  height: '22px',
+                  fontSize: '0.94rem',
+                  fontWeight: 800,
+                  color: isAllSelected ? '#4f46e5' : 'var(--text-primary, #0f172a)',
+                }}
+              >
+                {isHindi ? 'सभी कैटेगरीज (सब कुछ देखें)' : 'All Categories (Show Everything)'}
+              </div>
+              <div
+                style={{
+                  fontSize: '0.74rem',
+                  color: 'var(--text-secondary, #64748b)',
+                  marginTop: '2px',
+                }}
+              >
+                {isHindi ? 'सभी डिपार्टमेंट्स के प्रोडक्ट्स देखें' : 'View all trending products across all departments'}
+              </div>
+            </div>
+
+            {isAllSelected && (
+              <div
+                style={{
+                  width: '24px',
+                  height: '24px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--color-primary)',
+                  backgroundColor: '#6366f1',
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
-                <Check size={14} strokeWidth={3} />
+                <Check size={15} strokeWidth={3} />
               </div>
             )}
           </div>
 
-          {/* Filtered Category Items */}
+          {/* 44 Category Items */}
           {filteredCategories.map((cat) => {
             const isSelected =
               selectedCategoryId === cat.id ||
@@ -328,43 +279,54 @@ export const CategoryExplorerModal = ({
               <div
                 key={cat.id}
                 onClick={() => {
-                  onSelectCategory(cat.id);
+                  onSelectCategory(cat.nameEn);
                   onClose();
                 }}
                 style={{
-                  padding: '14px 16px',
+                  padding: '12px 16px',
                   borderRadius: '16px',
-                  border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--border-subtle)',
-                  backgroundColor: isSelected ? 'rgba(79, 70, 229, 0.08)' : 'var(--bg-surface-subtle)',
+                  border: isSelected
+                    ? '1.5px solid rgba(99, 102, 241, 0.4)'
+                    : '1px solid var(--border-subtle, #e2e8f0)',
+                  backgroundColor: isSelected
+                    ? 'rgba(99, 102, 241, 0.08)'
+                    : 'var(--bg-surface, #ffffff)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '14px',
                   transition: 'all 0.15s ease',
-                  position: 'relative',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f8fafc)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-surface, #ffffff)';
                 }}
               >
                 <div
                   style={{
-                    width: '44px',
-                    height: '44px',
+                    width: '40px',
+                    height: '40px',
                     borderRadius: '12px',
-                    backgroundColor: cat.color ? cat.color + '22' : 'rgba(99, 102, 241, 0.12)',
+                    backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.4rem',
+                    fontSize: '1.3rem',
                     flexShrink: 0,
+                    border: '1px solid var(--border-subtle, #f1f5f9)',
                   }}
                 >
                   {cat.icon}
                 </div>
+
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
                       fontSize: '0.92rem',
                       fontWeight: 800,
-                      color: isSelected ? 'var(--color-primary)' : 'var(--text-primary)',
+                      color: isSelected ? '#4f46e5' : 'var(--text-primary, #0f172a)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -374,8 +336,8 @@ export const CategoryExplorerModal = ({
                   </div>
                   <div
                     style={{
-                      fontSize: '0.72rem',
-                      color: 'var(--text-secondary)',
+                      fontSize: '0.74rem',
+                      color: 'var(--text-secondary, #64748b)',
                       marginTop: '2px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -385,13 +347,14 @@ export const CategoryExplorerModal = ({
                     {isHindi ? cat.descriptionHi : cat.descriptionEn}
                   </div>
                 </div>
+
                 {isSelected && (
                   <div
                     style={{
-                      width: '22px',
-                      height: '22px',
+                      width: '24px',
+                      height: '24px',
                       borderRadius: '50%',
-                      backgroundColor: 'var(--color-primary)',
+                      backgroundColor: '#6366f1',
                       color: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
@@ -399,45 +362,16 @@ export const CategoryExplorerModal = ({
                       flexShrink: 0,
                     }}
                   >
-                    <Check size={14} strokeWidth={3} />
+                    <Check size={15} strokeWidth={3} />
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-
-        {/* Footer */}
-        {selectedCategoryId && (
-          <div
-            style={{
-              padding: '12px 24px',
-              borderTop: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: 'var(--bg-surface-subtle)',
-            }}
-          >
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              {isHindi ? 'फ़िल्टर लागू है' : 'Filter active'}:{' '}
-              <strong style={{ color: 'var(--color-primary)' }}>
-                {getCategoryMeta(selectedCategoryId)?.[isHindi ? 'nameHi' : 'nameEn'] || selectedCategoryId}
-              </strong>
-            </span>
-            <button
-              onClick={() => {
-                onSelectCategory(undefined);
-                onClose();
-              }}
-              className="btn btn-sm btn-secondary"
-              style={{ fontWeight: 700 }}
-            >
-              {isHindi ? 'फ़िल्टर हटाएं (Clear)' : 'Clear Filter'}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
 };
+
+export default CategoryExplorerModal;
