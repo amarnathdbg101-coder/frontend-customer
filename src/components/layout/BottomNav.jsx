@@ -1,11 +1,11 @@
 /**
  * Customer App Bottom Navigation Bar
- * Features: Explore, Deals/Offers, Saved & Orders, Profile
+ * Features: Explore, Deals, Mera Khata (Udhar Passbook), Saved, Profile
  */
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Flame, Heart, User } from 'lucide-react';
+import { Home, Flame, BookOpen, Heart, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -32,7 +32,15 @@ export const BottomNav = () => {
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <Flame size={20} color="#f97316" />
-        <span>{isHindi ? 'ऑफर्स / डील्स' : 'Deals'}</span>
+        <span>{isHindi ? 'डील्स' : 'Deals'}</span>
+      </NavLink>
+
+      <NavLink
+        to={isAuthenticated ? '/khata' : '/login'}
+        className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+      >
+        <BookOpen size={20} color="#6366f1" />
+        <span>{isHindi ? 'खाता' : 'Khata'}</span>
       </NavLink>
 
       <NavLink
@@ -47,7 +55,7 @@ export const BottomNav = () => {
             style={{
               position: 'absolute',
               top: '4px',
-              right: '20px',
+              right: '16px',
               background: '#ef4444',
               color: '#fff',
               fontSize: '0.62rem',
@@ -66,7 +74,7 @@ export const BottomNav = () => {
       </NavLink>
 
       <NavLink
-        to={isAuthenticated ? "/profile" : "/login"}
+        to={isAuthenticated ? '/profile' : '/login'}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <User size={20} />

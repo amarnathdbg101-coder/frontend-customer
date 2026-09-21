@@ -22,7 +22,7 @@ export const FloatingCartBar = () => {
         position: 'fixed',
         left: '50%',
         transform: 'translateX(-50%)',
-        bottom: '72px', // positioned cleanly above the mobile bottom nav
+        bottom: 'calc(var(--bottom-nav-height, 64px) + var(--safe-area-bottom, 0px) + 10px)',
         width: 'calc(100% - 24px)',
         maxWidth: '480px',
         zIndex: 90,
