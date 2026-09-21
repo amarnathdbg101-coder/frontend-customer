@@ -2,9 +2,12 @@ import apiClient from '../../../shared/services/apiClient';
 import { Shop, Product, Category, PaginatedResponse, ApiResponse } from '../../../types';
 
 export interface NearbyShopsParams {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
   radius?: number;
+  radius_km?: number;
   search?: string;
   category?: string;
   limit?: number;
@@ -21,21 +24,45 @@ export interface ProductsParams {
 
 export const catalogService = {
   /**
-   * Get nearby shops based on lat/lng or filters
+   * Get public shops based on location or filters
    */
   async getNearbyShops(params: NearbyShopsParams): Promise<Shop[]> {
-    const response = await apiClient.get<ApiResponse<Shop[]> | Shop[]>('/shops/nearby', { params });
+    const formattedParams = {
+      lat: params.latitude || params.lat,
+      lng: params.longitude || params.lng,
+      radius_km: params.radius || params.radius_km,
+      search: params.search,
+      category: params.category,
+      limit: params.limit,
+      page: params.page,
+    };
+    const response = await apiClient.get<ApiResponse<Shop[]> | Shop[]>('/shops', { params: formattedParams });
     if (Array.isArray(response.data)) {
       return response.data;
     }
-    return (response.data as ApiResponse<Shop[]>).data || [];
+    const dataObj = response.data as any;
+    return dataObj?.data?.shops || dataObj?.data || dataObj?.shops || [];
+  },
+
+  /**
+   * Get home feed multi-section recommendations
+   */
+  async getHomeFeed(latitude?: number, longitude?: number): Promise<any> {
+    const response = await apiClient.get('/home-feed', {
+      params: {
+        latitude: latitude || 26.1542,
+        longitude: longitude || 85.8918,
+      },
+    });
+    return response.data;
   },
 
   /**
    * Get shop storefront details by ID or Slug
    */
   async getShopDetails(shopIdOrSlug: string): Promise<Shop> {
-    const response = await apiClient.get<ApiResponse<Shop>>(`/shops/${shopIdOrSlug}`);
+    const endpoint = shopIdOrSlug.length === 36 ? `/shops/${shopIdOrSlug}` : `/shops/slug/${shopIdOrSlug}`;
+    const response = await apiClient.get<ApiResponse<Shop>>(endpoint);
     return (response.data as any).data || response.data;
   },
 
@@ -47,7 +74,8 @@ export const catalogService = {
     if (Array.isArray(response.data)) {
       return response.data;
     }
-    return (response.data as ApiResponse<Product[]>).data || [];
+    const dataObj = response.data as any;
+    return dataObj?.data?.products || dataObj?.data || dataObj?.products || [];
   },
 
   /**
@@ -66,7 +94,8 @@ export const catalogService = {
     if (Array.isArray(response.data)) {
       return response.data;
     }
-    return (response.data as ApiResponse<Category[]>).data || [];
+    const dataObj = response.data as any;
+    return dataObj?.data?.categories || dataObj?.data || [];
   },
 
   /**
@@ -77,6 +106,7 @@ export const catalogService = {
     if (Array.isArray(response.data)) {
       return response.data;
     }
-    return (response.data as ApiResponse<Product[]>).data || [];
+    const dataObj = response.data as any;
+    return dataObj?.data?.deals || dataObj?.data || [];
   },
 };
