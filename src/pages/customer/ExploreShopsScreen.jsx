@@ -1,3 +1,4 @@
+import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
 /**
  * Customer Explore & Marketplace Screen
  * Clean, modern, responsive layout with location discovery, search, promo carousel, 

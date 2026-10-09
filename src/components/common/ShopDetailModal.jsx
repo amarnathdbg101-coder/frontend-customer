@@ -107,7 +107,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
               }}
-              title="Dukan Share Karein"
+              title="Share Shop / दुकान शेयर करें"
             >
               <Share2 size={16} />
             </button>
@@ -125,7 +125,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
               }}
-              title="Band Karein"
+              title="Close / बंद करें"
             >
               <X size={18} />
             </button>

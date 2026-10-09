@@ -1,13 +1,20 @@
+/**
+ * Customer Reset Password Screen
+ * 100% localized (English & हिन्दी, zero Hinglish)
+ */
+
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { authApi } from '../../api/auth.api';
+import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
 
 export const ResetPasswordScreen = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
+  const { isHindi, setLanguage, t } = useLanguage();
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,17 +28,17 @@ export const ResetPasswordScreen = () => {
     setError('');
 
     if (!token) {
-      setError('Password reset link invalid ya expire ho chuki hai. Kripya naya link mangwayein.');
+      setError(t('auth.reset_token_missing'));
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('Password kam se kam 6 characters ka hona chahiye.');
+      setError(t('auth.invalid_password'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Dono password aapas me match nahi kar rahe hain.');
+      setError(t('auth.passwords_mismatch'));
       return;
     }
 
@@ -41,17 +48,67 @@ export const ResetPasswordScreen = () => {
       await authApi.resetPassword(token, newPassword);
       setIsSuccess(true);
     } catch (err) {
-      setError(err.message || 'Password reset asafal raha. Ho sakta hai token expire ho gaya ho.');
+      setError(err.message || t('common.error'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AppLayout title="ShopSilo" subtitle="Reset Password" hideNav={true}>
-      <div style={{ paddingTop: '20px' }}>
-        {/* Banner */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+    <AppLayout title={t('app_name')} subtitle={t('auth.reset_password_title')} hideNav={true} showBack={true}>
+      <div style={{ paddingTop: '10px', maxWidth: '440px', margin: '0 auto' }}>
+        
+        {/* Top Language Toggle Pill */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'var(--bg-surface-subtle, rgba(255,255,255,0.06))',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-full)',
+              padding: '3px',
+              gap: '4px',
+            }}
+            role="radiogroup"
+            aria-label="Language selection"
+          >
+            <button
+              type="button"
+              onClick={() => setLanguage('hi')}
+              style={{
+                border: 'none',
+                background: isHindi ? 'var(--color-primary)' : 'transparent',
+                color: isHindi ? '#ffffff' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+              }}
+            >
+              हिन्दी
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              style={{
+                border: 'none',
+                background: !isHindi ? 'var(--color-primary)' : 'transparent',
+                color: !isHindi ? '#ffffff' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+              }}
+            >
+              English
+            </button>
+          </div>
+        </div>
+
+        {/* Brand Banner */}
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
             style={{
               width: '64px',
@@ -67,11 +124,11 @@ export const ResetPasswordScreen = () => {
           >
             <ShieldCheck size={36} />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Naya Password Banayein
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+            {t('auth.reset_password_title')}
           </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Apne account ke liye ek surakshit aur mazboot password chunein
+          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+            {t('auth.reset_password_subtitle')}
           </p>
         </div>
 
@@ -88,16 +145,18 @@ export const ResetPasswordScreen = () => {
           >
             <CheckCircle2 size={48} color="#22c55e" style={{ margin: '0 auto 12px' }} />
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-              Password Kamyabi Se Badal Gaya!
+              {t('auth.reset_success_title')}
             </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-              Aapka naya password save ho gaya hai. Ab aap naye password se login kar sakte hain.
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+              {t('auth.reset_success_subtitle')}
             </p>
             <button
               onClick={() => navigate('/login')}
               className="btn btn-primary btn-block btn-lg"
             >
-              Ab Login Karein <ArrowRight size={18} />
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {t('auth.back_to_login')} <ArrowRight size={18} />
+              </span>
             </button>
           </div>
         ) : (
@@ -108,7 +167,7 @@ export const ResetPasswordScreen = () => {
                 style={{
                   backgroundColor: 'var(--color-danger-light)',
                   color: 'var(--color-danger)',
-                  padding: '12px',
+                  padding: '12px 14px',
                   borderRadius: 'var(--radius-md)',
                   display: 'flex',
                   alignItems: 'center',
@@ -129,25 +188,26 @@ export const ResetPasswordScreen = () => {
                   color: '#eab308',
                   padding: '14px',
                   borderRadius: 'var(--radius-md)',
-                  fontSize: '0.85rem',
+                  fontSize: '0.84rem',
                   marginBottom: '20px',
                   border: '1px solid rgba(234, 179, 8, 0.3)',
+                  lineHeight: 1.4,
                 }}
               >
-                ⚠️ Reset token missing hai. Agar aapne forgot password request kiya tha, toh link me diya gaya poora URL paste karein.
+                ⚠️ {t('auth.reset_token_missing')}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Naya Password</label>
+              <div className="form-group" style={{ marginBottom: '14px' }}>
+                <label className="form-label">{t('auth.new_password_label')}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     className="form-input"
                     style={{ paddingRight: '40px' }}
-                    placeholder="Kam se kam 6 akshar"
+                    placeholder={t('auth.new_password_placeholder')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
@@ -167,19 +227,20 @@ export const ResetPasswordScreen = () => {
                       alignItems: 'center',
                       padding: 0,
                     }}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Naya Password Dobara Dalein (Confirm)</label>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">{t('auth.confirm_new_password_label')}</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="form-input"
-                  placeholder="Dobara wahi password dalein"
+                  placeholder={t('auth.confirm_new_password_placeholder')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
@@ -189,30 +250,20 @@ export const ResetPasswordScreen = () => {
                 type="submit"
                 className="btn btn-primary btn-block btn-lg"
                 disabled={loading || !token}
-                style={{ marginTop: '12px' }}
+                style={{ marginTop: '8px' }}
               >
-                {loading ? 'Kripya intezaar karein...' : (
-                  <>
-                    Password Update Karein <ArrowRight size={18} />
-                  </>
+                {loading ? t('auth.waiting') : (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    {t('common.save')} <ArrowRight size={18} />
+                  </span>
                 )}
               </button>
             </form>
-
-            <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.85rem' }}>
-              <Link
-                to="/login"
-                style={{
-                  color: 'var(--text-secondary)',
-                  textDecoration: 'none',
-                }}
-              >
-                ← Wapas Login Par Jayein
-              </Link>
-            </div>
           </>
         )}
       </div>
     </AppLayout>
   );
 };
+
+export default ResetPasswordScreen;

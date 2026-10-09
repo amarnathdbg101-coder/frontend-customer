@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
   (error: AxiosError<any>) => {
     const status = error.response?.status;
     const backendMessage = error.response?.data?.error || error.response?.data?.message;
-    const fallbackMessage = error.message || 'Kuch galat ho gaya, kripya dobara koshish karein';
+    const fallbackMessage = error.message || 'Something went wrong. Please try again. / तकनीकी समस्या आई, कृपया पुनः प्रयास करें।';
     const requestUrl = error.config?.url || '';
 
     // Graceful 401 handling for expired tokens

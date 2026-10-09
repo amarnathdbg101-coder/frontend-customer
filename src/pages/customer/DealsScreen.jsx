@@ -1,3 +1,4 @@
+import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tag, MapPin, Store, Navigation, Sparkles } from 'lucide-react';

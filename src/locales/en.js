@@ -19,9 +19,16 @@ export default {
     "help": "Help & Support",
     "privacy": "Privacy & Terms",
     "report": "Grievance Redressal (IT Rules 2021)",
-    "create_shop": "Create Shop",
-    "merchant_dashboard": "Merchant Dashboard",
-    "merchant_login": "Merchant Login"
+    "merchant_app_link": "Are you a Shop Keeper? Open Merchant App",
+    "appearance": "Appearance",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System",
+    "language": "Language",
+    "language_hi": "हिन्दी",
+    "language_en": "English",
+    "merchant_link_title": "Are you a Shopkeeper?",
+    "merchant_link_action": "Open Merchant App"
   },
   "common": {
     "save": "Save",
@@ -96,7 +103,29 @@ export default {
     "login_success": "Signed in successfully!",
     "register_success": "Account created successfully! Welcome to ShopSilo.",
     "logout_confirm": "Are you sure you want to sign out?",
-    "login_required_reserve": "Please sign in to reserve items or proceed with checkout."
+    "login_required_reserve": "Please sign in to reserve items or proceed with checkout.",
+    "new_password_label": "New Password",
+    "new_password_placeholder": "Enter new password",
+    "confirm_new_password_label": "Confirm New Password",
+    "confirm_new_password_placeholder": "Re-enter new password",
+    "reset_password_title": "Create New Password",
+    "reset_password_subtitle": "Enter and confirm your new secure password",
+    "reset_token_missing": "Password reset link is invalid or expired. Please request a new link.",
+    "reset_success_title": "Password Changed Successfully!",
+    "reset_success_subtitle": "Your password has been updated. You can now sign in with your new password.",
+    "back_to_login": "Back to Sign In",
+    "forgot_password_title": "Reset Password",
+    "forgot_password_desc": "Enter your registered email address to receive password reset instructions.",
+    "send_reset_link": "Send Reset Link",
+    "sending": "Sending...",
+    "reset_link_sent": "Password reset link sent to your email!",
+    "understood": "Understood",
+    "google_connecting": "Connecting with Google...",
+    "role_merchant_notice": "This account belongs to a Merchant partner. Please use the ShopSilo Merchant App to manage your store.",
+    "waiting": "Please wait...",
+    "account_creating": "Creating your account...",
+    "register_cta_question": "Need a new account?",
+    "register_cta_link": "Create Account Here"
   },
   "products": {
     "catalog_title": "Product Catalog",
@@ -310,5 +339,46 @@ export default {
     "description_placeholder": "Provide comprehensive details including date, shop name, transaction receipt number, and photographic evidence...",
     "submit_report": "Submit Formal Report",
     "acknowledgment": "Your grievance has been officially registered. In accordance with Rule 3(2), an acknowledgment ticket has been generated and our Grievance Officer will resolve it within 15 days."
+  },
+  "scanner": {
+    "camera_capture_failed": "Failed to capture camera frame",
+    "product_not_identified": "Could not identify product. Please scan barcode or try with a clearer photo.",
+    "photo_not_recognized": "Product could not be recognized from the photo.",
+    "ai_analysis_failed": "AI photo analysis failed",
+    "enter_barcode": "Please enter Barcode or SKU number",
+    "barcode_not_matched": "No product matched with barcode \"{{code}}\".",
+    "camera_not_available": "Camera access is unavailable",
+    "enable_camera_or_upload": "Please enable camera access or upload an image from gallery",
+    "upload_photo": "Upload Photo",
+    "ai_analyzing": "AI is analyzing the product...",
+    "scan_title": "Product Visual & Barcode Scanner"
+  },
+  "help_support": {
+    "title": "Customer Support & FAQs",
+    "faq_title": "Frequently Asked Questions",
+    "q_bargain": "How does price negotiation (Bargain) work?",
+    "a_bargain": "Click 'Make Offer' on any eligible product. Our pricing system calculates your proposed price against verified merchant discount margins for instant approval or counter-offer.",
+    "q_wrong_bill": "What should I do if a store creates an incorrect bill?",
+    "a_wrong_bill": "You can dispute any transaction directly in your Khata passbook, or register a formal report under Grievance Redressal.",
+    "call_support": "Customer Helpline",
+    "chat_support": "Live Chat Support"
+  },
+  "smart_search": {
+    "voice_not_supported": "Voice input is not supported in this browser. Please type your search.",
+    "search_error": "Smart search encountered an issue. Please try another search term.",
+    "searching_nearby": "Searching in neighborhood stores...",
+    "not_found_nearby": "No matching products found in nearby stores for this requirement.",
+    "try_broader_search": "Please try a general search or increase the distance radius."
+  },
+  "error_boundary": {
+    "title": "Something Went Wrong",
+    "subtitle": "An unexpected error occurred while loading this section.",
+    "reload_button": "Reload Page"
+  },
+  "cache": {
+    "offline_notice": "You are currently offline. Showing cached store data.",
+    "updated_just_now": "Updated just now",
+    "syncing": "Checking for live updates...",
+    "data_cached": "Cached locally for instant access"
   }
 };

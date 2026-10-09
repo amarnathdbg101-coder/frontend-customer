@@ -46,7 +46,7 @@ client.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const backendMessage = error.response?.data?.error || error.response?.data?.message;
-    const fallbackMessage = error.message || 'Kuch galat ho gaya, kripya dobara koshish karein';
+    const fallbackMessage = error.message || 'Something went wrong. Please try again. / तकनीकी समस्या आई, पुनः प्रयास करें।';
     const requestUrl = error.config?.url || '';
 
     // Handle 401 Unauthorized gracefully

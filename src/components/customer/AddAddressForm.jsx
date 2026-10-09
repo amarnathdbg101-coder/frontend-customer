@@ -12,7 +12,7 @@ export const AddAddressForm = ({ onSave, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!street.trim()) {
-      alert('Kripya gali/mohalla ya house number likhein.');
+      alert('Please enter house number or street details / कृपया मकान संख्या या गली का विवरण दर्ज करें।');
       return;
     }
     onSave({

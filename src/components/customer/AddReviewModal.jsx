@@ -76,7 +76,7 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Aapka dukan se khareedari ka experience kaisa raha?
+              How was your store shopping experience? / दुकान से खरीदारी का आपका अनुभव कैसा रहा?
             </p>
 
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', padding: '0.5rem 0' }}>

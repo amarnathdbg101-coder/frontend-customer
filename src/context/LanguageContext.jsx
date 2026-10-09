@@ -4,7 +4,7 @@ import { dictionaries } from '../locales/index.js';
 const LanguageContext = createContext(null);
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'hi', label: 'हिंदी', dir: 'ltr', fontClass: 'font-devanagari' },
+  { code: 'hi', label: 'हिन्दी', dir: 'ltr', fontClass: 'font-devanagari' },
   { code: 'en', label: 'English', dir: 'ltr', fontClass: 'font-sans' }
 ];
 
@@ -23,7 +23,7 @@ export const LanguageProvider = ({ children }) => {
       localStorage.setItem('shopsilo_customer_language', language);
       localStorage.setItem('shopsilo_language', language);
     } catch (e) {
-      console.warn('Unable to persist language preference', e);
+      console.warn('[LanguageContext] Unable to persist language preference', e);
     }
 
     // Sync HTML document lang and dir attributes for SEO and accessibility
@@ -35,6 +35,11 @@ export const LanguageProvider = ({ children }) => {
     } else {
       document.body.classList.add('lang-en');
       document.body.classList.remove('lang-hi');
+    }
+
+    // Broadcast event for decoupled listeners
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('shopsilo:language_changed', { detail: { language } }));
     }
   }, [language]);
 

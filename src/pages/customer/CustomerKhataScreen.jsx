@@ -1,3 +1,4 @@
+import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   BookOpen,

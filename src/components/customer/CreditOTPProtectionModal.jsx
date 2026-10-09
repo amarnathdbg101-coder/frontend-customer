@@ -62,12 +62,12 @@ export const CreditOTPProtectionModal = ({ isOpen, onClose, khataId, shopName, c
         </div>
 
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 1rem 0' }}>
-          Jab yeh feature ON hoga, tab <strong>{shopName}</strong> aapke naam par koi naya Udhar tabhi add kar sakenge jab aap unhe SMS/App me aaya 4-digit OTP bataenge.
+          When this feature is active, <strong>{shopName}</strong> can only add credit entries to your ledger after you verify the secure 4-digit OTP. / जब यह सुरक्षा सक्रिय होगी, तब <strong>{shopName}</strong> केवल 4-अंकीय ओटीपी सत्यापन के बाद ही उधारी दर्ज कर सकेंगे।
         </p>
 
         <div style={{ padding: '12px', borderRadius: '12px', background: enabled ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${enabled ? '#22c55e' : '#ef4444'}`, marginBottom: '1.25rem' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: enabled ? '#22c55e' : '#ef4444' }}>
-            Current Status: {enabled ? 'PROTECTED (OTP Required)' : 'UNLOCKED (Dukandar Direct Add Kar Sakte Hain)'}
+            Current Status: {enabled ? 'PROTECTED (OTP Required)' : 'UNLOCKED (Merchant Direct Entry Allowed)'}
           </span>
         </div>
 
