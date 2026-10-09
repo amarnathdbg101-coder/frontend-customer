@@ -84,12 +84,12 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
 
       const base64Data = captureFrame();
       if (!base64Data) {
-        throw new Error('Camera frame capture nahi ho paya');
+        throw new Error('Failed to capture camera frame / कैमरा फ़्रेम कैप्चर विफल');
       }
 
       const res = await aiApi.scanProduct(base64Data);
       if (!res || (!res.name && !res.product_name && !res.product)) {
-        throw new Error('Product identify nahi ho paya. Kripya dukan ke barcode ya clear photo se dobara koshish karein.');
+        throw new Error('Could not identify product. Please scan barcode or use clearer photo / उत्पाद की पहचान नहीं हो सकी। कृपया बारकोड अथवा स्पष्ट फ़ोटो से पुनः प्रयास करें।');
       }
 
       setScanResult({
@@ -122,7 +122,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
         const base64Data = reader.result;
         const res = await aiApi.scanProduct(base64Data);
         if (!res || (!res.name && !res.product_name && !res.product)) {
-          throw new Error('Photo se product pehchana nahi ja saka.');
+          throw new Error('Product not recognized in photo / फ़ोटो से उत्पाद पहचाना नहीं जा सका।');
         }
 
         setScanResult({
@@ -135,7 +135,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
           raw: res,
         });
       } catch (err) {
-        setErrorMsg(err.message || 'AI photo analysis fail ho gaya');
+        setErrorMsg(err.message || 'AI photo analysis failed / एआई फ़ोटो विश्लेषण विफल');
       } finally {
         setIsProcessing(false);
       }
@@ -147,7 +147,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
     if (e) e.preventDefault();
     const code = barcodeInput.trim();
     if (!code) {
-      setErrorMsg('Kripya Barcode ya SKU number likhein');
+      setErrorMsg('Please enter Barcode or SKU number / कृपया बारकोड अथवा एसकेयू नंबर दर्ज करें');
       return;
     }
 
@@ -160,7 +160,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
       const product = res.data?.product || res.product || res.data || res;
 
       if (!product || !product.id) {
-        throw new Error(`Barcode "${code}" se koi product match nahi hua.`);
+        throw new Error(`No product matched barcode ${code} / बारकोड ${code} से कोई उत्पाद नहीं मिला`);
       }
 
       setScanResult({
@@ -174,7 +174,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
         raw: product,
       });
     } catch (err) {
-      setErrorMsg(err.message || `Barcode '${code}' se product nahi mila`);
+      setErrorMsg(err.message || `Barcode ${code} not found / बारकोड ${code} नहीं मिला`);
     } finally {
       setIsProcessing(false);
     }
@@ -381,10 +381,10 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                 >
                   <Camera size={42} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                    Camera access uplabdh nahi hai
+                    Camera access unavailable / कैमरा उपलब्ध नहीं है
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-                    Aap live camera chalu karein ya gallery se photo upload karein
+                    Enable live camera or upload photo from gallery / कैमरा चालू करें अथवा फ़ोटो अपलोड करें
                   </div>
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                     <button
@@ -401,7 +401,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                       className="btn btn-primary btn-sm"
                       style={{ gap: '6px' }}
                     >
-                      <Upload size={14} /> Photo Upload Karein
+                      <Upload size={14} /> Upload Photo / फ़ोटो अपलोड
                     </button>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                     {isProcessing ? (
                       <>
                         <RefreshCw size={16} className="spin" />
-                        <span>AI Analyze Kar Raha Hai...</span>
+                        <span>AI Analyzing... / एआई विश्लेषण जारी...</span>
                       </>
                     ) : (
                       <>

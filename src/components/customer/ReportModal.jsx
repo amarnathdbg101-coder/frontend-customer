@@ -22,7 +22,7 @@ export const ReportModal = ({ isOpen, onClose, targetType = 'shop', targetId, ta
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) {
-      setError('Kripya brief details likhein.');
+      setError('Please provide incident details / कृपया विवरण दर्ज करें।');
       return;
     }
 

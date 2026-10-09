@@ -36,7 +36,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, shop } = useAuth();
   const { theme, toggleTheme, setThemeMode } = useTheme();
-  const { isHindi } = useLanguage();
+  const { isHindi, setLanguage, t } = useLanguage();
 
   if (!isOpen) return null;
 
@@ -72,21 +72,21 @@ export const SideDrawer = ({ isOpen, onClose }) => {
 
   const navItems = [
     {
-      label: isHindi ? 'स्टोरफ्रंट होम' : 'Storefront Home',
+      label: isHindi ? 'दुकानें खोजें (होम)' : 'Storefront Home',
       path: '/',
       icon: Home,
       color: '#4f46e5',
       bg: '#eef2ff',
     },
     {
-      label: isHindi ? 'मेरी इन-स्टोर बुकिंग्स' : 'My In-Store Reservations',
+      label: isHindi ? 'मेरी काउंटर बुकिंग्स' : 'My Counter Reservations',
       path: '/reservations',
       icon: ShoppingBag,
       color: '#059669',
       bg: '#ecfdf5',
     },
     {
-      label: isHindi ? 'मेरा खाता (Passbook)' : 'Mera Khata (Passbook)',
+      label: isHindi ? 'मेरा डिजिटल खाता (पासबुक)' : 'My Khata Ledger',
       path: '/khata',
       icon: BookOpen,
       color: '#dc2626',
@@ -345,9 +345,9 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               }}
             >
               {[
-                { label: 'Light', value: 'light', icon: Sun },
-                { label: 'Dark', value: 'dark', icon: Moon },
-                { label: 'System', value: 'system', icon: Monitor },
+                { label: isHindi ? 'लाइट' : 'Light', value: 'light', icon: Sun },
+                { label: isHindi ? 'डार्क' : 'Dark', value: 'dark', icon: Moon },
+                { label: isHindi ? 'सिस्टम' : 'System', value: 'system', icon: Monitor },
               ].map((opt) => {
                 const isSelected = currentThemeMode === opt.value;
                 const IconComp = opt.icon;
@@ -382,18 +382,21 @@ export const SideDrawer = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* BECOME A SHOP OWNER CARD */}
-          <div
-            onClick={handleBecomeMerchant}
+          {/* MERCHANT APP LINK FOR SHOPKEEPERS */}
+          <a
+            href="https://shop.shopsilo.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
               padding: '12px 14px',
               borderRadius: '14px',
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              cursor: 'pointer',
+              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              textDecoration: 'none',
               transition: 'transform 0.15s ease',
             }}
           >
@@ -402,25 +405,25 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 width: '34px',
                 height: '34px',
                 borderRadius: '10px',
-                backgroundColor: '#dcfce7',
-                color: '#16a34a',
+                backgroundColor: 'var(--color-primary-light, #eef2ff)',
+                color: 'var(--color-primary, #4f46e5)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              <Sparkles size={18} />
+              <Store size={18} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#166534' }}>
-                {shop ? (isHindi ? 'दुकानदार डैशबोर्ड' : 'Merchant OS Hub') : (isHindi ? 'दुकानदार बनें' : 'Become a Shop Owner')}
+              <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
+                {isHindi ? 'क्या आप दुकानदार हैं?' : 'Are you a Shop Keeper?'}
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#15803d', marginTop: '1px' }}>
-                {shop ? (isHindi ? 'काउंटर बिलिंग व सेल्स' : 'Counter POS, Khata & Sales') : (isHindi ? 'अपनी डिजिटल दुकान खोलें' : 'Open local digital storefront')}
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', marginTop: '1px' }}>
+                {isHindi ? 'मर्चेंट ऐप खोलें' : 'Open Merchant OS App ↗'}
               </div>
             </div>
-          </div>
+          </a>
 
           {/* SIGN OUT / SIGN IN */}
           {isAuthenticated ? (
@@ -442,7 +445,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               }}
             >
               <LogOut size={18} color="#ef4444" />
-              <span>{isHindi ? 'लॉग आउट' : 'Sign Out'}</span>
+              <span>{t('nav.logout')}</span>
             </button>
           ) : (
             <button

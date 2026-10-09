@@ -123,7 +123,7 @@ export const GoogleLoginButton = ({
               animation: 'spin 0.8s linear infinite',
             }}
           />
-          <span>Google se connect ho raha hai...</span>
+          <span>Connecting with Google...</span>
         </div>
       ) : (
         <>

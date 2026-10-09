@@ -1,16 +1,18 @@
 /**
- * Login Screen
- * 
- * Hinglish Hint:
- * Customer ke liye fast mobile & desktop login page:
- * - Email / Mobile & Password validation
- * - 1-Click Google Sign-In via Google Identity Services
+ * Customer Login Screen
+ * Clean, modern, responsive, 100% localized (English & हिन्दी, zero Hinglish)
+ * Features:
+ * - Phone / Email & Password authentication
+ * - 1-Click Google Sign-In
+ * - Direct Language Selector
+ * - Merchant boundary guard
  */
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Store, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2 } from 'lucide-react';
+import { Store, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { authApi } from '../../api/auth.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
@@ -18,6 +20,7 @@ import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
 export const LoginScreen = () => {
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useAuth();
+  const { isHindi, setLanguage, t } = useLanguage();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -38,11 +41,15 @@ export const LoginScreen = () => {
     setLoading(true);
 
     try {
-      await login(identifier.trim(), password);
-      // Customer app: Navigate directly to Explore Shops
+      const res = await login(identifier.trim(), password);
+      const user = res?.user || res?.data?.user;
+      if (user && (user.role === 'merchant' || user.role === 'shop')) {
+        setError(t('auth.role_merchant_notice'));
+        return;
+      }
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Login asafal raha, kripya check karein');
+      setError(err.message || t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -51,10 +58,15 @@ export const LoginScreen = () => {
   const handleGoogleSuccess = async (idToken) => {
     setError('');
     try {
-      await loginWithGoogle(idToken);
+      const res = await loginWithGoogle(idToken);
+      const user = res?.user || res?.data?.user;
+      if (user && (user.role === 'merchant' || user.role === 'shop')) {
+        setError(t('auth.role_merchant_notice'));
+        return;
+      }
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Google login asafal raha, kripya dobara koshish karein.');
+      setError(err.message || t('common.error'));
     }
   };
 
@@ -66,19 +78,71 @@ export const LoginScreen = () => {
 
     try {
       const res = await authApi.forgotPassword(forgotEmail.trim());
-      setForgotMsg(res.message || 'Agar ye email registered hai, toh password reset link bhej di gayi hai.');
+      setForgotMsg(res.message || t('auth.reset_link_sent'));
     } catch (err) {
-      setForgotError(err.message || 'Request bhejte waqt problem aayi. Dobara koshish karein.');
+      setForgotError(err.message || t('common.error'));
     } finally {
       setForgotLoading(false);
     }
   };
 
   return (
-    <AppLayout title="ShopSilo" subtitle="Apni Dukan Ka Smart App" hideNav={true}>
-      <div style={{ paddingTop: '20px' }}>
+    <AppLayout title={t('app_name')} subtitle={t('auth.login_title')} hideNav={true}>
+      <div style={{ paddingTop: '16px', maxWidth: '440px', margin: '0 auto' }}>
+        
+        {/* Top Language Toggle Pill */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'var(--bg-surface-subtle, rgba(255,255,255,0.06))',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-full)',
+              padding: '3px',
+              gap: '4px',
+            }}
+            role="radiogroup"
+            aria-label="Language selection"
+          >
+            <button
+              type="button"
+              onClick={() => setLanguage('hi')}
+              style={{
+                border: 'none',
+                background: isHindi ? 'var(--color-primary)' : 'transparent',
+                color: isHindi ? '#ffffff' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              हिन्दी
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              style={{
+                border: 'none',
+                background: !isHindi ? 'var(--color-primary)' : 'transparent',
+                color: !isHindi ? '#ffffff' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                padding: '4px 12px',
+                borderRadius: 'var(--radius-full)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              English
+            </button>
+          </div>
+        </div>
+
         {/* Brand Banner */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
             style={{
               width: '64px',
@@ -94,11 +158,11 @@ export const LoginScreen = () => {
           >
             <Store size={36} />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Welcome Back!
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+            {t('auth.login_title')}
           </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Apne account me login karke shopping karein
+          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+            {t('auth.login_subtitle')}
           </p>
         </div>
 
@@ -108,7 +172,7 @@ export const LoginScreen = () => {
             style={{
               backgroundColor: 'var(--color-danger-light)',
               color: 'var(--color-danger)',
-              padding: '12px',
+              padding: '12px 14px',
               borderRadius: 'var(--radius-md)',
               display: 'flex',
               alignItems: 'center',
@@ -117,30 +181,28 @@ export const LoginScreen = () => {
               marginBottom: '16px',
             }}
           >
-            <AlertCircle size={18} />
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Email ya Mobile Number</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                required
-                className="form-input"
-                placeholder="Email ya 10-digit mobile number"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-            </div>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label className="form-label">{t('auth.phone_label')}</label>
+            <input
+              type="text"
+              required
+              className="form-input"
+              placeholder={t('auth.phone_placeholder')}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+            />
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label className="form-label" style={{ margin: 0 }}>Password</label>
+              <label className="form-label" style={{ margin: 0 }}>{t('auth.password_label')}</label>
               <button
                 type="button"
                 onClick={() => {
@@ -159,7 +221,7 @@ export const LoginScreen = () => {
                   padding: 0,
                 }}
               >
-                Password bhool gaye?
+                {t('auth.forgot_password')}
               </button>
             </div>
             <div style={{ position: 'relative' }}>
@@ -168,7 +230,7 @@ export const LoginScreen = () => {
                 required
                 className="form-input"
                 style={{ paddingRight: '40px' }}
-                placeholder="••••••••"
+                placeholder={t('auth.password_placeholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -188,6 +250,7 @@ export const LoginScreen = () => {
                   alignItems: 'center',
                   padding: 0,
                 }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -198,12 +261,12 @@ export const LoginScreen = () => {
             type="submit"
             className="btn btn-primary btn-block btn-lg"
             disabled={loading}
-            style={{ marginTop: '12px' }}
+            style={{ marginTop: '8px' }}
           >
-            {loading ? 'Kripya intezaar karein...' : (
-              <>
-                Login Karein <ArrowRight size={18} />
-              </>
+            {loading ? t('auth.waiting') : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {t('auth.login_button')} <ArrowRight size={18} />
+              </span>
             )}
           </button>
         </form>
@@ -211,7 +274,9 @@ export const LoginScreen = () => {
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '12px' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>OR</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>
+            {t('auth.or_continue_with')}
+          </span>
           <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
         </div>
 
@@ -219,21 +284,22 @@ export const LoginScreen = () => {
         <GoogleLoginButton
           text="continue_with"
           onSuccess={handleGoogleSuccess}
-          onError={(err) => setError(err.message || 'Google login asafal raha')}
+          onError={(err) => setError(err.message || t('common.error'))}
         />
 
         {/* Switch to Register */}
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.85rem' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>Naya khata banana hai? </span>
+          <span style={{ color: 'var(--text-secondary)' }}>{t('auth.register_cta_question')} </span>
           <Link
             to="/register"
             style={{
               color: 'var(--color-primary)',
-              fontWeight: 600,
+              fontWeight: 700,
               textDecoration: 'none',
+              marginLeft: '4px',
             }}
           >
-            Yahan Register Karein
+            {t('auth.register_cta_link')}
           </Link>
         </div>
 
@@ -252,11 +318,11 @@ export const LoginScreen = () => {
           }}
         >
           <div>
-            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--color-primary)' }}>
-              🏪 क्या आप दुकानदार (Merchant) हैं?
+            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--color-primary)' }}>
+              🏪 {t('nav.merchant_link_title')}
             </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              POS बिलिंग व दुकान डैशबोर्ड के लिए मर्चेंट पोर्टल पर लॉगिन करें।
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              {isHindi ? 'दुकानदार लॉगिन हेतु मर्चेंट पोर्टल का उपयोग करें।' : 'For shop management & POS billing, use the Merchant App.'}
             </div>
           </div>
           <a
@@ -266,12 +332,12 @@ export const LoginScreen = () => {
               whiteSpace: 'nowrap',
               textDecoration: 'none',
               padding: '6px 14px',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               fontWeight: 800,
               borderRadius: 'var(--radius-full)',
             }}
           >
-            मर्चेंट लॉगिन 👉
+            {t('nav.merchant_link_action')} 👉
           </a>
         </div>
 
@@ -307,7 +373,7 @@ export const LoginScreen = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>
-                  Password Reset Link Mangwayein
+                  {t('auth.forgot_password_title')}
                 </h3>
                 <button
                   onClick={() => setShowForgotModal(false)}
@@ -318,6 +384,7 @@ export const LoginScreen = () => {
                     cursor: 'pointer',
                     padding: '4px',
                   }}
+                  aria-label="Close"
                 >
                   <X size={20} />
                 </button>
@@ -333,13 +400,13 @@ export const LoginScreen = () => {
                     onClick={() => setShowForgotModal(false)}
                     className="btn btn-primary btn-block"
                   >
-                    Theek Hai, Samajh Gaya
+                    {t('auth.understood')}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleForgotPassword}>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.4 }}>
-                    Apna registered email address dalein. Hum aapko password reset karne ka link bhejenge.
+                    {t('auth.forgot_password_desc')}
                   </p>
 
                   {forgotError && (
@@ -358,12 +425,12 @@ export const LoginScreen = () => {
                   )}
 
                   <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label">Email Address</label>
+                    <label className="form-label">{t('auth.email_label')}</label>
                     <input
                       type="email"
                       required
                       className="form-input"
-                      placeholder="aapka@email.com"
+                      placeholder={t('auth.email_placeholder')}
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                     />
@@ -374,10 +441,10 @@ export const LoginScreen = () => {
                     className="btn btn-primary btn-block"
                     disabled={forgotLoading}
                   >
-                    {forgotLoading ? 'Bhej rahe hain...' : (
-                      <>
-                        Reset Link Bhejein <Send size={16} style={{ marginLeft: '6px' }} />
-                      </>
+                    {forgotLoading ? t('auth.sending') : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        {t('auth.send_reset_link')} <Send size={16} />
+                      </span>
                     )}
                   </button>
                 </form>
@@ -389,3 +456,5 @@ export const LoginScreen = () => {
     </AppLayout>
   );
 };
+
+export default LoginScreen;

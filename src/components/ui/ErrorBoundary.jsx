@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component {
           <div className="error-boundary-icon">
             <AlertTriangle size={48} />
           </div>
-          <h2 className="error-boundary-title">Kuch Galat Ho Gaya</h2>
+          <h2 className="error-boundary-title">Something Went Wrong / कोई त्रुटि हुई</h2>
           <p className="error-boundary-message">
             Something went wrong. Please try again.
           </p>

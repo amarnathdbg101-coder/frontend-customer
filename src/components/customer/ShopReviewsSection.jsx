@@ -65,7 +65,7 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
 
       {reviews.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '1.5rem', background: 'var(--bg-surface-subtle, #0f172a)', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-          <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Abhi tak koi review nahi hai. Pehla review aap dein!</p>
+          <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No reviews yet. Be the first to review! / अभी तक कोई समीक्षा नहीं है। पहली समीक्षा आप दर्ज करें!</p>
           <button
             onClick={() => setShowAddModal(true)}
             style={{ background: 'none', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}

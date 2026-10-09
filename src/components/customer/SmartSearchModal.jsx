@@ -49,7 +49,7 @@ export const SmartSearchModal = ({ isOpen, onClose, onSelectProduct }) => {
   const handleSpeech = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Aapke browser me voice input support nahi hai. Kripya type karein.');
+      alert('Voice input is not supported in this browser. Please type your search. / इस ब्राउज़र में वॉयस इनपुट समर्थित नहीं है।');
       return;
     }
 
@@ -127,7 +127,7 @@ export const SmartSearchModal = ({ isOpen, onClose, onSelectProduct }) => {
       }
     } catch (err) {
       console.error('Smart search error:', err);
-      setErrorMsg('Smart search me dikkat aayi. Kripya doosra shabd search karein.');
+      setErrorMsg('Smart search encountered an issue. Please try another search term. / खोज में त्रुटि हुई। कृपया अन्य शब्द लिखकर पुनः प्रयास करें।');
     } finally {
       setIsSearching(false);
     }
@@ -358,7 +358,7 @@ export const SmartSearchModal = ({ isOpen, onClose, onSelectProduct }) => {
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <RefreshCw size={32} color="var(--color-primary)" className="spin" style={{ margin: '0 auto 12px auto' }} />
               <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                Aas-paas ki dukaano me dhundh rahe hain...
+                Searching in nearby shops... / नजदीकी दुकानों में खोज जारी है...
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                 AI semantic understanding & inventory matching
@@ -369,10 +369,10 @@ export const SmartSearchModal = ({ isOpen, onClose, onSelectProduct }) => {
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <Package size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
                 <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Is zaroorat ka product nazdeeki dukaano me nahi mila
+                  No product matched this in nearby shops / नजदीकी दुकानों में यह उत्पाद उपलब्ध नहीं है
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Kripya general search karein ya radius badhayein
+                  Please try a broader search or increase radius / कृपया सामान्य खोज करें अथवा दायरा बढ़ाएं
                 </div>
               </div>
             ) : (

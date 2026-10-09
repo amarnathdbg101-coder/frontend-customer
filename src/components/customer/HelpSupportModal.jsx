@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
 import { X, HelpCircle, Phone, MessageCircle, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
-
-const FAQS = [
-  {
-    q: 'Counter Pickup Reservation kaise kaam karta hai?',
-    a: 'App me kisi bhi dukan ka item dekh kar "Hold / Reserve" karein. Aapko 4-digit pickup OTP milega. Dukan par jakar OTP dikhayein aur bina kisi wait ke item le lein.'
-  },
-  {
-    q: 'Digital Khata Udhar Passbook kya hai?',
-    a: 'Aap jis dukan se regular samaan lete hain, unka digital udhar ledger aapke Khata tab me dikhta hai. Aap transaction history dekh sakte hain, dispute raise kar sakte hain aur direct UPI se pay kar sakte hain.'
-  },
-  {
-    q: 'Bargaining (Bhav-Taav) kaise karein?',
-    a: 'Product detail page par "Bhav-Taav Karein" button dabayein. AI instant aapke offer ko calculate karke dukan ke allowed margin ke hisaab se accept ya counter-offer karta hai.'
-  },
-  {
-    q: 'Agar dukan par galat bill ban gaya to kya karein?',
-    a: 'Khata passbook me transaction ke samne "Dispute" button dabayein aur reason likhein. Dukaandaar ko instant notification jayegi.'
-  }
-];
+import { useLanguage } from '../../context/LanguageContext';
 
 export const HelpSupportModal = ({ isOpen, onClose }) => {
   const [openFaq, setOpenFaq] = useState(null);
+  const { isHindi, t } = useLanguage();
 
   if (!isOpen) return null;
+
+  const faqs = [
+    {
+      q: isHindi ? 'काउंटर पिकअप रिजर्वेशन कैसे काम करता है?' : 'How does counter pickup reservation work?',
+      a: isHindi ? 'ऐप में किसी भी दुकान का सामान देखकर "बुक / रिज़र्व" करें। आपको 4-अंकों का पिकअप टोकन मिलेगा। दुकान पर जाकर टोकन दिखाएं और बिना प्रतीक्षा सामान प्राप्त करें।' : 'Reserve any product in the app. You receive a verified 4-digit pickup token to show at the store counter for zero-wait collection.'
+    },
+    {
+      q: isHindi ? 'डिजिटल खाता बही क्या है?' : 'What is the Digital Khata Ledger?',
+      a: isHindi ? 'नियमित स्थानीय दुकानों से आपका संपूर्ण उधारी व भुगतान रिकॉर्ड खाता अनुभाग में पारदर्शी रूप से उपलब्ध रहता है। आप रसीद देख सकते हैं, आपत्ति दर्ज कर सकते हैं अथवा यूपीआई से भुगतान कर सकते हैं।' : 'A real-time, transparent ledger of credit balances with neighborhood merchants. View receipts, raise disputes, or settle balances via UPI.'
+    },
+    {
+      q: t('help_support.q_bargain'),
+      a: t('help_support.a_bargain')
+    },
+    {
+      q: t('help_support.q_wrong_bill'),
+      a: t('help_support.a_wrong_bill')
+    }
+  ];
 
   return (
     <div
@@ -59,8 +61,12 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
               <HelpCircle size={20} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Customer Support &amp; Help Desk</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>24x7 Assistant for ShopSilo Shoppers</span>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                {t('help_support.title')}
+              </h3>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {isHindi ? 'शॉपसिलो ग्राहकों हेतु 24x7 सहायता' : '24x7 Assistant for ShopSilo Shoppers'}
+              </span>
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
@@ -70,7 +76,7 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <a
-            href="https://wa.me/919876543210?text=Namaste%20ShopSilo%20Support%20mujhe%20madad%20chahiye"
+            href="https://wa.me/919876543210"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -88,7 +94,7 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
             }}
           >
             <MessageCircle size={16} />
-            WhatsApp Help
+            {t('help_support.chat_support')}
           </a>
 
           <a
@@ -108,13 +114,15 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
             }}
           >
             <Phone size={16} />
-            Call Helpline
+            {t('help_support.call_support')}
           </a>
         </div>
 
-        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: 'var(--text-primary)' }}>Frequently Asked Questions</h4>
+        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+          {t('help_support.faq_title')}
+        </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-          {FAQS.map((faq, idx) => (
+          {faqs.map((faq, idx) => (
             <div
               key={idx}
               style={{
@@ -155,9 +163,11 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: 'rgba(59, 130, 246, 0.08)', borderRadius: '10px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
           <ShieldCheck size={16} color="#3b82f6" />
-          <span>Grievance Officer: support@shopsilo.in | IT Rules 2021 Compliance</span>
+          <span>Grievance Officer: grievance@shopsilo.in | IT Rules 2021 Compliance</span>
         </div>
       </div>
     </div>
   );
 };
+
+export default HelpSupportModal;

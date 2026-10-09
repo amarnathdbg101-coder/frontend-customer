@@ -1,5 +1,5 @@
 /**
- * Shared Safe LocalStorage Helper
+ * Shared Safe LocalStorage Helper & Enterprise LocalCache Integration
  */
 
 export const storage = {
@@ -31,3 +31,6 @@ export const storage = {
     }
   },
 };
+
+export { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
+export default storage;
