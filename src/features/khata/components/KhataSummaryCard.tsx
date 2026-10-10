@@ -47,7 +47,7 @@ export const KhataSummaryCard: React.FC<KhataSummaryCardProps> = ({
           </div>
           <div>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-              {khata.shop_name || 'Dukaan'}
+              {khata.shop_name || 'Partner Store'}
             </h3>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               Khata ID: #{khata.id.slice(0, 8)}
@@ -66,7 +66,7 @@ export const KhataSummaryCard: React.FC<KhataSummaryCardProps> = ({
             {formatCurrency(khata.balance)}
           </div>
           <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isDue ? '#ef4444' : '#10b981' }}>
-            {isDue ? 'Baki (Due)' : 'Cleared'}
+            {isDue ? 'Net Due' : 'Cleared'}
           </span>
         </div>
       </div>

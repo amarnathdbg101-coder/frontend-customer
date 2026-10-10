@@ -4,6 +4,7 @@ import { RealQRCode } from '../common/RealQRCode';
 import { useAuth } from '../../context/AuthContext';
 
 export const CustomerKhataQRModal = ({ isOpen, onClose }) => {
+  const { isHindi } = useLanguage();
   const { user } = useAuth();
   if (!isOpen || !user) return null;
 
@@ -45,7 +46,7 @@ export const CustomerKhataQRModal = ({ isOpen, onClose }) => {
             </div>
             <div style={{ textAlign: 'left' }}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>My Personal Khata QR</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Instant 1-Tap Dukandar Scan</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{isHindi ? 'त्वरित मर्चेंट स्कैन' : 'Instant Merchant Scan'}</span>
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
@@ -76,7 +77,7 @@ export const CustomerKhataQRModal = ({ isOpen, onClose }) => {
           </div>
 
           <p style={{ margin: 0, fontSize: '0.78rem', color: '#475569' }}>
-            Dukan counter par yeh QR dikhayein taaki dukandar bina phone number pooche aapka ledger open kar sakein.
+            {isHindi ? 'दुकान काउंटर पर यह क्यूआर कोड दिखाएं ताकि दुकानदार तुरंत आपका खाता बही खोल सके।' : 'Show this QR code at the counter for the merchant to quickly access your credit ledger.'}
           </p>
         </div>
 

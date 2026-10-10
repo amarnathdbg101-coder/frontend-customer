@@ -18,7 +18,7 @@ import { useLocation } from '../../context/LocationContext';
 import { formatCurrency } from '../../utils/format';
 
 const SUGGESTIONS = [
-  'Khane ke baad meetha chahiye',
+  isHindi ? 'भोजन के बाद मीठा चाहिए' : 'Looking for dessert after dinner',
   'Sar dard ya bukhar ki tablet',
   'Chai patti aur doodh',
   'Cold drink aur chips party ke liye',
@@ -369,10 +369,10 @@ export const SmartSearchModal = ({ isOpen, onClose, onSelectProduct }) => {
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <Package size={40} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
                 <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                  No product matched this in nearby shops / नजदीकी दुकानों में यह उत्पाद उपलब्ध नहीं है
+                  {isHindi ? 'नजदीकी दुकानों में यह उत्पाद उपलब्ध नहीं है' : 'No product matched this in nearby shops'}
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Please try a broader search or increase radius / कृपया सामान्य खोज करें अथवा दायरा बढ़ाएं
+                  {isHindi ? 'कृपया सामान्य खोज करें अथवा दायरा बढ़ाएं' : 'Please try a broader search or increase radius'}
                 </div>
               </div>
             ) : (

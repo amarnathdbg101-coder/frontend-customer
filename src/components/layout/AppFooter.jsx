@@ -108,12 +108,12 @@ export const AppFooter = () => {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.86rem' }}>
               <li>
                 <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                  {isHindi ? 'सेवा की शर्तें (Terms)' : 'Terms of Service'}
+                  {isHindi ? 'सेवा की शर्तें' : 'Terms of Service'}
                 </a>
               </li>
               <li>
                 <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                  {isHindi ? 'गोपनीयता नीति (Privacy)' : 'Privacy Policy'}
+                  {isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'}
                 </a>
               </li>
               <li>

@@ -71,7 +71,7 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
           <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
             <CheckCircle2 size={42} color="#22c55e" style={{ margin: '0 auto 0.5rem auto' }} />
             <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)' }}>Review Submitted!</h4>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Aapki rating shop profile par add ho gayi hai.</p>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{isHindi ? 'आपकी समीक्षा दुकान प्रोफ़ाइल पर जुड़ गई है।' : 'Your review has been added to the store profile.'}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -116,7 +116,7 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Product quality, dukandar ka vyavahar ya billing speed..."
+                placeholder={isHindi ? "उत्पाद गुणवत्ता, सेवा या बिलिंग गति..." : "Product quality, customer service, or billing speed..."}
                 style={{
                   width: '100%',
                   padding: '10px 12px',

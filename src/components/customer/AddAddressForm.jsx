@@ -12,7 +12,7 @@ export const AddAddressForm = ({ onSave, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!street.trim()) {
-      alert('Please enter house number or street details / कृपया मकान संख्या या गली का विवरण दर्ज करें।');
+      alert(isHindi ? 'कृपया मकान संख्या या गली का विवरण दर्ज करें।' : 'Please enter house number or street details.');
       return;
     }
     onSave({

@@ -14,8 +14,10 @@ import {
 import { productApi } from '../../api/product.api';
 import { aiApi } from '../../api/ai.api';
 import { formatCurrency } from '../../utils/format';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
+  const { isHindi } = useLanguage();
   const [activeTab, setActiveTab] = useState('camera'); // 'camera' | 'barcode'
   const [barcodeInput, setBarcodeInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -84,12 +86,12 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
 
       const base64Data = captureFrame();
       if (!base64Data) {
-        throw new Error('Failed to capture camera frame / कैमरा फ़्रेम कैप्चर विफल');
+        throw new Error(isHindi ? 'कैमरा फ़्रेम कैप्चर विफल' : 'Failed to capture camera frame');
       }
 
       const res = await aiApi.scanProduct(base64Data);
       if (!res || (!res.name && !res.product_name && !res.product)) {
-        throw new Error('Could not identify product. Please scan barcode or use clearer photo / उत्पाद की पहचान नहीं हो सकी। कृपया बारकोड अथवा स्पष्ट फ़ोटो से पुनः प्रयास करें।');
+        throw new Error(isHindi ? 'उत्पाद की पहचान नहीं हो सकी। कृपया स्पष्ट फ़ोटो अथवा बारकोड से पुनः प्रयास करें।' : 'Could not identify product. Please use a clearer photo or barcode.');
       }
 
       setScanResult({
@@ -102,7 +104,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
         raw: res,
       });
     } catch (err) {
-      setErrorMsg(err.message || 'AI scanning me dikkat aayi. Barcode code se dhundhein.');
+      setErrorMsg(err.message || (isHindi ? 'स्कैनिंग में समस्या आई। कृपया बारकोड से खोजें।' : 'Scanning failed. Try searching by barcode.'));
     } finally {
       setIsProcessing(false);
     }
@@ -122,7 +124,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
         const base64Data = reader.result;
         const res = await aiApi.scanProduct(base64Data);
         if (!res || (!res.name && !res.product_name && !res.product)) {
-          throw new Error('Product not recognized in photo / फ़ोटो से उत्पाद पहचाना नहीं जा सका।');
+          throw new Error(isHindi ? 'फ़ोटो से उत्पाद पहचाना नहीं जा सका।' : 'Product not recognized in photo.');
         }
 
         setScanResult({
@@ -135,7 +137,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
           raw: res,
         });
       } catch (err) {
-        setErrorMsg(err.message || 'AI photo analysis failed / एआई फ़ोटो विश्लेषण विफल');
+        setErrorMsg(err.message || (isHindi ? 'एआई फ़ोटो विश्लेषण विफल' : 'AI photo analysis failed'));
       } finally {
         setIsProcessing(false);
       }
@@ -147,7 +149,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
     if (e) e.preventDefault();
     const code = barcodeInput.trim();
     if (!code) {
-      setErrorMsg('Please enter Barcode or SKU number / कृपया बारकोड अथवा एसकेयू नंबर दर्ज करें');
+      setErrorMsg(isHindi ? 'कृपया बारकोड अथवा एसकेयू नंबर दर्ज करें।' : 'Please enter Barcode or SKU number.');
       return;
     }
 
@@ -160,7 +162,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
       const product = res.data?.product || res.product || res.data || res;
 
       if (!product || !product.id) {
-        throw new Error(`No product matched barcode ${code} / बारकोड ${code} से कोई उत्पाद नहीं मिला`);
+        throw new Error(isHindi ? `बारकोड ${code} से कोई उत्पाद नहीं मिला` : `No product matched barcode ${code}`);
       }
 
       setScanResult({
@@ -174,7 +176,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
         raw: product,
       });
     } catch (err) {
-      setErrorMsg(err.message || `Barcode ${code} not found / बारकोड ${code} नहीं मिला`);
+      setErrorMsg(err.message || (isHindi ? `बारकोड ${code} नहीं मिला` : `Barcode ${code} not found`));
     } finally {
       setIsProcessing(false);
     }
@@ -259,7 +261,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                 Scan & Check Price
               </div>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                AI Camera Photo ya Barcode/SKU se dukan ka item dhundhein
+                {isHindi ? 'कैमरा फ़ोटो या बारकोड से उत्पाद खोजें' : 'Search items by camera photo or barcode'}
               </div>
             </div>
           </div>
@@ -381,10 +383,10 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                 >
                   <Camera size={42} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
                   <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                    Camera access unavailable / कैमरा उपलब्ध नहीं है
+                    {isHindi ? 'कैमरा उपलब्ध नहीं है' : 'Camera access unavailable'}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-                    Enable live camera or upload photo from gallery / कैमरा चालू करें अथवा फ़ोटो अपलोड करें
+                    {isHindi ? 'कैमरा चालू करें अथवा फ़ोटो अपलोड करें' : 'Enable live camera or upload photo from gallery'}
                   </div>
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                     <button
@@ -401,7 +403,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                       className="btn btn-primary btn-sm"
                       style={{ gap: '6px' }}
                     >
-                      <Upload size={14} /> Upload Photo / फ़ोटो अपलोड
+                      <Upload size={14} /> {isHindi ? 'फ़ोटो अपलोड' : 'Upload Photo'}
                     </button>
                   </div>
                 </div>
@@ -482,7 +484,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
                 </button>
               </div>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                Tip: Product box ya packet par chhape barcode ke niche ka number daalein.
+                {isHindi ? 'सुझाव: उत्पाद के पैकेट पर छपे बारकोड का नंबर दर्ज करें।' : 'Tip: Enter the numeric code printed beneath the product barcode.'}
               </div>
             </form>
           )}

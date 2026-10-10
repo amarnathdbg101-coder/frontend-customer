@@ -29,10 +29,12 @@ import {
   Share2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 
 export const ShopDetailModal = ({ shop, onClose }) => {
   const navigate = useNavigate();
+  const { isHindi } = useLanguage();
   const [copiedLink, setCopiedLink] = useState(false);
   const [selectedBannerIdx, setSelectedBannerIdx] = useState(0);
 
@@ -107,7 +109,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
               }}
-              title="Share Shop / दुकान शेयर करें"
+              title={isHindi ? "दुकान साझा करें" : "Share Store"}
             >
               <Share2 size={16} />
             </button>
@@ -125,7 +127,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 cursor: 'pointer',
                 color: 'var(--text-secondary)',
               }}
-              title="Close / बंद करें"
+              title={isHindi ? "बंद करें" : "Close"}
             >
               <X size={18} />
             </button>
@@ -147,7 +149,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 marginBottom: '12px',
               }}
             >
-              ✓ Dukan ka link clipboard par copy ho gaya!
+              {isHindi ? '✓ दुकान का लिंक क्लिपबोर्ड पर कॉपी हो गया!' : '✓ Store link copied to clipboard!'}
             </div>
           )}
 
@@ -292,7 +294,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                       backgroundColor: isShopOpen ? '#10b981' : '#ef4444',
                     }}
                   />
-                  {isShopOpen ? 'OPEN ABHI' : 'BAND HAI'}
+                  {isShopOpen ? (isHindi ? 'दुकान खुली है' : 'OPEN NOW') : (isHindi ? 'दुकान बंद है' : 'CLOSED')}
                 </span>
               </div>
 
@@ -325,7 +327,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 }}
               >
                 <Phone size={16} />
-                <span>Call Shop</span>
+                <span>{isHindi ? 'दुकानदार को कॉल करें' : 'Call Store'}</span>
               </a>
             )}
 
@@ -351,7 +353,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 }}
               >
                 <MessageCircle size={16} />
-                <span>WhatsApp Chat</span>
+                <span>{isHindi ? 'व्हाट्सएप चैट' : 'WhatsApp Chat'}</span>
               </a>
             )}
 
@@ -375,7 +377,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                 }}
               >
                 <Navigation size={16} />
-                <span>Directions</span>
+                <span>{isHindi ? 'रास्ता देखें' : 'Directions'}</span>
               </a>
             )}
           </div>
@@ -401,7 +403,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
                   marginBottom: '6px',
                 }}
               >
-                ABOUT DUKAN
+                {isHindi ? 'दुकान के बारे में' : 'ABOUT STORE'}
               </div>
               <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
                 {shop.description}
@@ -433,13 +435,13 @@ export const ShopDetailModal = ({ shop, onClose }) => {
               }}
             >
               <Clock size={14} color="var(--color-primary)" />
-              DUKAN TIMINGS & SCHEDULE
+              {isHindi ? 'दुकान का समय एवं कार्यदिवस' : 'STORE TIMINGS & SCHEDULE'}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
               <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  OPENING TIME
+                  {isHindi ? 'खुलने का समय' : 'OPENING TIME'}
                 </div>
                 <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
                   {shop.opening_time || '09:00 AM'}
@@ -448,7 +450,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
 
               <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  CLOSING TIME
+                  {isHindi ? 'बंद होने का समय' : 'CLOSING TIME'}
                 </div>
                 <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
                   {shop.closing_time || '09:00 PM'}
@@ -457,10 +459,10 @@ export const ShopDetailModal = ({ shop, onClose }) => {
 
               <div style={{ gridColumn: '1 / -1', backgroundColor: '#ffffff', padding: '10px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  WEEKLY OFF / CHHUTTI
+                  {isHindi ? 'साप्ताहिक अवकाश' : 'WEEKLY OFF'}
                 </div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 700, color: shop.weekly_off ? '#b91c1c' : '#15803d', marginTop: '2px' }}>
-                  {shop.weekly_off ? `Band Rehta Hai: ${shop.weekly_off}` : 'Saare 7 Din Khuli Rehti Hai (Open All Days)'}
+                  {shop.weekly_off ? (isHindi ? `साप्ताहिक अवकाश: ${shop.weekly_off}` : `Weekly Off: ${shop.weekly_off}`) : (isHindi ? 'सप्ताह के सातों दिन खुली रहती है' : 'Open All 7 Days')}
                 </div>
               </div>
             </div>
@@ -490,11 +492,11 @@ export const ShopDetailModal = ({ shop, onClose }) => {
               }}
             >
               <MapPin size={14} color="var(--color-primary)" />
-              DUKAN KA PATA & LOCATION
+              {isHindi ? 'दुकान का पता एवं स्थान' : 'STORE ADDRESS & LOCATION'}
             </div>
 
             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-              {fullAddress || 'Address details currently not listed.'}
+              {fullAddress || '{isHindi ? 'पते का विवरण उपलब्ध नहीं है।' : 'Address details currently not listed.'}'}
             </div>
 
             {shop.latitude && shop.longitude && (
@@ -556,7 +558,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
               borderRadius: '14px',
             }}
           >
-            <span>Dukan Ke Sare Products Dekhein</span>
+            <span>{isHindi ? 'दुकान के सभी उत्पाद देखें' : 'View All Store Products'}</span>
             <ArrowRight size={18} />
           </button>
         </div>

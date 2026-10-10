@@ -374,12 +374,12 @@ export function printKhataStatement({ customer, transactions = [], shop }) {
       <div style="font-size: 11px; color: #64748b;">📞 +91 ${customerPhone}</div>
     </div>
     <div>
-      <div class="stat-label">Total Credit (Jama)</div>
+      <div class="stat-label">Total Credit (Deposits)</div>
       <div class="stat-val">${formatInr(totalCredit)}</div>
       <div style="font-size: 10px; color: #16a34a;">Total Paid: ${formatInr(totalPaid)}</div>
     </div>
     <div>
-      <div class="stat-label">Current Net Due (Baki)</div>
+      <div class="stat-label">Current Net Due</div>
       <div class="stat-val due">${formatInr(netDue)}</div>
       <div style="font-size: 10px; color: #dc2626; font-weight: 700;">Status: ${netDue > 0 ? 'Payment Pending' : 'All Clear'}</div>
     </div>

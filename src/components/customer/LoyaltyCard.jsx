@@ -49,7 +49,7 @@ export const LoyaltyCard = () => {
             <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary, #f8fafc)', fontWeight: 700 }}>
               Local Loyalty Rewards
             </h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)' }}>Dukan-level customer perks</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)' }}>{isHindi ? 'दुकान स्तर के विशेष लाभ' : 'Store-level customer rewards'}</span>
           </div>
         </div>
 

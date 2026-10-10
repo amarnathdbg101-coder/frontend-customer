@@ -22,7 +22,7 @@ export const ReportModal = ({ isOpen, onClose, targetType = 'shop', targetId, ta
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!description.trim()) {
-      setError('Please provide incident details / कृपया विवरण दर्ज करें।');
+      setError(isHindi ? 'कृपया विवरण दर्ज करें।' : 'Please provide incident details.');
       return;
     }
 

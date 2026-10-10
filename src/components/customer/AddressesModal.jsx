@@ -150,7 +150,7 @@ export const AddressesModal = ({ isOpen, onClose }) => {
             {addresses.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)' }}>
                 <MapPin size={36} style={{ margin: '0 auto 0.5rem auto', opacity: 0.4 }} />
-                <p style={{ margin: 0 }}>No saved addresses found / कोई सुरक्षित पता उपलब्ध नहीं है।</p>
+                <p style={{ margin: 0 }}>{isHindi ? 'कोई सुरक्षित पता उपलब्ध नहीं है।' : 'No saved addresses found.'}</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

@@ -65,7 +65,7 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Store size={18} color="var(--color-primary, #6366f1)" />
           <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {reservation.shop_name || 'Dukaan Store'}
+            {reservation.shop_name || 'Partner Store'}
           </h4>
         </div>
 

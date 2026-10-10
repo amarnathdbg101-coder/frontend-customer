@@ -56,7 +56,7 @@ export const PrivacyPolicyModal = ({ isOpen, onClose }) => {
           <div>
             <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)', fontSize: '0.9rem' }}>2. Digital Khata Passbook Rights</h4>
             <p style={{ margin: 0 }}>
-              Every Udhar or Jama transaction recorded by a shopkeeper can be viewed instantly in your customer passbook. You retain the right to dispute any incorrect transaction or enable Credit OTP Protection.
+              Every credit or payment transaction recorded by a merchant can be viewed instantly in your customer ledger passbook. You retain the right to dispute any incorrect transaction or enable Credit OTP Protection.
             </p>
           </div>
 

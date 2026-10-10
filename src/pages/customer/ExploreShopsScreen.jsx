@@ -555,10 +555,10 @@ export const ExploreShopsScreen = () => {
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {isHindi ? 'मेरा खाता' : 'Mera Khata'}
+              {isHindi ? 'मेरा खाता' : 'My Khata'}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              {isHindi ? 'उधार पासबुक' : 'Udhar Passbook'}
+              {isHindi ? 'उधार पासबुक' : 'Credit Ledger'}
             </div>
           </div>
         </div>

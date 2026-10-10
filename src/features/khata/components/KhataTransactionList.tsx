@@ -50,7 +50,7 @@ export const KhataTransactionList: React.FC<KhataTransactionListProps> = ({ tran
               </div>
               <div>
                 <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {tx.description || (isCredit ? 'Udhar / Items Purchase' : 'Payment Received')}
+                  {tx.description || (isCredit ? 'Credit Purchase' : 'Payment Received')}
                 </h4>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   {formatDate(tx.created_at)}

@@ -294,7 +294,7 @@ export default {
     "loyalty_rewards": "VIP Loyalty Rewards",
     "loyalty_points": "{{points}} Reward Points",
     "app_settings": "App Preferences",
-    "language_preference": "Language / भाषा",
+    "language_preference": "Language",
     "theme_mode": "Theme Display",
     "dark_mode": "Dark Mode",
     "light_mode": "Light Mode",
