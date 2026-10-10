@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Customer Product Card Component (Pixel-perfect match with Shopsilo Mobile OS)
  */
 
 import React, { memo } from 'react';
 import { Package, Clock, Heart } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
+import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
 
 const ProductCardInner = ({
@@ -172,8 +173,8 @@ const ProductCardInner = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.96rem', fontWeight: 900, color: '#2563eb' }}>
-            ₹{price}
+          <span style={{ fontSize: '0.96rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
+            {formatCurrency(price)}
           </span>
           {hasDiscount && (
             <span
@@ -184,7 +185,7 @@ const ProductCardInner = ({
                 fontWeight: 600,
               }}
             >
-              ₹{mrp}
+              {formatCurrency(mrp)}
             </span>
           )}
         </div>
@@ -209,7 +210,7 @@ const ProductCardInner = ({
           }}
         >
           <Clock size={12} strokeWidth={2.5} />
-          <span>{inStock ? (isHindi ? 'रिज़र्व' : 'Reserve') : (isHindi ? 'खत्म' : 'Out')}</span>
+          <span>{inStock ? (isHindi ? 'रिजर्व' : 'Reserve') : (isHindi ? 'उपलब्ध नहीं' : 'Out')}</span>
         </button>
       </div>
     </div>
