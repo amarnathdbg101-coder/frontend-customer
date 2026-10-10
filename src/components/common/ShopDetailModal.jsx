@@ -496,7 +496,7 @@ export const ShopDetailModal = ({ shop, onClose }) => {
             </div>
 
             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-              {fullAddress || '{isHindi ? 'पते का विवरण उपलब्ध नहीं है।' : 'Address details currently not listed.'}'}
+              {fullAddress || (isHindi ? 'पते का विवरण उपलब्ध नहीं है।' : 'Address details currently not listed.')}
             </div>
 
             {shop.latitude && shop.longitude && (
