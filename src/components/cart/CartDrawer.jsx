@@ -4,8 +4,9 @@
  * Features:
  * - Slide-out interactive drawer with glassy modern design
  * - Multi-item list with quantity increment/decrement steppers
- * - Transparent price breakdown (Subtotal, Savings, Net Total)
- * - Clear cart with confirmation
+ * - Transparent price breakdown (Subtotal, Savings, Coupon Discount, Net Total)
+ * - Live claimed coupon indicator with 1-tap remove
+ * - 1-Click WhatsApp full cart inquiry & order sharing
  * - 1-Click navigation to Checkout Modal
  * - Full i18n support (English & Hindi)
  */
@@ -22,6 +23,8 @@ import {
   Store,
   CheckCircle,
   Package,
+  MessageCircle,
+  Tag,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -34,6 +37,10 @@ export const CartDrawer = () => {
     cartCount,
     subtotal,
     totalSavings,
+    appliedCoupon,
+    couponDiscount,
+    finalTotal,
+    removeCoupon,
     isCartOpen,
     closeCart,
     openCheckout,
@@ -49,6 +56,60 @@ export const CartDrawer = () => {
     if (window.confirm(t('cart.clear_confirm'))) {
       clearCart();
     }
+  };
+
+  const handleShareCartOnWhatsApp = () => {
+    if (items.length === 0) return;
+    const shopName = items[0]?.shop_name || (isHindi ? 'दुकानदार' : 'Store Partner');
+    
+    let text = isHindi
+      ? `🛒 *${shopName} के लिए कार्ट ऑर्डर सूची*
+
+`
+      : `🛒 *Cart Order Inquiry for ${shopName}*
+
+`;
+
+    items.forEach((item, i) => {
+      text += `${i + 1}. *${item.name}* x ${item.quantity} = ₹${item.price * item.quantity}
+`;
+    });
+
+    text += isHindi
+      ? `
+*कुल सामान:* ${cartCount}`
+      : `
+*Total Items:* ${cartCount}`;
+    text += `
+*कुल मूल्य:* ₹${subtotal}`;
+
+    if (couponDiscount > 0) {
+      text += isHindi
+        ? `
+*कूपन छूट (${appliedCoupon?.code || 'डील्स'}):* -₹${couponDiscount}`
+        : `
+*Coupon Savings (${appliedCoupon?.code || 'DEALS'}):* -₹${couponDiscount}`;
+    }
+
+    text += isHindi
+      ? `
+*कुल देय राशि:* ₹${finalTotal || subtotal}
+
+`
+      : `
+*Total Payable:* ₹${finalTotal || subtotal}
+
+`;
+
+    text += isHindi
+      ? `नमस्ते ${shopName}! क्या यह ऑर्डर 10-सेकंड काउंटर पिकअप के लिए तैयार और उपलब्ध है?`
+      : `Hello ${shopName}! Is this order ready for 10-second instant counter pickup?`;
+
+    const phone = items[0]?.shop_phone ? items[0].shop_phone.replace(/[^0-9]/g, '') : '';
+    const url = phone.length >= 10
+      ? `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   const handleBrowseStores = () => {
@@ -266,7 +327,7 @@ export const CartDrawer = () => {
                       }}
                     >
                       {item.image ? (
-                        <img loading="lazy" decoding="async" 
+                        <img loading="lazy" decoding="async"
                           src={getImageUrl(item.image)}
                           alt={item.name}
                           style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
@@ -325,7 +386,7 @@ export const CartDrawer = () => {
                         )}
                         {hasDiscount && (
                           <span style={{ fontSize: '0.7rem', color: '#15803d', fontWeight: 700 }}>
-                            Save ₹{savings}
+                            {isHindi ? `बचत ₹${savings}` : `Save ₹${savings}`}
                           </span>
                         )}
                       </div>
@@ -429,11 +490,56 @@ export const CartDrawer = () => {
               boxShadow: '0 -4px 15px rgba(0,0,0,0.04)',
             }}
           >
+            {/* Applied Coupon Banner */}
+            {appliedCoupon && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  marginBottom: '10px',
+                  fontSize: '0.78rem',
+                  color: '#065f46',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}>
+                  <Tag size={13} color="#10b981" />
+                  <span>{appliedCoupon.code || appliedCoupon.title}: <strong>-₹{couponDiscount}</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#b91c1c',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                  }}
+                >
+                  {isHindi ? 'हटाएं' : 'Remove'}
+                </button>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                 <span>{t('cart.subtotal')}</span>
                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>₹{subtotal}</span>
               </div>
+
+              {couponDiscount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#15803d', fontWeight: 800 }}>
+                  <span>{isHindi ? 'कूपन डिस्काउंट' : 'Coupon Discount'}</span>
+                  <span>- ₹{couponDiscount}</span>
+                </div>
+              )}
 
               {totalSavings > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#15803d', fontWeight: 700 }}>
@@ -455,32 +561,57 @@ export const CartDrawer = () => {
                 }}
               >
                 <span>{t('cart.total_payable')}</span>
-                <span>₹{subtotal}</span>
+                <span>₹{finalTotal || subtotal}</span>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={openCheckout}
-              className="btn btn-primary btn-block"
-              style={{
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: 800,
-                fontSize: '0.92rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
-              }}
-            >
-              <span>{t('cart.proceed_checkout')}</span>
-              <ArrowRight size={18} />
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={openCheckout}
+                className="btn btn-primary btn-block"
+                style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-md)',
+                  fontWeight: 800,
+                  fontSize: '0.92rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
+                }}
+              >
+                <span>{t('cart.proceed_checkout')} (₹{finalTotal || subtotal})</span>
+                <ArrowRight size={18} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShareCartOnWhatsApp}
+                className="btn btn-secondary btn-block"
+                style={{
+                  padding: '9px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  color: '#15803d',
+                  backgroundColor: '#dcfce7',
+                  border: '1px solid #bbf7d0',
+                }}
+              >
+                <MessageCircle size={15} />
+                <span>{isHindi ? 'WhatsApp पर कार्ट ऑर्डर भेजें' : 'Share Cart Order on WhatsApp'}</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 };
+export default CartDrawer;

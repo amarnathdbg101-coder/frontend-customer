@@ -202,27 +202,33 @@ export const StorefrontScreen = () => {
               </span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {shop.phone && (
-                  <a
-                    href={`https://wa.me/91${shop.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(shop.name)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      backgroundColor: '#25d366',
-                      color: '#ffffff',
-                      padding: '3px 8px',
-                      borderRadius: 'var(--radius-full)',
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      fontSize: '0.72rem',
-                    }}
-                  >
-                    <MessageCircle size={12} /> WhatsApp
-                  </a>
-                )}
+                {shop.phone && (() => {
+                  const cleanPhone = shop.phone.replace(/[^0-9]/g, '');
+                  const waMsg = isHindi
+                    ? `नमस्ते ${shop.name}! मैं ShopSilo पर आपकी दुकान देख रहा हूँ और कुछ सामान के बारे में जानकारी चाहिए।`
+                    : `Hello ${shop.name}! I am browsing your store on ShopSilo and have an inquiry.`;
+                  return (
+                    <a
+                      href={`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(waMsg)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        backgroundColor: '#25d366',
+                        color: '#ffffff',
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-full)',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        fontSize: '0.74rem',
+                      }}
+                    >
+                      <MessageCircle size={13} /> {isHindi ? 'व्हाट्सएप पूछताछ' : 'WhatsApp Shop'}
+                    </a>
+                  );
+                })()}
 
                 <span
                   style={{

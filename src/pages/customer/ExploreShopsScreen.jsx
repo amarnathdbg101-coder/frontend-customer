@@ -35,6 +35,7 @@ import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skele
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
+import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
 
 const RADIUS_OPTIONS = [
   { label: '1 km', value: 1 },
@@ -73,6 +74,7 @@ export const ExploreShopsScreen = () => {
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [inspectedShop, setInspectedShop] = useState(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 
@@ -328,6 +330,31 @@ export const ExploreShopsScreen = () => {
               <X size={16} />
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsSmartSearchOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '6px 12px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+              whiteSpace: 'nowrap',
+            }}
+            title={isHindi ? 'सामान कहाँ मिलेगा? मल्टी-शॉप तुलना' : 'Where is it available? Multi-Shop Search'}
+          >
+            <span>✨</span>
+            <span>{isHindi ? 'सामान कहाँ मिलेगा?' : 'Compare Shops'}</span>
+          </button>
         </div>
       </div>
 
@@ -902,6 +929,13 @@ export const ExploreShopsScreen = () => {
           setSelectedCategory(catId || 'All');
           setIsCategoryModalOpen(false);
         }}
+      />
+
+      {/* HYPERLOCAL MULTI-SHOP SEARCH MODAL ("सामान कहाँ मिलेगा?") */}
+      <SmartSearchModal
+        isOpen={isSmartSearchOpen}
+        onClose={() => setIsSmartSearchOpen(false)}
+        initialQuery={searchTerm}
       />
     </AppLayout>
   );

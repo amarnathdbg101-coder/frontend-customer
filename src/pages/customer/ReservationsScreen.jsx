@@ -169,11 +169,8 @@ export const ReservationsScreen = () => {
       ) : (
         <div className="reservations-grid">
           {filteredReservations.map((r) => {
-            const displayId =
-              r.pickup_code ||
-              r.reservation_number ||
-              (typeof r.id === 'string' ? r.id.slice(0, 8) : r.id) ||
-              'PKP-892';
+            const rawNums = String(r.pickup_code || r.reservation_number || r.id || '').replace(/[^0-9]/g, '');
+            const displayId = r.token_display || (rawNums.length >= 4 ? `#${rawNums.slice(-4)}` : `#${rawNums || '4812'}`);
 
             const isActive = r.status === 'active' || r.status === 'pending' || !r.status || r.status === 'ready';
             const isDone = r.status === 'completed' || r.status === 'verified';
@@ -324,13 +321,25 @@ export const ReservationsScreen = () => {
                 />
               </div>
 
-              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '3px' }}>
-                {inspectToken.pickup_code || inspectToken.reservation_number || 'PKP-789'}
-              </div>
-
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: 1.4 }}>
-                {t('checkout.pickup_instructions')}
-              </p>
+              {(() => {
+                const rawNums = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').replace(/[^0-9]/g, '');
+                const tokenCode = inspectToken.token_display || (rawNums.length >= 4 ? `#${rawNums.slice(-4)}` : `#${rawNums || '4812'}`);
+                return (
+                  <>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {isHindi ? '4-अंकों का पिकअप कोड' : '4-DIGIT PICKUP CODE'}
+                    </div>
+                    <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '4px', margin: '6px 0', fontFamily: 'monospace' }}>
+                      {tokenCode}
+                    </div>
+                    <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#065f46', borderRadius: '10px', padding: '10px 14px', fontSize: '0.78rem', lineHeight: 1.45, fontWeight: 600, marginTop: '8px', textAlign: 'left' }}>
+                      ⚡ {isHindi
+                        ? 'दुकान के काउंटर पर पहुँचकर केवल यह टोकन नंबर (#...) दिखाएं या QR कोड स्कैन करवाएं। दुकानदार POS में दर्ज करते ही आपका पैक किया हुआ सामान 10 सेकंड में मिल जाएगा!'
+                        : 'Show this 4-digit token or QR pass at the store counter. The merchant enters it into POS to hand over your packed goods in 10 seconds!'}
+                    </div>
+                  </>
+                );
+              })()}
 
               <button
                 type="button"

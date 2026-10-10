@@ -865,31 +865,43 @@ export const ProductDetailModal = ({
                       </button>
                     )}
 
-                    {product.shop_phone && (
-                      <a
-                        href={`https://wa.me/91${product.shop_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello! I want to inquire about "${product.name}" listed at ${formatCurrency(product.price)} on ShopSilo. Is it available in store?`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          backgroundColor: '#25d366',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '10px',
-                          padding: '10px 16px',
-                          fontSize: '0.86rem',
-                          fontWeight: 800,
-                          textDecoration: 'none',
-                          boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
-                        }}
-                      >
-                        <MessageCircle size={16} />
-                        <span>{isHindi ? 'दुकानदार से पूछें' : 'Ask Shopkeeper'}</span>
-                      </a>
-                    )}
+                                        {(() => {
+                      const rawPhone = product.shop_phone || product.shop?.phone || '';
+                      const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+                      const sName = product.shop_name || product.shop?.name || (isHindi ? 'दुकानदार' : 'Store');
+                      const inquiryMsg = isHindi
+                        ? `नमस्ते ${sName}! क्या ${product.name} (${formatCurrency(price)}) अभी आपकी दुकान पर उपलब्ध है?`
+                        : `Hello ${sName}! Is ${product.name} (${formatCurrency(price)}) currently available at your store?`;
+                      const waUrl = cleanPhone.length >= 10
+                        ? `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(inquiryMsg)}`
+                        : `https://wa.me/?text=${encodeURIComponent(inquiryMsg)}`;
+
+                      return (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            backgroundColor: '#25d366',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px 16px',
+                            fontSize: '0.86rem',
+                            fontWeight: 800,
+                            textDecoration: 'none',
+                            boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)',
+                          }}
+                        >
+                          <MessageCircle size={16} />
+                          <span>{isHindi ? 'व्हाट्सएप पूछताछ' : 'WhatsApp Shop'}</span>
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
