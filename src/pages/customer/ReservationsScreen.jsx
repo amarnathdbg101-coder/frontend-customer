@@ -67,15 +67,40 @@ export const ReservationsScreen = () => {
     }
   };
 
-  const formatExpiry = (expiresAt) => {
-    if (!expiresAt) return 'Today';
+  const parseSafeDate = (rawDate) => {
+    if (!rawDate) return null;
     try {
-      const d = new Date(expiresAt);
-      if (isNaN(d.getTime())) return 'Today';
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-      return 'Today';
+      let str = String(rawDate).trim();
+      if (!str.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+        str = str.replace(' ', 'T') + 'Z';
+      }
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? null : d;
+    } catch {
+      return null;
     }
+  };
+
+  const formatLocalTime = (rawDate) => {
+    const d = parseSafeDate(rawDate);
+    if (!d) return '--:--';
+    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const formatLocalDateTime = (rawDate) => {
+    const d = parseSafeDate(rawDate);
+    if (!d) return '--';
+    return d.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatExpiry = (expiresAt) => {
+    return formatLocalTime(expiresAt);
   };
 
   const filteredReservations = useMemo(() => {
@@ -222,13 +247,20 @@ export const ReservationsScreen = () => {
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{t('cart.quantity')}: <strong>{r.quantity || 1}</strong></span>
-                    <span>•</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                      <Clock size={12} color="var(--text-muted)" />
-                      {t('products.hold_hours')}: {formatExpiry(r.expires_at)}
-                    </span>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>{t('cart.quantity')}: <strong>{r.quantity || 1}</strong></span>
+                      <span>•</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                        <Clock size={12} color="var(--color-primary)" />
+                        <span>{isHindi ? 'आरक्षित किया:' : 'Booked at:'} <strong>{formatLocalTime(r.created_at)}</strong></span>
+                      </span>
+                    </div>
+                    {r.expires_at && (
+                      <div style={{ fontSize: '0.72rem', color: isActive ? '#b45309' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                        <span>⏳ {isHindi ? 'पिकअप अंतिम समय:' : 'Pickup Deadline:'} <strong>{formatLocalTime(r.expires_at)}</strong> ({isHindi ? 'तक मान्य' : 'valid till'})</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
