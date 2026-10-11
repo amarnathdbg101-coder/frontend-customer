@@ -16,6 +16,8 @@ import { ShoppingBag, Clock, CheckCircle, XCircle, QrCode, X, Store, Package } f
 import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { sessionState } from '../../utils/sessionState.js';
+import { useScreenState } from '../../hooks/useScreenState.js';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { RealQRCode } from '../../components/common/RealQRCode';
 

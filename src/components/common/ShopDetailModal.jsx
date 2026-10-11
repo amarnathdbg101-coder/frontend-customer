@@ -31,8 +31,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
+import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 
-export const ShopDetailModal = ({ shop, onClose }) => {
+export const ShopDetailModal = ({ shop, coords, onClose }) => {
   const navigate = useNavigate();
   const { isHindi } = useLanguage();
   const [copiedLink, setCopiedLink] = useState(false);
@@ -41,6 +42,8 @@ export const ShopDetailModal = ({ shop, onClose }) => {
   if (!shop) return null;
 
   const isShopOpen = Boolean(shop.is_currently_open ?? shop.is_open ?? shop.is_active);
+  const distKm = calculateDistanceKm(coords?.lat, coords?.lng, shop.latitude, shop.longitude);
+  const travelInfo = formatTravelTime(distKm, isHindi);
   const banners = Array.isArray(shop.banners) && shop.banners.length > 0 ? shop.banners : [];
   const fullAddress = [shop.address, shop.city, shop.pincode].filter(Boolean).join(', ');
 
@@ -304,6 +307,42 @@ export const ShopDetailModal = ({ shop, onClose }) => {
               <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 🏪 {shop.category || 'General Store'} • {shop.city || 'Local Area'}
               </div>
+
+              {travelInfo && (
+                <div
+                  style={{
+                    marginTop: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor:
+                      travelInfo.mode === 'walk'
+                        ? 'rgba(16, 185, 129, 0.12)'
+                        : travelInfo.mode === 'drive'
+                        ? 'rgba(59, 130, 246, 0.12)'
+                        : 'rgba(107, 114, 128, 0.08)',
+                    border:
+                      travelInfo.mode === 'walk'
+                        ? '1px solid rgba(16, 185, 129, 0.3)'
+                        : travelInfo.mode === 'drive'
+                        ? '1px solid rgba(59, 130, 246, 0.3)'
+                        : '1px solid rgba(107, 114, 128, 0.2)',
+                    color:
+                      travelInfo.mode === 'walk'
+                        ? '#047857'
+                        : travelInfo.mode === 'drive'
+                        ? '#1d4ed8'
+                        : 'var(--text-secondary, #6b7280)',
+
+                    borderRadius: '8px',
+                    padding: '3px 8px',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                  }}
+                >
+                  <span>{travelInfo.full}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -498,6 +537,31 @@ export const ShopDetailModal = ({ shop, onClose }) => {
             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
               {fullAddress || (isHindi ? 'पते का विवरण उपलब्ध नहीं है।' : 'Address details currently not listed.')}
             </div>
+
+            {distKm != null && (
+              <div
+                style={{
+                  marginTop: '10px',
+                  padding: '8px 10px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  color: 'var(--color-primary, #4f46e5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>📍</span>
+                <span>
+                  {isHindi
+                    ? `आपके स्थान से सटीक दूरी: ${formatDistance(distKm)}`
+                    : `Exact distance from your location: ${formatDistance(distKm)}`}
+                </span>
+              </div>
+            )}
 
             {shop.latitude && shop.longitude && (
               <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>

@@ -25,6 +25,8 @@ import {
   Eye,
   ShoppingCart,
   Star,
+  Navigation,
+  ShieldCheck,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -33,15 +35,19 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { useLocation } from '../../context/LocationContext';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { getImageUrl } from '../../utils/imageUrl';
+import { useScreenState } from '../../hooks/useScreenState.js';
+import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 
 export const StorefrontScreen = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { coords } = useLocation();
   const { addItem, isInCart } = useCart();
   const { t, isHindi } = useLanguage();
 
@@ -54,6 +60,9 @@ export const StorefrontScreen = () => {
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(null);
   const [error, setError] = useState('');
+
+  // Maintain shop storefront scroll position within session
+  useScreenState(`storefront_${slug}`, { restoreScroll: true, isDataReady: !loading });
 
   useEffect(() => {
     if (slug) {
@@ -130,178 +139,18 @@ export const StorefrontScreen = () => {
     }
   };
 
+  const isShopOpen = Boolean(shop?.is_currently_open ?? shop?.is_open ?? shop?.is_active);
+  const distKm = shop ? calculateDistanceKm(coords?.lat, coords?.lng, shop.latitude, shop.longitude) : null;
+  const travelInfo = formatTravelTime(distKm, isHindi);
+
   const filteredProducts = (Array.isArray(products) ? products : []).filter((p) =>
     (p.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <AppLayout title={shop?.name || t('nav.explore')} showBack={true}>
-      {/* Shop Profile Banner & Photos */}
-      {shop && (
-        <div
-          className="card"
-          style={{
-            background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-            color: '#ffffff',
-            border: 'none',
-            padding: 0,
-            overflow: 'hidden',
-            marginBottom: '14px',
-          }}
-        >
-          {shop.banners && shop.banners.length > 0 && (
-            <div style={{ width: '100%', height: '120px', overflow: 'relative', position: 'relative' }}>
-              <img loading="lazy" decoding="async" 
-                src={getImageUrl(shop.banners[0])}
-                alt={shop.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(30,27,75,0.85) 100%)',
-                }}
-              />
-            </div>
-          )}
-
-          <div style={{ padding: '16px' }}>
-            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  overflow: 'hidden',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
-                }}
-              >
-                {shop.logo_url ? (
-                  <img loading="lazy" decoding="async" 
-                    src={getImageUrl(shop.logo_url)}
-                    alt={shop.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Store size={30} />
-                )}
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {shop.name}
-                </h1>
-                <div style={{ fontSize: '0.78rem', opacity: 0.85, marginTop: '2px' }}>{shop.category}</div>
-                <div
-                  style={{
-                    fontSize: '0.74rem',
-                    opacity: 0.8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    marginTop: '4px',
-                  }}
-                >
-                  <MapPin size={12} /> {shop.address}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Contact & Status Bar */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '14px',
-                paddingTop: '10px',
-                borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-                fontSize: '0.75rem',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Clock size={12} /> {shop.timing || '9:00 AM - 9:00 PM'}
-              </span>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {shop.phone && (() => {
-                  const cleanPhone = shop.phone.replace(/[^0-9]/g, '');
-                  const waMsg = isHindi
-                    ? `नमस्ते ${shop.name}! मैं ShopSilo पर आपकी दुकान देख रहा हूँ और कुछ सामान के बारे में जानकारी चाहिए।`
-                    : `Hello ${shop.name}! I am browsing your store on ShopSilo and have an inquiry.`;
-                  return (
-                    <a
-                      href={`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(waMsg)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        backgroundColor: '#25d366',
-                        color: '#ffffff',
-                        padding: '4px 10px',
-                        borderRadius: 'var(--radius-full)',
-                        fontWeight: 700,
-                        textDecoration: 'none',
-                        fontSize: '0.74rem',
-                      }}
-                    >
-                      <MessageCircle size={13} /> {isHindi ? 'व्हाट्सएप पूछताछ' : 'WhatsApp Shop'}
-                    </a>
-                  );
-                })()}
-
-                <span
-                  style={{
-                    backgroundColor: (shop.is_currently_open ?? shop.is_open ?? shop.is_active) ? '#10b981' : '#ef4444',
-                    color: '#ffffff',
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-full)',
-                    fontWeight: 700,
-                  }}
-                >
-                  {(shop.is_currently_open ?? shop.is_open ?? shop.is_active) ? t('common.open_now') : t('common.closed')}
-                </span>
-              </div>
-            </div>
-
-            {/* View Full Shop Info Button */}
-            <button
-              onClick={() => setShowShopDetailModal(true)}
-              style={{
-                marginTop: '12px',
-                width: '100%',
-                background: 'rgba(255, 255, 255, 0.15)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                color: '#ffffff',
-                padding: '8px 12px',
-                borderRadius: '10px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-              }}
-            >
-              <Eye size={15} />
-              <span>{t('products.seller_info')}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Search Bar */}
-      <div className="search-box">
+      {/* In-Store Search Bar */}
+      <div className="search-box" style={{ marginTop: '4px' }}>
         <Search size={18} color="var(--text-muted)" />
         <input
           type="search"
@@ -443,36 +292,36 @@ export const StorefrontScreen = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
-                  {inStock && (
+                  {inStock ? (
                     <button
                       type="button"
                       onClick={() => addItem(p, 1)}
-                      className={`btn btn-sm ${inCart ? 'btn-success' : 'btn-secondary'}`}
-                      style={{ padding: '8px 12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
+                      className="btn btn-primary btn-block btn-sm"
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        fontWeight: 800,
+                        fontSize: '0.86rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+                      }}
                     >
-                      <ShoppingCart size={14} />
-                      <span>{inCart ? t('products.already_in_cart') : t('products.add_to_cart')}</span>
+                      <ShoppingCart size={16} />
+                      <span>{inCart ? (isHindi ? 'कार्ट में जोड़ा गया ✓' : 'In Cart ✓') : (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart')}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="btn btn-secondary btn-block btn-sm"
+                      style={{ padding: '10px 14px', borderRadius: '10px', fontWeight: 700, opacity: 0.6 }}
+                    >
+                      <span>{isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock'}</span>
                     </button>
                   )}
-
-                  <button
-                    className="btn btn-primary btn-sm"
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                    onClick={handleOpenModal}
-                  >
-                    <Eye size={14} />
-                    <span>{inStock ? t('products.reserve_for_pickup') : t('products.product_details')}</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -535,6 +384,7 @@ export const StorefrontScreen = () => {
       {showShopDetailModal && shop && (
         <ShopDetailModal
           shop={shop}
+          coords={coords}
           onClose={() => setShowShopDetailModal(false)}
         />
       )}

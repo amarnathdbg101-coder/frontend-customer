@@ -3,7 +3,7 @@
  */
 
 import React, { memo } from 'react';
-import { Package, Clock, Heart } from 'lucide-react';
+import { Package, ShoppingCart, Heart } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
@@ -162,7 +162,7 @@ const ProductCardInner = ({
         </div>
       </div>
 
-      {/* Price & Reserve Row */}
+      {/* Price & Add to Cart Row */}
       <div
         style={{
           padding: '0 10px 10px 10px',
@@ -190,7 +190,7 @@ const ProductCardInner = ({
           )}
         </div>
 
-        {/* Reserve Button */}
+        {/* Add to Cart Button */}
         <button
           type="button"
           onClick={onClick}
@@ -198,19 +198,20 @@ const ProductCardInner = ({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
-            backgroundColor: inStock ? 'rgba(16, 185, 129, 0.1)' : 'rgba(148, 163, 184, 0.15)',
-            color: inStock ? '#059669' : '#64748b',
-            border: inStock ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid transparent',
-            padding: '4px 8px',
+            backgroundColor: inStock ? 'var(--color-primary, #4f46e5)' : 'rgba(148, 163, 184, 0.15)',
+            color: inStock ? '#ffffff' : '#64748b',
+            border: 'none',
+            padding: '5px 10px',
             borderRadius: '8px',
-            fontSize: '0.72rem',
+            fontSize: '0.74rem',
             fontWeight: 800,
             cursor: 'pointer',
             flexShrink: 0,
+            boxShadow: inStock ? '0 2px 6px rgba(79, 70, 229, 0.25)' : 'none',
           }}
         >
-          <Clock size={12} strokeWidth={2.5} />
-          <span>{inStock ? (isHindi ? 'रिजर्व' : 'Reserve') : (isHindi ? 'उपलब्ध नहीं' : 'Out')}</span>
+          <ShoppingCart size={13} strokeWidth={2.5} />
+          <span>{inStock ? (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart') : (isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock')}</span>
         </button>
       </div>
     </div>

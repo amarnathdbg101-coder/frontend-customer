@@ -23,11 +23,13 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { getImageUrl } from '../../utils/imageUrl';
 import { RealQRCode } from '../../components/common/RealQRCode';
 import { useLanguage } from '../../context/LanguageContext';
+import { useScreenState } from '../../hooks/useScreenState.js';
 
 export const CustomerKhataScreen = () => {
   const { user } = useAuth();
   const { isHindi, t } = useLanguage();
   const [loading, setLoading] = useState(true);
+  useScreenState('customer_khata', { restoreScroll: true, isDataReady: !loading });
   const [refreshing, setRefreshing] = useState(false);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);

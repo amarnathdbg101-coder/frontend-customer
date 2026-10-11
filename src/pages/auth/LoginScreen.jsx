@@ -9,9 +9,10 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Store, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { sessionState } from '../../utils/sessionState';
 import { useLanguage } from '../../context/LanguageContext';
 import { authApi } from '../../api/auth.api';
 import { AppLayout } from '../../components/layout/AppLayout';
@@ -19,6 +20,7 @@ import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
 
 export const LoginScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, loginWithGoogle } = useAuth();
   const { isHindi, setLanguage, t } = useLanguage();
 
@@ -47,7 +49,8 @@ export const LoginScreen = () => {
         setError(t('auth.role_merchant_notice'));
         return;
       }
-      navigate('/');
+      const targetRoute = sessionState.getRedirectAfterLogin() || location.state?.from?.pathname || '/';
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       setError(err.message || t('common.error'));
     } finally {
@@ -64,7 +67,8 @@ export const LoginScreen = () => {
         setError(t('auth.role_merchant_notice'));
         return;
       }
-      navigate('/');
+      const targetRoute = sessionState.getRedirectAfterLogin() || location.state?.from?.pathname || '/';
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       setError(err.message || t('common.error'));
     }

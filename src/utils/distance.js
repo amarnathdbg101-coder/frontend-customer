@@ -60,13 +60,25 @@ export const formatTravelTime = (km, isHindi = false) => {
     };
   }
 
-  const driveMins = getDrivingTimeMinutes(km);
+  if (km <= 35) {
+    const driveMins = getDrivingTimeMinutes(km);
+    return {
+      icon: '🚗',
+      mode: 'drive',
+      distStr,
+      timeStr: `${driveMins} ${isHindi ? 'मिनट ड्राइव' : 'mins drive'}`,
+      full: `🚗 ${distStr} (${driveMins} ${isHindi ? 'मिनट ड्राइव' : 'mins drive'})`,
+    };
+  }
+
+  // Intercity / distant store: show clean distance badge without absurd driving minutes
+  const roundedKm = Math.round(km);
   return {
-    icon: '🚗',
-    mode: 'drive',
-    distStr,
-    timeStr: `${driveMins} ${isHindi ? 'मिनट ड्राइव' : 'mins drive'}`,
-    full: `🚗 ${distStr} (${driveMins} ${isHindi ? 'मिनट ड्राइव' : 'mins drive'})`,
+    icon: '📍',
+    mode: 'distant',
+    distStr: `${roundedKm} km`,
+    timeStr: isHindi ? 'दूर' : 'away',
+    full: `📍 ${roundedKm} km ${isHindi ? 'दूर' : 'away'}`,
   };
 };
 

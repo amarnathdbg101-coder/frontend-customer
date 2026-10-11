@@ -8,15 +8,17 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { UserPlus, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { sessionState } from '../../utils/sessionState';
 import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
 
 export const RegisterScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, loginWithGoogle } = useAuth();
   const { isHindi, setLanguage, t } = useLanguage();
 
@@ -54,7 +56,8 @@ export const RegisterScreen = () => {
 
     try {
       await register({ ...formData, role: 'customer' });
-      navigate('/');
+      const targetRoute = sessionState.getRedirectAfterLogin() || location.state?.from?.pathname || '/';
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       setError(err.message || t('common.error'));
     } finally {
@@ -66,7 +69,8 @@ export const RegisterScreen = () => {
     setError('');
     try {
       await loginWithGoogle(idToken);
-      navigate('/');
+      const targetRoute = sessionState.getRedirectAfterLogin() || location.state?.from?.pathname || '/';
+      navigate(targetRoute, { replace: true });
     } catch (err) {
       setError(err.message || t('common.error'));
     }

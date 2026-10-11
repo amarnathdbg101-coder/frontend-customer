@@ -7,6 +7,8 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
+import { sessionState } from '../../utils/sessionState.js';
+import { useScreenState } from '../../hooks/useScreenState.js';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { getImageUrl } from '../../utils/imageUrl';
 
@@ -66,7 +68,14 @@ export const DealsScreen = () => {
 
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const savedDealsState = sessionState.getScreenState('deals', { selectedCategory: 'All' });
+  const [selectedCategory, setSelectedCategory] = useState(savedDealsState.selectedCategory || 'All');
+
+  useScreenState('deals', { restoreScroll: true, isDataReady: !loading });
+
+  useEffect(() => {
+    sessionState.saveScreenState('deals', { selectedCategory });
+  }, [selectedCategory]);
   const [claimedToast, setClaimedToast] = useState(null);
 
   useEffect(() => {
