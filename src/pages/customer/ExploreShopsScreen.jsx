@@ -1,4 +1,6 @@
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
+import { sessionState } from '../../utils/sessionState.js';
+import { useScreenState } from '../../hooks/useScreenState.js';
 /**
  * Customer Explore & Marketplace Screen
  * Clean, modern, responsive layout with location discovery, search, promo carousel, 
@@ -65,12 +67,34 @@ export const ExploreShopsScreen = () => {
   const { isHindi, t } = useLanguage();
   const { openCart, cartCount } = useCart();
 
+  // Restore explore screen state (tab, category, search) from session
+  const savedExploreState = sessionState.getScreenState('explore', {
+    activeTab: 'products',
+    selectedCategory: 'All',
+    searchTerm: '',
+  });
+
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'shops'
+  const [searchTerm, setSearchTerm] = useState(savedExploreState.searchTerm || '');
+  const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
+  const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
+
+  // Automatic scroll position restoration
+  useScreenState('explore', {
+    restoreScroll: true,
+    isDataReady: !loading && (products.length > 0 || shops.length > 0),
+  });
+
+  // Keep screen state synced in session
+  useEffect(() => {
+    sessionState.saveScreenState('explore', {
+      activeTab,
+      selectedCategory,
+      searchTerm,
+    });
+  }, [activeTab, selectedCategory, searchTerm]);
 
   // Modals state
   const [inspectedProduct, setInspectedProduct] = useState(null);

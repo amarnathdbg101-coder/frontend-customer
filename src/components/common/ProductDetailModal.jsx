@@ -836,36 +836,9 @@ export const ProductDetailModal = ({
                     </button>
                   </div>
 
-                  {/* Secondary Quick Reserve & WhatsApp Inquiry Row */}
+                  {/* Secondary WhatsApp Inquiry Row */}
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {onReserve && (
-                      <button
-                        type="button"
-                        onClick={handleQuickReserve}
-                        disabled={reserving}
-                        style={{
-                          flex: 1,
-                          minWidth: '150px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                          color: '#059669',
-                          border: '1.5px solid rgba(16, 185, 129, 0.3)',
-                          borderRadius: '10px',
-                          padding: '10px 14px',
-                          fontSize: '0.86rem',
-                          fontWeight: 800,
-                          cursor: reserving ? 'wait' : 'pointer',
-                        }}
-                      >
-                        <Clock size={16} />
-                        <span>{reserving ? (isHindi ? 'रिजर्व हो रहा है...' : 'Reserving...') : (isHindi ? 'स्टोर से पिकअप रिजर्व' : 'Reserve for Store Pickup')}</span>
-                      </button>
-                    )}
-
-                                        {(() => {
+                    {(() => {
                       const rawPhone = product.shop_phone || product.shop?.phone || '';
                       const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
                       const sName = product.shop_name || product.shop?.name || (isHindi ? 'दुकानदार' : 'Store');

@@ -14,6 +14,8 @@ import { Heart, Store, Package, MapPin, Phone, Navigation, ShoppingCart } from '
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { sessionState } from '../../utils/sessionState.js';
+import { useScreenState } from '../../hooks/useScreenState.js';
 import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
@@ -27,7 +29,14 @@ export const SavedScreen = () => {
   const { t, isHindi } = useLanguage();
   const { addItem, isInCart } = useCart();
 
-  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'shops'
+  const savedTabState = sessionState.getScreenState('saved', { activeTab: 'products' });
+  const [activeTab, setActiveTab] = useState(savedTabState.activeTab || 'products');
+
+  useScreenState('saved', { restoreScroll: true, isDataReady: true });
+
+  useEffect(() => {
+    sessionState.saveScreenState('saved', { activeTab });
+  }, [activeTab]);
   const [inspectedProduct, setInspectedProduct] = useState(null);
 
   return (

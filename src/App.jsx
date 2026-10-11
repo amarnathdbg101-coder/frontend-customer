@@ -9,7 +9,7 @@
  */
 
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LocationProvider } from './context/LocationContext';
 import { SavedProvider } from './context/SavedContext';
@@ -18,6 +18,7 @@ import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { CartProvider } from './context/CartContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { sessionState } from './utils/sessionState';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { CheckoutModal } from './components/cart/CheckoutModal';
 import { FloatingCartBar } from './components/cart/FloatingCartBar';
@@ -57,8 +58,43 @@ const ResetPasswordScreen = lazy(() =>
 );
 
 // Protected Route Guard for Customer Profile / Orders / Khata
+
+// Route Session & State Keeper: remembers active screen within tab session
+function RouteSessionKeeper() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isInitialCheckDone = React.useRef(false);
+
+  React.useEffect(() => {
+    const fullPath = location.pathname + location.search + location.hash;
+
+    // On initial session mount at '/', restore last active screen if present in session
+    if (!isInitialCheckDone.current) {
+      isInitialCheckDone.current = true;
+      if (location.pathname === '/') {
+        const savedRoute = sessionState.getActiveRoute();
+        if (
+          savedRoute &&
+          savedRoute !== '/' &&
+          !savedRoute.startsWith('/login') &&
+          !savedRoute.startsWith('/register') &&
+          !savedRoute.startsWith('/reset-password')
+        ) {
+          navigate(savedRoute, { replace: true });
+          return;
+        }
+      }
+    }
+
+    sessionState.saveActiveRoute(fullPath);
+  }, [location, navigate]);
+
+  return null;
+}
+
 const ProtectedCustomerRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
   const { isHindi } = useLanguage();
 
   if (loading) {
@@ -66,7 +102,8 @@ const ProtectedCustomerRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    sessionState.saveRedirectAfterLogin(location.pathname + location.search + location.hash);
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;
@@ -102,6 +139,7 @@ function App() {
               <SavedProvider>
                 <CartProvider>
                   <BrowserRouter>
+                    <RouteSessionKeeper />
                     <CartDrawer />
                     <CheckoutModal />
                     <FloatingCartBar />

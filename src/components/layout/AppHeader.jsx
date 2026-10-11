@@ -11,6 +11,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { SideDrawer } from './SideDrawer';
 import { getImageUrl } from '../../utils/imageUrl';
+import { sessionState } from '../../utils/sessionState';
 
 export const AppHeader = ({ title, subtitle, showBack = false }) => {
   const navigate = useNavigate();
@@ -19,13 +20,22 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
   const { setLanguage, isHindi, t } = useLanguage();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      const prev = sessionState.getPreviousRoute();
+      navigate(prev || '/', { replace: true });
+    }
+  };
+
   return (
     <>
       <header className="app-header">
         <div className="header-left">
           {showBack ? (
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               style={{
                 background: 'transparent',
                 border: 'none',

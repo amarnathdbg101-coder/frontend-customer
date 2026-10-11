@@ -40,6 +40,7 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { getImageUrl } from '../../utils/imageUrl';
+import { useScreenState } from '../../hooks/useScreenState.js';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 
 export const StorefrontScreen = () => {
@@ -59,6 +60,9 @@ export const StorefrontScreen = () => {
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(null);
   const [error, setError] = useState('');
+
+  // Maintain shop storefront scroll position within session
+  useScreenState(`storefront_${slug}`, { restoreScroll: true, isDataReady: !loading });
 
   useEffect(() => {
     if (slug) {
@@ -288,36 +292,36 @@ export const StorefrontScreen = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
-                  {inStock && (
+                  {inStock ? (
                     <button
                       type="button"
                       onClick={() => addItem(p, 1)}
-                      className={`btn btn-sm ${inCart ? 'btn-success' : 'btn-secondary'}`}
-                      style={{ padding: '8px 12px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
+                      className="btn btn-primary btn-block btn-sm"
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        fontWeight: 800,
+                        fontSize: '0.86rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+                      }}
                     >
-                      <ShoppingCart size={14} />
-                      <span>{inCart ? t('products.already_in_cart') : t('products.add_to_cart')}</span>
+                      <ShoppingCart size={16} />
+                      <span>{inCart ? (isHindi ? 'कार्ट में जोड़ा गया ✓' : 'In Cart ✓') : (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart')}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="btn btn-secondary btn-block btn-sm"
+                      style={{ padding: '10px 14px', borderRadius: '10px', fontWeight: 700, opacity: 0.6 }}
+                    >
+                      <span>{isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock'}</span>
                     </button>
                   )}
-
-                  <button
-                    className="btn btn-primary btn-sm"
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                    onClick={handleOpenModal}
-                  >
-                    <Eye size={14} />
-                    <span>{inStock ? t('products.reserve_for_pickup') : t('products.product_details')}</span>
-                  </button>
                 </div>
               </div>
             </div>

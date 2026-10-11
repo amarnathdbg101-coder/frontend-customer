@@ -1,3 +1,4 @@
+import { sessionState } from '../utils/sessionState';
 /**
  * Customer Authentication Context
  * 
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('shopme_token');
     localStorage.removeItem('shopsilo_user');
     localStorage.removeItem('shopme_user');
+    sessionState.clearAll();
   }, []);
 
   // Synchronize auth state across browser tabs & listen for 401 expiry events
