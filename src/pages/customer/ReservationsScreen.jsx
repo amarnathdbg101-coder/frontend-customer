@@ -1,218 +1,139 @@
-import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
-/**
- * Customer Reservations (Pickup Orders) Screen
- * 
- * Features:
- * - List of counter pickup reservations and generated tokens
- * - Filter by status (All, Active, Completed, Cancelled)
- * - View QR Code & Verification Token Modal
- * - Cancel reservation action
- * - Full i18n support (English & Formal Hindi)
- */
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Clock, CheckCircle, XCircle, QrCode, X, Store, Package } from 'lucide-react';
+import { ShoppingBag, Clock, Store, QrCode } from 'lucide-react';
 import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { sessionState } from '../../utils/sessionState.js';
 import { useScreenState } from '../../hooks/useScreenState.js';
+import { useSWR } from '../../hooks/useSWR.js';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { RealQRCode } from '../../components/common/RealQRCode';
+import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
+import { BaseModal, ModalHeader, ModalBody, EmptyState, Card, Badge, Button } from '../../components/ui';
 
 export const ReservationsScreen = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { t, isHindi } = useLanguage();
 
-  const [reservations, setReservations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeStatusTab, setActiveStatusTab] = useState('all'); // 'all', 'active', 'completed', 'cancelled'
+  const [activeStatusTab, setActiveStatusTab] = useState('all');
   const [inspectToken, setInspectToken] = useState(null);
 
+  // Authenticated redirect guard
   useEffect(() => {
     if (!isAuthenticated) {
-      setLoading(false);
-      return;
+      navigate('/login');
     }
-    loadReservations();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
-  const loadReservations = async () => {
-    try {
-      setLoading(true);
-      const data = await reservationApi.listUserReservations();
-      const list = Array.isArray(data?.reservations)
-        ? data.reservations
-        : Array.isArray(data)
-        ? data
-        : [];
-      setReservations(list);
-    } catch (err) {
-      console.error('Failed to load reservations:', err);
-      setReservations([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Enterprise SWR + Event-Driven Cache Invalidation
+  const {
+    data: rawReservations,
+    loading,
+    revalidate,
+  } = useSWR(CACHE_KEYS.RESERVATIONS, async () => {
+    const data = await reservationApi.listReservations();
+    return Array.isArray(data?.reservations) ? data.reservations : (Array.isArray(data) ? data : []);
+  }, {
+    ttlMinutes: DEFAULT_TTL.RESERVATIONS,
+    invalidateEvents: [CACHE_EVENTS.RESERVATIONS_MUTATED],
+    enabled: isAuthenticated,
+    revalidateOnFocus: true,
+  });
+
+  const reservations = rawReservations || [];
 
   const handleCancel = async (id) => {
-    if (!window.confirm(t('checkout.cancel_confirm'))) return;
+    if (!window.confirm(isHindi ? 'क्या आप इस रिजर्वेशन को रद्द करना चाहते हैं?' : 'Are you sure you want to cancel this reservation?')) {
+      return;
+    }
     try {
-      await reservationApi.cancelUserReservation(id);
-      await loadReservations();
+      await reservationApi.cancelReservation(id);
+      cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED, { cancelledId: id });
     } catch (err) {
       alert(err.message || t('common.error'));
     }
   };
 
-  const parseSafeDate = (rawDate) => {
-    if (!rawDate) return null;
-    try {
-      let str = String(rawDate).trim();
-      if (!str.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(str)) {
-        str = str.replace(' ', 'T') + 'Z';
-      }
-      const d = new Date(str);
-      return isNaN(d.getTime()) ? null : d;
-    } catch {
-      return null;
-    }
-  };
-
-  const formatLocalTime = (rawDate) => {
-    const d = parseSafeDate(rawDate);
-    if (!d) return '--:--';
-    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  };
-
-  const formatLocalDateTime = (rawDate) => {
-    const d = parseSafeDate(rawDate);
-    if (!d) return '--';
-    return d.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
-
-  const formatExpiry = (expiresAt) => {
-    return formatLocalTime(expiresAt);
-  };
-
   const filteredReservations = useMemo(() => {
     if (activeStatusTab === 'all') return reservations;
-    if (activeStatusTab === 'active') {
-      return reservations.filter((r) => r.status === 'pending' || r.status === 'active' || r.status === 'ready');
-    }
-    if (activeStatusTab === 'completed') {
-      return reservations.filter((r) => r.status === 'completed' || r.status === 'verified');
-    }
-    if (activeStatusTab === 'cancelled') {
-      return reservations.filter((r) => r.status === 'cancelled');
-    }
-    return reservations;
+    return reservations.filter((r) => {
+      const s = r.status?.toLowerCase();
+      if (activeStatusTab === 'active') return s === 'active' || s === 'pending' || !s || s === 'ready';
+      if (activeStatusTab === 'completed') return s === 'completed' || s === 'verified';
+      if (activeStatusTab === 'cancelled') return s === 'cancelled';
+      return true;
+    });
   }, [reservations, activeStatusTab]);
 
-  if (!isAuthenticated) {
-    return (
-      <AppLayout title={t('nav.reservations')} subtitle={t('checkout.reservation_title')} showBack={true}>
-        <div className="card" style={{ textAlign: 'center', padding: '48px 20px' }}>
-          <ShoppingBag size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>{t('auth.login_title')}</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', maxWidth: '360px', margin: '8px auto 20px auto' }}>
-            {t('auth.login_required_reserve')}
-          </p>
-          <button className="btn btn-primary" onClick={() => navigate('/login')} style={{ padding: '10px 28px', fontWeight: 700, borderRadius: 'var(--radius-full)' }}>
-            {t('nav.login')}
-          </button>
-        </div>
-      </AppLayout>
-    );
-  }
+  const formatLocalTime = (isoStr) => {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch {
+      return isoStr;
+    }
+  };
 
   return (
-    <AppLayout title={t('nav.reservations')} subtitle={t('checkout.reservation_subtitle')} showBack={true}>
+    <AppLayout
+      title={isHindi ? 'मेरे काउंटर पिकअप ऑर्डर्स' : 'My Store Pickups'}
+      subtitle={isHindi ? 'दुकान से 30-मिनट काउंटर पिकअप रिजर्वेशन' : '30-Minute Counter Pickup reservations'}
+    >
       <title>{t('nav.reservations')} — ShopSilo</title>
 
-      {/* Status Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          background: 'var(--bg-surface)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '4px',
-          marginBottom: '18px',
-          border: '1px solid var(--border-subtle)',
-          overflowX: 'auto',
-          boxShadow: 'var(--shadow-xs)',
-        }}
-      >
+      {/* Status Filter Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
         {[
-          { id: 'all', label: `${t('common.view_all')} (${reservations.length})` },
-          { id: 'active', label: t('checkout.status_pending') },
-          { id: 'completed', label: t('checkout.status_completed') },
-          { id: 'cancelled', label: t('checkout.status_cancelled') },
+          { id: 'all', label: isHindi ? 'सभी' : 'All' },
+          { id: 'active', label: isHindi ? 'सक्रिय (Active)' : 'Active' },
+          { id: 'completed', label: isHindi ? 'पूर्ण (Completed)' : 'Completed' },
+          { id: 'cancelled', label: isHindi ? 'रद्द (Cancelled)' : 'Cancelled' },
         ].map((tab) => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveStatusTab(tab.id)}
-            style={{
-              flex: 1,
-              padding: '9px 12px',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              background: activeStatusTab === tab.id ? 'var(--color-primary)' : 'transparent',
-              color: activeStatusTab === tab.id ? '#ffffff' : 'var(--text-secondary)',
-              transition: 'all 0.15s ease',
-            }}
+            className={`tab-pill ${activeStatusTab === tab.id ? 'active' : ''}`}
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+      {loading && reservations.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
           {t('common.loading')}
         </div>
       ) : filteredReservations.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
-          <ShoppingBag size={48} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-          <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '4px' }}>
-            {t('common.no_results')}
-          </div>
-          <p style={{ margin: 0, fontSize: '0.84rem' }}>
-            {t('common.try_adjusting_search')}
-          </p>
-        </div>
+        <EmptyState
+          icon={ShoppingBag}
+          title={isHindi ? 'कोई पिकअप ऑर्डर नहीं मिला' : 'No Pickup Orders Found'}
+          description={isHindi ? 'दुकान से सामान चुनें और तुरंत पिकअप कोड पाएं।' : 'Reserve items from local stores for instant queue-free counter pickup.'}
+          action={
+            <Button variant="primary" onClick={() => navigate('/')}>
+              {t('nav.explore')}
+            </Button>
+          }
+        />
       ) : (
-        <div className="reservations-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredReservations.map((r) => {
-            const rawNums = String(r.pickup_code || r.reservation_number || r.id || '').replace(/[^0-9]/g, '');
-            const displayId = r.token_display || (rawNums.length >= 4 ? `#${rawNums.slice(-4)}` : `#${rawNums || '4812'}`);
-
+            const displayId = r.pickup_code || r.reservation_number || String(r.id || '').slice(-6).toUpperCase();
             const isActive = r.status === 'active' || r.status === 'pending' || !r.status || r.status === 'ready';
             const isDone = r.status === 'completed' || r.status === 'verified';
             const isCancelled = r.status === 'cancelled';
 
             return (
-              <div
+              <Card
                 key={r.id || Math.random()}
-                className="card"
+                padding="16px"
                 style={{
                   margin: 0,
-                  padding: '16px',
-                  borderRadius: 'var(--radius-lg)',
-                  border: '1.5px solid var(--border-subtle)',
-                  boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -233,18 +154,12 @@ export const ReservationsScreen = () => {
                       )}
                     </div>
 
-                    <span
-                      className={`badge ${
-                        isDone
-                          ? 'badge-success'
-                          : isCancelled
-                          ? 'badge-danger'
-                          : 'badge-warning'
-                      }`}
-                      style={{ flexShrink: 0 }}
+                    <Badge
+                      variant={isDone ? 'success' : isCancelled ? 'danger' : 'warning'}
+                      size="sm"
                     >
                       {isDone ? t('checkout.status_completed') : isCancelled ? t('checkout.status_cancelled') : t('checkout.status_pending')}
-                    </span>
+                    </Badge>
                   </div>
 
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -277,34 +192,23 @@ export const ReservationsScreen = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span
-                      style={{
-                        backgroundColor: 'var(--color-primary-light)',
-                        color: 'var(--color-primary)',
-                        fontWeight: 900,
-                        padding: '4px 10px',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.88rem',
-                        letterSpacing: '1px',
-                        display: 'inline-block',
-                      }}
-                    >
+                    <Badge variant="primary" size="md">
                       {displayId}
-                    </span>
+                    </Badge>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={QrCode}
                       onClick={() => setInspectToken(r)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ padding: '4px 10px', fontSize: '0.74rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}
                     >
-                      <QrCode size={13} />
-                      <span>{t('checkout.view_token')}</span>
-                    </button>
+                      {t('checkout.view_token')}
+                    </Button>
                   </div>
 
                   {isActive && (
                     <button
+                      type="button"
                       onClick={() => handleCancel(r.id)}
                       style={{
                         background: 'transparent',
@@ -320,7 +224,7 @@ export const ReservationsScreen = () => {
                     </button>
                   )}
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
@@ -328,64 +232,54 @@ export const ReservationsScreen = () => {
 
       {/* Inspect QR Code Modal */}
       {inspectToken && (
-        <div className="modal-backdrop" onClick={() => setInspectToken(null)}>
-          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px', margin: '0 auto' }}>
-            <div className="sheet-handle" />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {t('checkout.pickup_otp')}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setInspectToken(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-              >
-                <X size={20} />
-              </button>
+        <BaseModal isOpen={Boolean(inspectToken)} onClose={() => setInspectToken(null)} maxWidth="420px">
+          <ModalHeader
+            title={t('checkout.pickup_otp')}
+            subtitle={inspectToken.product?.name || `Order #${inspectToken.pickup_code || inspectToken.id}`}
+            icon={QrCode}
+            onClose={() => setInspectToken(null)}
+          />
+          <ModalBody padding="20px" style={{ textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+              <RealQRCode
+                value={`SHOP-PICKUP:${inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id}`}
+                size={180}
+                logoText="PICKUP"
+                showDownload={true}
+                downloadFilename={"pickup-code-" + (inspectToken.pickup_code || inspectToken.id)}
+              />
             </div>
 
-            <div style={{ textAlign: 'center', padding: '10px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
-                <RealQRCode
-                  value={`SHOP-PICKUP:${inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id}`}
-                  size={180}
-                  logoText="PICKUP"
-                  showDownload={true}
-                  downloadFilename={"pickup-code-" + (inspectToken.pickup_code || inspectToken.id)}
-                />
-              </div>
+            {(() => {
+              const rawNums = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').replace(/[^0-9]/g, '');
+              const tokenCode = inspectToken.token_display || (rawNums.length >= 4 ? `#${rawNums.slice(-4)}` : `#${rawNums || '4812'}`);
+              return (
+                <>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {isHindi ? '4-अंकों का पिकअप कोड' : '4-DIGIT PICKUP CODE'}
+                  </div>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '4px', margin: '6px 0', fontFamily: 'monospace' }}>
+                    {tokenCode}
+                  </div>
+                  <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#065f46', borderRadius: '10px', padding: '10px 14px', fontSize: '0.78rem', lineHeight: 1.45, fontWeight: 600, marginTop: '8px', textAlign: 'left' }}>
+                    ⚡ {isHindi
+                      ? 'दुकान के काउंटर पर पहुँचकर केवल यह टोकन नंबर (#...) दिखाएं या QR कोड स्कैन करवाएं। दुकानदार POS में दर्ज करते ही आपका पैक किया हुआ सामान 10 सेकंड में मिल जाएगा!'
+                      : 'Show this 4-digit token or QR pass at the store counter. The merchant enters it into POS to hand over your packed goods in 10 seconds!'}
+                  </div>
+                </>
+              );
+            })()}
 
-              {(() => {
-                const rawNums = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').replace(/[^0-9]/g, '');
-                const tokenCode = inspectToken.token_display || (rawNums.length >= 4 ? `#${rawNums.slice(-4)}` : `#${rawNums || '4812'}`);
-                return (
-                  <>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      {isHindi ? '4-अंकों का पिकअप कोड' : '4-DIGIT PICKUP CODE'}
-                    </div>
-                    <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '4px', margin: '6px 0', fontFamily: 'monospace' }}>
-                      {tokenCode}
-                    </div>
-                    <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#065f46', borderRadius: '10px', padding: '10px 14px', fontSize: '0.78rem', lineHeight: 1.45, fontWeight: 600, marginTop: '8px', textAlign: 'left' }}>
-                      ⚡ {isHindi
-                        ? 'दुकान के काउंटर पर पहुँचकर केवल यह टोकन नंबर (#...) दिखाएं या QR कोड स्कैन करवाएं। दुकानदार POS में दर्ज करते ही आपका पैक किया हुआ सामान 10 सेकंड में मिल जाएगा!'
-                        : 'Show this 4-digit token or QR pass at the store counter. The merchant enters it into POS to hand over your packed goods in 10 seconds!'}
-                    </div>
-                  </>
-                );
-              })()}
-
-              <button
-                type="button"
-                onClick={() => setInspectToken(null)}
-                className="btn btn-primary btn-block"
-                style={{ marginTop: '16px', fontWeight: 700 }}
-              >
-                {t('common.close')}
-              </button>
-            </div>
-          </div>
-        </div>
+            <Button
+              variant="primary"
+              fullWidth={true}
+              style={{ marginTop: '16px' }}
+              onClick={() => setInspectToken(null)}
+            >
+              {t('common.close')}
+            </Button>
+          </ModalBody>
+        </BaseModal>
       )}
     </AppLayout>
   );

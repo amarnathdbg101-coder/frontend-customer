@@ -122,3 +122,5 @@ export const SkeletonShopGrid = ({ count = 4 }) => (
     ))}
   </div>
 );
+
+export const CardSkeleton = SkeletonProductCard;

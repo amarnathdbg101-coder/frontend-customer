@@ -15,6 +15,7 @@ import { sessionState } from '../../utils/sessionState';
 import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
+import { AlertBanner, Button } from '../../components/ui';
 
 export const RegisterScreen = () => {
   const navigate = useNavigate();

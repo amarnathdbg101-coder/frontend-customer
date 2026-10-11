@@ -1,12 +1,9 @@
-﻿/**
- * Customer Product Card Component (Pixel-perfect square layout, 1-line name truncation)
- */
-
 import React, { memo } from 'react';
-import { Package, ShoppingCart, Heart } from 'lucide-react';
+import { ShoppingCart, Heart, Package } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
+import { Badge, Button } from '../ui';
 
 const ProductCardInner = ({
   product,
@@ -27,7 +24,13 @@ const ProductCardInner = ({
   const inStock = stock > 0;
   const mrp = Number(p.compare_price || p.mrp || 0);
   const price = Number(p.price || 0);
-  const hasDiscount = mrp > price;
+  const isPricePublic = p.is_price_public !== false && 
+                        p.isPricePublic !== false && 
+                        p.attributes?.is_price_public !== false && 
+                        p.attributes?.is_price_public !== 'false' && 
+                        price > 0 &&
+                        !p.hide_price;
+  const hasDiscount = isPricePublic && mrp > price;
   const discountPct = hasDiscount ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   return (
@@ -43,7 +46,7 @@ const ProductCardInner = ({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        transition: 'transform 0.15s ease, boxShadow 0.15s ease',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         position: 'relative',
         height: '100%',
       }}
@@ -92,22 +95,10 @@ const ProductCardInner = ({
 
           {/* Discount Badge on Top-Left */}
           {hasDiscount && discountPct > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '6px',
-                left: '6px',
-                backgroundColor: '#ef4444',
-                color: '#ffffff',
-                fontSize: '0.64rem',
-                fontWeight: 800,
-                padding: '2px 6px',
-                borderRadius: '6px',
-                boxShadow: '0 2px 5px rgba(239, 68, 68, 0.3)',
-                letterSpacing: '0.2px',
-              }}
-            >
-              {discountPct}% OFF
+            <div style={{ position: 'absolute', top: '6px', left: '6px', zIndex: 2 }}>
+              <Badge variant="danger" size="sm">
+                {discountPct}% OFF
+              </Badge>
             </div>
           )}
 
@@ -132,6 +123,7 @@ const ProductCardInner = ({
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+              zIndex: 2,
             }}
             aria-label="Save item"
           >
@@ -173,25 +165,31 @@ const ProductCardInner = ({
           gap: '4px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
-          <span style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
-            {formatCurrency(price)}
-          </span>
-          {hasDiscount && (
-            <span
-              style={{
-                fontSize: '0.68rem',
-                color: 'var(--text-muted, #94a3b8)',
-                textDecoration: 'line-through',
-                fontWeight: 600,
-              }}
-            >
-              {formatCurrency(mrp)}
+        {isPricePublic ? (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
+            <span style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
+              {formatCurrency(price)}
             </span>
-          )}
-        </div>
+            {hasDiscount && (
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  color: 'var(--text-muted, #94a3b8)',
+                  textDecoration: 'line-through',
+                  fontWeight: 600,
+                }}
+              >
+                {formatCurrency(mrp)}
+              </span>
+            )}
+          </div>
+        ) : (
+          <Badge variant="bargain" size="sm">
+            {isHindi ? '🔒 मोलभाव करें' : '🔒 Ask Price'}
+          </Badge>
+        )}
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart / Ask Price Button */}
         <button
           type="button"
           onClick={onClick}
@@ -199,8 +197,12 @@ const ProductCardInner = ({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
-            backgroundColor: inStock ? 'var(--color-primary, #4f46e5)' : 'rgba(148, 163, 184, 0.15)',
-            color: inStock ? '#ffffff' : '#64748b',
+            backgroundColor: !isPricePublic
+              ? '#25d366'
+              : inStock
+                ? 'var(--color-primary, #4f46e5)'
+                : 'rgba(148, 163, 184, 0.15)',
+            color: '#ffffff',
             border: 'none',
             padding: '4px 8px',
             borderRadius: '6px',
@@ -208,11 +210,17 @@ const ProductCardInner = ({
             fontWeight: 800,
             cursor: 'pointer',
             flexShrink: 0,
-            boxShadow: inStock ? '0 2px 6px rgba(79, 70, 229, 0.25)' : 'none',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <ShoppingCart size={12} strokeWidth={2.5} />
-          <span>{inStock ? (isHindi ? 'कार्ट' : 'Add') : (isHindi ? 'आउट' : 'Out')}</span>
+          {isPricePublic ? (
+            <>
+              <ShoppingCart size={12} strokeWidth={2.5} />
+              <span>{inStock ? (isHindi ? 'जोड़ें' : 'Add') : (isHindi ? 'खत्म' : 'Out')}</span>
+            </>
+          ) : (
+            <span>{isHindi ? 'रेट पूछें' : 'Ask Price'}</span>
+          )}
         </button>
       </div>
     </div>

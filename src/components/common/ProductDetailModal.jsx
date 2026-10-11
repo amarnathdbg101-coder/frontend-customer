@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { getCategoryEmoji } from '../../utils/categoryMeta';
 import { getImageUrl } from '../../utils/imageUrl';
+import { QuantityStepper, Button, Badge } from '../ui';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -94,21 +95,71 @@ export const ProductDetailModal = ({
   const savings = hasDiscount ? comparePrice - price : 0;
   const discountPct = hasDiscount ? Math.round((savings / comparePrice) * 100) : 0;
 
-  // Filter safe customer specifications (Zero leakage of internal merchant metrics)
+  const categoryName = typeof product.category === 'object'
+    ? (product.category?.name || product.category_name || '')
+    : String(product.category_name || product.category || '');
+
+  const isPricePublic = product.is_price_public !== false && 
+                        product.isPricePublic !== false && 
+                        product.attributes?.is_price_public !== false && 
+                        product.attributes?.is_price_public !== 'false' && 
+                        !product.hide_price;
+
+  // Safely parse attributes if stringified JSON
+  let rawAttributes = product.attributes || {};
+  if (typeof rawAttributes === 'string') {
+    try {
+      rawAttributes = JSON.parse(rawAttributes);
+    } catch (_) {
+      rawAttributes = {};
+    }
+  }
+
+  // Combine top-level fields & attributes map
+  const combinedSpecs = { ...(typeof rawAttributes === 'object' && rawAttributes !== null ? rawAttributes : {}) };
+  if (product.brand && !combinedSpecs.brand) combinedSpecs.brand = product.brand;
+  if (product.color && !combinedSpecs.color) combinedSpecs.color = product.color;
+  if (product.size && !combinedSpecs.size) combinedSpecs.size = product.size;
+  if (product.flavor && !combinedSpecs.flavor) combinedSpecs.flavor = product.flavor;
+  if (product.material && !combinedSpecs.material) combinedSpecs.material = product.material;
+  if (product.warranty && !combinedSpecs.warranty) combinedSpecs.warranty = product.warranty;
+  if (product.model && !combinedSpecs.model) combinedSpecs.model = product.model;
+
+  const brand = combinedSpecs.brand || combinedSpecs.Brand || combinedSpecs.company || '';
+
+  // Strict Private Merchant Blocklist (Zero leakage of internal shop metrics to customer)
   const PRIVATE_KEYS = [
-    'cost_price', 'unit_profit', 'profit_margin_pct', 'profit',
-    'margin', 'supplier', 'wholesale_price', 'barcode', 'sku', 'id',
-    'cogs', 'purchase_price', 'kharid_price', 'distributor', 'reorder_point',
-    'threshold', 'stock_alert_threshold', 'internal_code', 'inventory'
+    // Internal Financials & Purchase Costs
+    'cost_price', 'costprice', 'cost', 'unit_profit', 'profit_margin_pct', 'profit',
+    'margin', 'wholesale_price', 'wholesaleprice', 'purchase_price', 'kharid_price', 'cogs', 'markup',
+
+    // Internal Bargaining Limits
+    'floor_price', 'floorprice', 'min_price', 'bottom_price', 'allow_bargain', 'is_bargain_allowed',
+
+    // Supplier & Dealer Contacts
+    'supplier', 'supplier_name', 'distributor', 'distributor_name', 'vendor',
+    'dealer', 'dealer_name', 'dealer_phone', 'wholesaler',
+
+    // Internal Inventory Alert Thresholds & Counts
+    'reorder_point', 'reorder_qty', 'threshold', 'stock_alert_threshold',
+    'low_stock_threshold', 'min_stock', 'inventory',
+
+    // Internal Codes, UUIDs & Barcodes
+    'barcode', 'sku', 'id', 'uuid', 'shop_id', 'user_id', 'internal_code',
+
+    // Internal System Flags & Redundant Category Keys
+    'is_price_public', 'ispricepublic', 'hide_price', 'price_public', 'is_public', 'is_active', 'is_featured',
+    'category', 'category_name', 'category_id', 'category_slug', 'unit'
   ];
 
-  const safeAttributes = Object.entries(product.attributes || {}).filter(([key, val]) => {
-    if (!val) return false;
-    if (PRIVATE_KEYS.includes(key.toLowerCase())) return false;
+  const safeAttributes = Object.entries(combinedSpecs).filter(([key, val]) => {
+    if (val === null || val === undefined || val === '') return false;
+    if (typeof val === 'boolean') return false; // Never render internal true/false flags
+    if (PRIVATE_KEYS.includes(key.toLowerCase().trim())) return false;
     return true;
   });
 
-  const hasSpecifications = (product.weight && Number(product.weight) > 0) || safeAttributes.length > 0 || product.unit;
+  const hasSpecifications = Boolean(brand || categoryName || (product.weight && Number(product.weight) > 0) || safeAttributes.length > 0 || product.unit);
 
   const handleAddToCart = () => {
     addItem(product, cartQty);
@@ -375,26 +426,28 @@ export const ProductDetailModal = ({
             </div>
           </div>
 
-          {/* Modal Body: Responsive 2-Column Grid */}
+          {/* Modal Body: Responsive 2-Column Grid / Single Column Mobile Layout */}
           <div
             style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '24px',
+              WebkitOverflowScrolling: 'touch',
+              padding: '18px 20px',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '28px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '20px',
               alignItems: 'start',
             }}
           >
             {/* === LEFT COLUMN: STUDIO HERO GALLERY === */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
               {/* Main Showcase Stage */}
               <div
                 style={{
                   width: '100%',
-                  height: '360px',
-                  borderRadius: '20px',
+                  height: '280px',
+                  maxHeight: '40vh',
+                  borderRadius: '16px',
                   backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
                   position: 'relative',
                   display: 'flex',
@@ -403,7 +456,7 @@ export const ProductDetailModal = ({
                   border: '1px solid var(--border-subtle, #e2e8f0)',
                   overflow: 'hidden',
                   cursor: activeImage ? 'zoom-in' : 'default',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
                 }}
                 onClick={() => {
                   if (activeImage) setIsZoomOpen(true);
@@ -628,7 +681,7 @@ export const ProductDetailModal = ({
               {/* Product Header */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  {(product.attributes?.brand || product.attributes?.company) && (
+                  {brand && (
                     <span
                       style={{
                         fontSize: '0.78rem',
@@ -640,7 +693,7 @@ export const ProductDetailModal = ({
                         letterSpacing: '0.3px',
                       }}
                     >
-                      {product.attributes?.brand || product.attributes?.company}
+                      {brand}
                     </span>
                   )}
                   {product.unit && (
@@ -672,7 +725,7 @@ export const ProductDetailModal = ({
                 </h1>
               </div>
 
-              {/* Pricing Hero Card */}
+                            {/* Pricing Hero Card */}
               <div
                 style={{
                   backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
@@ -681,130 +734,104 @@ export const ProductDetailModal = ({
                   padding: '16px 18px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                  <span
-                    style={{
-                      fontSize: '1.85rem',
-                      fontWeight: 900,
-                      color: 'var(--color-primary, #2563eb)',
-                      lineHeight: 1,
-                    }}
-                  >
-                    {formatCurrency(price)}
-                  </span>
+                {isPricePublic ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+                      <span
+                        style={{
+                          fontSize: '1.85rem',
+                          fontWeight: 900,
+                          color: 'var(--color-primary, #2563eb)',
+                          lineHeight: 1,
+                        }}
+                      >
+                        {formatCurrency(price)}
+                      </span>
 
-                  {hasDiscount && (
-                    <span
+                      {hasDiscount && (
+                        <span
+                          style={{
+                            fontSize: '1.05rem',
+                            color: 'var(--text-muted, #94a3b8)',
+                            textDecoration: 'line-through',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {formatCurrency(comparePrice)}
+                        </span>
+                      )}
+
+                      {hasDiscount && savings > 0 && (
+                        <span
+                          style={{
+                            fontSize: '0.78rem',
+                            fontWeight: 800,
+                            color: '#15803d',
+                            backgroundColor: '#dcfce7',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                          }}
+                        >
+                          {isHindi ? `बचत ${formatCurrency(savings)}` : `Save ${formatCurrency(savings)}`} ({discountPct}% OFF)
+                        </span>
+                      )}
+                    </div>
+
+                    <div
                       style={{
-                        fontSize: '1.05rem',
+                        fontSize: '0.74rem',
                         color: 'var(--text-muted, #94a3b8)',
-                        textDecoration: 'line-through',
                         fontWeight: 600,
+                        marginTop: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
                     >
-                      {formatCurrency(comparePrice)}
+                      <ShieldCheck size={14} color="#10b981" />
+                      <span>{isHindi ? 'सभी कर शामिल (Inclusive of all taxes)' : 'Inclusive of all taxes'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          backgroundColor: '#fef3c7',
+                          color: '#92400e',
+                          fontWeight: 800,
+                          fontSize: '0.92rem',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <span>🔒</span>
+                        <span>{isHindi ? 'मोलभाव करें / Price on Request' : 'Price on Request / Bargain Allowed'}</span>
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)' }}>
+                      {isHindi ? 'दुकानदार से बेस्ट रेट प्राप्त करने के लिए WhatsApp पर चैट करें या सीधे स्टोर विजिट करें।' : 'Contact the store on WhatsApp or visit directly to negotiate the best price.'}
                     </span>
-                  )}
-
-                  {hasDiscount && savings > 0 && (
-                    <span
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        color: '#15803d',
-                        backgroundColor: '#dcfce7',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                      }}
-                    >
-                      {isHindi ? `बचत ${formatCurrency(savings)}` : `Save ${formatCurrency(savings)}`} ({discountPct}% OFF)
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: '0.74rem',
-                    color: 'var(--text-muted, #94a3b8)',
-                    fontWeight: 600,
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <ShieldCheck size={14} color="#10b981" />
-                  <span>{isHindi ? 'सभी कर शामिल (Inclusive of all taxes)' : 'Inclusive of all taxes'}</span>
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Quantity Stepper & Cart / Reserve Action Station */}
-              {!isMerchant && inStock && (
+              {!isMerchant && inStock && isPricePublic && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
                     {/* Tactile Quantity Stepper */}
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                        borderRadius: '12px',
-                        padding: '6px 12px',
-                        backgroundColor: 'var(--bg-surface, #ffffff)',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setCartQty((q) => Math.max(1, q - 1))}
-                        disabled={cartQty <= 1}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: cartQty <= 1 ? 'not-allowed' : 'pointer',
-                          color: cartQty <= 1 ? 'var(--text-muted, #cbd5e1)' : 'var(--text-primary, #0f172a)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '2px',
-                        }}
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus size={16} />
-                      </button>
-
-                      <span
-                        style={{
-                          fontSize: '1rem',
-                          fontWeight: 800,
-                          minWidth: '24px',
-                          textAlign: 'center',
-                          color: 'var(--text-primary, #0f172a)',
-                        }}
-                      >
-                        {cartQty}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => setCartQty((q) => (currentStock > q ? q + 1 : q))}
-                        disabled={cartQty >= currentStock}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: cartQty >= currentStock ? 'not-allowed' : 'pointer',
-                          color: cartQty >= currentStock ? 'var(--text-muted, #cbd5e1)' : 'var(--text-primary, #0f172a)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '2px',
-                        }}
-                        aria-label="Increase quantity"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
+                    <QuantityStepper
+                        quantity={cartQty}
+                        onIncrement={() => setCartQty((q) => (currentStock > q ? q + 1 : q))}
+                        onDecrement={() => setCartQty((q) => Math.max(1, q - 1))}
+                        min={1}
+                        max={currentStock}
+                        size="md"
+                      />
 
                     {/* Primary Add to Cart Button */}
                     <button
@@ -876,6 +903,50 @@ export const ProductDetailModal = ({
                       );
                     })()}
                   </div>
+                </div>
+              )}
+
+              {/* If price is hidden or bargain item, prominent WhatsApp Price Inquiry CTA */}
+              {!isMerchant && inStock && !isPricePublic && (
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {(() => {
+                    const rawPhone = product.shop_phone || product.shop?.phone || '';
+                    const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+                    const sName = product.shop_name || product.shop?.name || (isHindi ? 'दुकानदार' : 'Store');
+                    const inquiryMsg = isHindi
+                      ? `नमस्ते ${sName}! मुझे ${product.name} का बेस्ट रेट जानना है। क्या यह आपकी दुकान पर उपलब्ध है?`
+                      : `Hello ${sName}! I would like to inquire about the best price for ${product.name}. Is it available at your store?`;
+                    const waUrl = cleanPhone.length >= 10
+                      ? `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(inquiryMsg)}`
+                      : `https://wa.me/?text=${encodeURIComponent(inquiryMsg)}`;
+
+                    return (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          backgroundColor: '#25d366',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '12px',
+                          padding: '12px 20px',
+                          fontSize: '0.94rem',
+                          fontWeight: 800,
+                          textDecoration: 'none',
+                          boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+                          flex: 1,
+                        }}
+                      >
+                        <MessageCircle size={18} />
+                        <span>{isHindi ? 'व्हाट्सएप पर रेट पूछें / मोलभाव करें' : 'Ask Best Price on WhatsApp'}</span>
+                      </a>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -984,6 +1055,41 @@ export const ProductDetailModal = ({
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+                    {brand && (
+                      <div
+                        style={{
+                          backgroundColor: 'var(--bg-surface, #ffffff)',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-subtle, #e2e8f0)',
+                        }}
+                      >
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
+                          Brand
+                        </div>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', marginTop: '2px' }}>
+                          {brand}
+                        </div>
+                      </div>
+                    )}
+                    {categoryName && (
+                      <div
+                        style={{
+                          backgroundColor: 'var(--bg-surface, #ffffff)',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-subtle, #e2e8f0)',
+                        }}
+                      >
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
+                          Category
+                        </div>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', marginTop: '2px' }}>
+                          {categoryName}
+                        </div>
+                      </div>
+                    )}
+
                     {product.weight > 0 && (
                       <div
                         style={{
@@ -1012,7 +1118,7 @@ export const ProductDetailModal = ({
                         }}
                       >
                         <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
-                          Unit / Parchi
+                          Unit
                         </div>
                         <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', marginTop: '2px' }}>
                           {product.unit}
@@ -1021,6 +1127,7 @@ export const ProductDetailModal = ({
                     )}
 
                     {safeAttributes.map(([key, val]) => {
+                      if (key.toLowerCase() === 'brand' && brand) return null;
                       const label = key.replace(/_/g, ' ').toUpperCase();
                       return (
                         <div

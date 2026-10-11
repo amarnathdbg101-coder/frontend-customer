@@ -31,6 +31,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/imageUrl';
+import { Button, Badge } from '../ui';
 
 export const DesktopNavbar = () => {
   const navigate = useNavigate();
@@ -280,13 +281,7 @@ export const DesktopNavbar = () => {
               </span>
             </button>
           ) : (
-            <button
-              onClick={() => navigate('/login')}
-              className="btn btn-primary btn-sm"
-              style={{ padding: '7px 16px', fontWeight: 700 }}
-            >
-              {t('nav.login')}
-            </button>
+            <Button variant="primary" size="sm" onClick={() => navigate('/login')}>{t('nav.login')}</Button>
           )}
         </div>
       </div>

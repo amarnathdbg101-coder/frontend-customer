@@ -12,6 +12,8 @@ import { sessionState } from '../utils/sessionState';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/auth.api';
 import { shopApi } from '../api/shop.api';
+import { localCache } from '../utils/localCache';
+import { cacheEvents, CACHE_EVENTS } from '../utils/cacheEvents';
 
 const AuthContext = createContext(null);
 
@@ -56,6 +58,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('shopsilo_user');
     localStorage.removeItem('shopme_user');
     sessionState.clearAll();
+    localCache.clearPrefix('shopsilo_cache_khata_');
+    localCache.clearPrefix('shopsilo_cache_reservations_');
+    cacheEvents.emit(CACHE_EVENTS.AUTH_LOGOUT);
   }, []);
 
   // Synchronize auth state across browser tabs & listen for 401 expiry events

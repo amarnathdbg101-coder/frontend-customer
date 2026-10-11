@@ -1,4 +1,5 @@
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
 import { sessionState } from '../../utils/sessionState.js';
 import { useScreenState } from '../../hooks/useScreenState.js';
 /**
@@ -81,6 +82,7 @@ export const ExploreShopsScreen = () => {
   const [searchTerm, setSearchTerm] = useState(savedExploreState.searchTerm || '');
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
+  const [sortBy, setSortBy] = useState('relevant');
 
   // Automatic scroll position restoration
   useScreenState('explore', {
@@ -201,15 +203,26 @@ export const ExploreShopsScreen = () => {
 
   useEffect(() => {
     loadMarketplaceData();
+
+    // Memory-Safe Event-Driven Cache Invalidation Subscription
+    const unsubShops = cacheEvents.on(CACHE_EVENTS.SHOPS_MUTATED, () => loadMarketplaceData());
+    const unsubProds = cacheEvents.on(CACHE_EVENTS.PRODUCTS_MUTATED, () => loadMarketplaceData());
+
+    return () => {
+      unsubShops();
+      unsubProds();
+    };
   }, [loadMarketplaceData]);
 
-  // 2. Filter Products
+  // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      // Proximity Distance Filter
+    const list = products.filter((p) => {
+      // Proximity Distance Filter (Pre-filters out-of-range products)
       const lat = p.shop_latitude || p.latitude;
       const lng = p.shop_longitude || p.longitude;
       const distKm = calculateDistanceKm(coords?.lat, coords?.lng, lat, lng);
+      p._distKm = distKm;
+
       if (distKm != null && radiusKm > 0 && distKm > radiusKm) {
         return false;
       }
@@ -232,13 +245,35 @@ export const ExploreShopsScreen = () => {
 
       return true;
     });
-  }, [products, debouncedSearch, selectedCategory, coords, radiusKm]);
 
-  // 3. Filter Shops
+    return list.sort((a, b) => {
+      if (sortBy === 'nearest') {
+        return (a._distKm ?? 999) - (b._distKm ?? 999);
+      }
+      if (sortBy === 'price_low') {
+        return (Number(a.price) || 0) - (Number(b.price) || 0);
+      }
+      if (sortBy === 'price_high') {
+        return (Number(b.price) || 0) - (Number(a.price) || 0);
+      }
+      if (sortBy === 'discount') {
+        const mrpA = Number(a.compare_price || a.mrp || 0);
+        const mrpB = Number(b.compare_price || b.mrp || 0);
+        const pctA = mrpA > a.price ? ((mrpA - a.price) / mrpA) * 100 : 0;
+        const pctB = mrpB > b.price ? ((mrpB - b.price) / mrpB) * 100 : 0;
+        return pctB - pctA;
+      }
+      return 0;
+    });
+  }, [products, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
+
+  // 3. Filter & Sort Shops (Location-Aware + Fast Proximity)
   const filteredShops = useMemo(() => {
-    return shops.filter((s) => {
+    const list = shops.filter((s) => {
       // Proximity Distance Filter
       const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
+      s._distKm = distKm;
+
       if (distKm != null && radiusKm > 0 && distKm > radiusKm) {
         return false;
       }
@@ -261,7 +296,14 @@ export const ExploreShopsScreen = () => {
 
       return true;
     });
-  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm]);
+
+    return list.sort((a, b) => {
+      if (sortBy === 'nearest') {
+        return (a._distKm ?? 999) - (b._distKm ?? 999);
+      }
+      return 0;
+    });
+  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
 
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
@@ -271,6 +313,7 @@ export const ExploreShopsScreen = () => {
         hold_hours,
         notes,
       });
+      cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED);
       alert(`${isHindi ? 'सामान रिज़र्व हो गया!' : 'Item Reserved!'} ${isHindi ? 'पिकअप OTP' : 'Pickup OTP'}: ${res.pickup_code || res.reservation_number || 'OK'}`);
       setInspectedProduct(null);
     } catch (err) {
@@ -652,6 +695,46 @@ export const ExploreShopsScreen = () => {
             {filteredShops.length}
           </span>
         </button>
+      </div>
+
+      {/* 6.5 SMART SORTING CONTROL BAR */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 0 12px 0', gap: '8px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary, #64748b)' }}>
+          {activeTab === 'products'
+            ? `${filteredProducts.length} ${isHindi ? 'सामान पास में उपलब्ध' : 'Products Nearby'}`
+            : `${filteredShops.length} ${isHindi ? 'दुकानें पास में उपलब्ध' : 'Shops Nearby'}`}
+        </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
+            {isHindi ? 'क्रमबद्ध:' : 'Sort:'}
+          </span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              padding: '4px 10px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              color: 'var(--color-primary, #2563eb)',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <option value="relevant">⚡ {isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
+            <option value="nearest">📍 {isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
+            {activeTab === 'products' && (
+              <>
+                <option value="price_low">💰 {isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
+                <option value="price_high">💎 {isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
+                <option value="discount">🔥 {isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Savings (% OFF)'}</option>
+              </>
+            )}
+          </select>
+        </div>
       </div>
 
       {/* 7. RESPONSIVE FEED CONTENT */}

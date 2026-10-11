@@ -35,12 +35,14 @@ import {
 } from 'lucide-react';
 import { productApi } from '../../api/product.api';
 import { reservationApi } from '../../api/reservation.api';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
 import { useLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { formatCurrency } from '../../utils/format';
 import { getImageUrl } from '../../utils/imageUrl';
+import { BaseModal, ModalHeader, ModalBody, Button } from '../ui';
 
 const POPULAR_SEARCH_TERMS = [
   { en: 'Fortune Sunlite Oil 1L', hi: 'फॉर्च्यून तेल 1L' },
@@ -255,6 +257,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
       }
 
       const code = res?.pickup_code ? `#${String(res.pickup_code).replace(/[^0-9]/g, '').slice(-4)}` : `#${random4Digit}`;
+      cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED);
       setReservedProduct({
         name: item.name,
         shopName: item.shop_name,
@@ -270,99 +273,14 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.75)',
-        backdropFilter: 'blur(5px)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-      }}
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        style={{
-          backgroundColor: 'var(--bg-surface, #ffffff)',
-          border: '1px solid var(--border-subtle, #e2e8f0)',
-          borderRadius: '24px',
-          width: '100%',
-          maxWidth: '680px',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-          overflow: 'hidden',
-          animation: 'fadeIn 0.2s ease',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: 'var(--bg-surface)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                color: 'var(--color-primary, #4f46e5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                {isHindi ? '🔍 सामान कहाँ मिलेगा? (हाइपरलोकल तुलना)' : '🔍 Where is it available? (Multi-Shop Search)'}
-              </div>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                {isHindi
-                  ? 'आस-पास की सभी दुकानों में स्टॉक और कीमत की लाइव तुलना'
-                  : 'Compare live stock & prices across all nearby stores'}
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'var(--bg-surface-subtle)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="680px" maxHeight="90vh" zIndex={9999}>
+      <ModalHeader
+        title={isHindi ? '🔍 सामान कहाँ मिलेगा? (मल्टी-शॉप खोज)' : '🔍 Where is it available? (Multi-Shop Search)'}
+        subtitle={isHindi ? 'आस-पास की सभी दुकानों और किराना में लाइव स्टॉक व कीमतें देखें' : 'Compare live stock & prices across all nearby stores'}
+        icon={Sparkles}
+        iconColor="#4f46e5"
+        onClose={onClose}
+      />
         {/* Search Input Bar */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
           <form onSubmit={handleSubmit}>
@@ -788,8 +706,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 };
 export default SmartSearchModal;

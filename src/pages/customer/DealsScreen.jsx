@@ -1,9 +1,11 @@
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tag, MapPin, Store, Navigation, Sparkles, CheckCircle, ShoppingBag, ArrowRight } from 'lucide-react';
 import { dealsApi } from '../../api/deals.api';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { EmptyState, Card, Badge, Button } from '../../components/ui';
 import { useLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
@@ -80,11 +82,25 @@ export const DealsScreen = () => {
 
   useEffect(() => {
     loadDeals();
+
+    const unsubscribe = cacheEvents.on(CACHE_EVENTS.DEALS_MUTATED, () => {
+      loadDeals();
+    });
+
+    return () => unsubscribe();
   }, [selectedCategory]);
 
   const loadDeals = async () => {
-    try {
+    const cacheKey = selectedCategory === 'All' ? CACHE_KEYS.DEALS : `${CACHE_KEYS.DEALS}_${selectedCategory}`;
+    const cached = localCache.get(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      setDeals(cached);
+      setLoading(false);
+    } else {
       setLoading(true);
+    }
+
+    try {
       const params = {};
       if (selectedCategory !== 'All') {
         params.category = selectedCategory;
@@ -93,12 +109,15 @@ export const DealsScreen = () => {
       const list = Array.isArray(data) ? data : (Array.isArray(data?.offers) ? data.offers : []);
       if (list.length > 0) {
         setDeals(list);
+        localCache.set(cacheKey, list, DEFAULT_TTL.DEALS);
       } else {
         setDeals(DEFAULT_FESTIVAL_DEALS);
       }
     } catch (err) {
       console.warn('Deals API fallback:', err);
-      setDeals(DEFAULT_FESTIVAL_DEALS);
+      if (deals.length === 0) {
+        setDeals(DEFAULT_FESTIVAL_DEALS);
+      }
     } finally {
       setLoading(false);
     }
@@ -224,17 +243,13 @@ export const DealsScreen = () => {
           {isHindi ? 'आस-पास के लाइव ऑफर्स खोजे जा रहे हैं...' : 'Discovering live discounts near you...'}
         </div>
       ) : deals.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '48px 20px' }}>
-          <Tag size={48} color="var(--text-muted)" style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-          <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-            {isHindi ? 'अभी कोई सक्रिय ऑफर उपलब्ध नहीं है' : 'No Active Deals Nearby Right Now'}
-          </div>
-          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-            {isHindi
-              ? 'आस-पास की दुकानों के नए ऑफर्स यहाँ लाइव दिखेंगे। थोड़ी देर बाद पुनः देखें!'
-              : 'Special deals posted by neighborhood merchants will appear here live.'}
-          </p>
-        </div>
+        <EmptyState
+          icon={Tag}
+          title={isHindi ? 'अभी कोई सक्रिय ऑफर उपलब्ध नहीं है' : 'No Active Deals Nearby Right Now'}
+          description={isHindi
+            ? 'आस-पास की दुकानों के नए ऑफर्स यहाँ लाइव दिखेंगे। थोड़ी देर बाद पुनः देखें!'
+            : 'Special deals posted by neighborhood merchants will appear here live.'}
+        />
       ) : (
         <div className="deals-grid">
           {deals.map((deal) => {

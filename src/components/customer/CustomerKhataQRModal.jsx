@@ -1,103 +1,63 @@
 import React from 'react';
-import { X, QrCode, ShieldCheck, UserCheck, Smartphone } from 'lucide-react';
+import { QrCode, CheckCircle2 } from 'lucide-react';
 import { RealQRCode } from '../common/RealQRCode';
-import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { BaseModal, ModalHeader, ModalBody, Button } from '../ui';
 
-export const CustomerKhataQRModal = ({ isOpen, onClose }) => {
+export const CustomerKhataQRModal = ({ isOpen, onClose, customerPhone, customerName }) => {
   const { isHindi } = useLanguage();
-  const { user } = useAuth();
-  if (!isOpen || !user) return null;
+  if (!isOpen) return null;
 
-  const phone = user.phone || '9876543210';
-  const qrData = `shopsilo://customer/${phone}?id=${user.id}&name=${encodeURIComponent(user.name || 'Customer')}`;
+  const khataPayload = JSON.stringify({
+    type: 'shopsilo_customer_khata',
+    phone: customerPhone,
+    name: customerName || 'Verified Customer',
+    version: '1.0',
+  });
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        backdropFilter: 'blur(6px)',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: 'var(--bg-surface, #1e293b)',
-          border: '1px solid var(--border-subtle, #334155)',
-          borderRadius: '24px',
-          width: '100%',
-          maxWidth: '420px',
-          padding: '1.75rem',
-          textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '6px', borderRadius: '8px' }}>
-              <QrCode size={18} />
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>My Personal Khata QR</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{isHindi ? 'त्वरित मर्चेंट स्कैन' : 'Instant Merchant Scan'}</span>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <X size={20} />
-          </button>
-        </div>
+    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="440px">
+      <ModalHeader
+        title={isHindi ? 'मेरा खाता पासबुक क्यूआर' : 'My Khata Passbook QR'}
+        subtitle={customerName || 'Customer ID'}
+        icon={QrCode}
+        onClose={onClose}
+      />
+      <ModalBody padding="24px" style={{ textAlign: 'center' }}>
+        <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+          {isHindi
+            ? 'दुकानदार से कहें कि वे अपने शॉप ऐप से इस क्यूआर को स्कैन करें ताकि आपका खाता तुरंत लिंक हो सके।'
+            : 'Show this QR code to the merchant to instantly link transactions to your Digital Khata passbook.'}
+        </p>
 
-        <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px 16px', border: '2px solid #10b981', marginBottom: '1.25rem', color: '#0f172a' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#059669', padding: '3px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800, marginBottom: '8px' }}>
-            <UserCheck size={13} /> VERIFIED CUSTOMER PASSBOOK
-          </div>
-
-          <h3 style={{ margin: '0 0 2px 0', fontSize: '1.25rem', fontWeight: 800 }}>
-            {user.name || 'Customer'}
-          </h3>
-          <p style={{ margin: '0 0 14px 0', fontSize: '0.85rem', color: '#64748b' }}>
-            Tel: <strong>{phone}</strong>
-          </p>
-
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-            <RealQRCode
-              value={qrData}
-              size={200}
-              logoText="KHATA"
-              showDownload={true}
-              downloadFilename={`my-khata-qr-${phone}`}
-            />
-          </div>
-
-          <p style={{ margin: 0, fontSize: '0.78rem', color: '#475569' }}>
-            {isHindi ? 'दुकान काउंटर पर यह क्यूआर कोड दिखाएं ताकि दुकानदार तुरंत आपका खाता बही खोल सके।' : 'Show this QR code at the counter for the merchant to quickly access your credit ledger.'}
-          </p>
-        </div>
-
-        <button
-          onClick={onClose}
+        <div
           style={{
-            width: '100%',
-            padding: '11px',
-            borderRadius: '12px',
-            border: 'none',
-            background: 'var(--color-primary, #3b82f6)',
-            color: 'white',
-            fontWeight: 700,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
+            background: 'white',
+            padding: '16px',
+            borderRadius: '16px',
+            display: 'inline-block',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
+            marginBottom: '1rem',
           }}
         >
-          Done
-        </button>
-      </div>
-    </div>
+          <RealQRCode
+            value={khataPayload}
+            size={220}
+            level="H"
+            includeMargin={true}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem', color: '#10b981', fontWeight: 700, marginBottom: '1.25rem' }}>
+          <CheckCircle2 size={16} />
+          <span>{isHindi ? 'सुरक्षित एवं सत्यापित ग्राहक पहचान' : 'Secure Verified Customer Token'}</span>
+        </div>
+
+        <Button variant="primary" fullWidth={true} onClick={onClose}>
+          {isHindi ? 'पूर्ण' : 'Done'}
+        </Button>
+      </ModalBody>
+    </BaseModal>
   );
 };
+export default CustomerKhataQRModal;
