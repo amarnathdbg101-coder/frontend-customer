@@ -1,5 +1,5 @@
 ﻿/**
- * Customer Product Card Component (Pixel-perfect match with Shopsilo Mobile OS)
+ * Customer Product Card Component (Pixel-perfect square layout, 1-line name truncation)
  */
 
 import React, { memo } from 'react';
@@ -35,28 +35,29 @@ const ProductCardInner = ({
       onClick={onClick}
       style={{
         backgroundColor: 'var(--bg-surface, #ffffff)',
-        borderRadius: '16px',
+        borderRadius: '14px',
         border: '1px solid var(--border-subtle, #e2e8f0)',
         overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        transition: 'transform 0.15s ease, boxShadow 0.15s ease',
         position: 'relative',
+        height: '100%',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.boxShadow = '0 6px 14px rgba(0, 0, 0, 0.08)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.04)';
       }}
     >
       <div>
-        {/* Product Image Box */}
+        {/* Square Product Image Box (1:1 Ratio) */}
         <div
           style={{
             position: 'relative',
@@ -77,15 +78,16 @@ const ProductCardInner = ({
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                transition: 'transform 0.3s ease',
+                objectFit: 'contain',
+                padding: '6px',
+                transition: 'transform 0.2s ease',
               }}
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
               }}
             />
           ) : (
-            <Package size={40} color="var(--text-muted, #94a3b8)" style={{ opacity: 0.4 }} />
+            <Package size={36} color="var(--text-muted, #94a3b8)" style={{ opacity: 0.4 }} />
           )}
 
           {/* Discount Badge on Top-Left */}
@@ -93,15 +95,15 @@ const ProductCardInner = ({
             <div
               style={{
                 position: 'absolute',
-                top: '8px',
-                left: '8px',
+                top: '6px',
+                left: '6px',
                 backgroundColor: '#ef4444',
                 color: '#ffffff',
-                fontSize: '0.68rem',
+                fontSize: '0.64rem',
                 fontWeight: 800,
-                padding: '2px 7px',
+                padding: '2px 6px',
                 borderRadius: '6px',
-                boxShadow: '0 2px 6px rgba(239, 68, 68, 0.3)',
+                boxShadow: '0 2px 5px rgba(239, 68, 68, 0.3)',
                 letterSpacing: '0.2px',
               }}
             >
@@ -118,10 +120,10 @@ const ProductCardInner = ({
             }}
             style={{
               position: 'absolute',
-              top: '8px',
-              right: '8px',
-              width: '28px',
-              height: '28px',
+              top: '6px',
+              right: '6px',
+              width: '26px',
+              height: '26px',
               borderRadius: '50%',
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               border: 'none',
@@ -129,33 +131,32 @@ const ProductCardInner = ({
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
             }}
             aria-label="Save item"
           >
             <Heart
-              size={14}
+              size={13}
               color={isSaved ? '#ef4444' : '#64748b'}
               fill={isSaved ? '#ef4444' : 'none'}
             />
           </button>
         </div>
 
-        {/* Product Details */}
-        <div style={{ padding: '10px 10px 6px 10px' }}>
+        {/* Product Name Truncated to EXACTLY 1 LINE */}
+        <div style={{ padding: '8px 10px 4px 10px' }}>
           <h4
             style={{
-              margin: '0 0 4px 0',
-              fontSize: '0.84rem',
-              fontWeight: 700,
+              margin: 0,
+              fontSize: '0.82rem',
+              fontWeight: 800,
               color: 'var(--text-primary, #0f172a)',
-              lineHeight: 1.25,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
               overflow: 'hidden',
-              minHeight: '2.5em',
+              textOverflow: 'ellipsis',
             }}
+            title={p.name}
           >
             {p.name}
           </h4>
@@ -172,14 +173,14 @@ const ProductCardInner = ({
           gap: '4px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.96rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
+          <span style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
             {formatCurrency(price)}
           </span>
           {hasDiscount && (
             <span
               style={{
-                fontSize: '0.72rem',
+                fontSize: '0.68rem',
                 color: 'var(--text-muted, #94a3b8)',
                 textDecoration: 'line-through',
                 fontWeight: 600,
@@ -201,17 +202,17 @@ const ProductCardInner = ({
             backgroundColor: inStock ? 'var(--color-primary, #4f46e5)' : 'rgba(148, 163, 184, 0.15)',
             color: inStock ? '#ffffff' : '#64748b',
             border: 'none',
-            padding: '5px 10px',
-            borderRadius: '8px',
-            fontSize: '0.74rem',
+            padding: '4px 8px',
+            borderRadius: '6px',
+            fontSize: '0.72rem',
             fontWeight: 800,
             cursor: 'pointer',
             flexShrink: 0,
             boxShadow: inStock ? '0 2px 6px rgba(79, 70, 229, 0.25)' : 'none',
           }}
         >
-          <ShoppingCart size={13} strokeWidth={2.5} />
-          <span>{inStock ? (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart') : (isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock')}</span>
+          <ShoppingCart size={12} strokeWidth={2.5} />
+          <span>{inStock ? (isHindi ? 'कार्ट' : 'Add') : (isHindi ? 'आउट' : 'Out')}</span>
         </button>
       </div>
     </div>
