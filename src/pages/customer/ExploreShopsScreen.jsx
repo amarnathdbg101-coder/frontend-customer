@@ -18,6 +18,7 @@ import {
   MapPin,
   X,
   Package,
+  Navigation,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -58,7 +59,8 @@ function extractArray(response, fieldName) {
 
 export const ExploreShopsScreen = () => {
   const navigate = useNavigate();
-  const { coords, locationName, radiusKm, setRadiusKm, detectLocation, isDetecting } = useLocation();
+  const { coords, locationName, radiusKm, setRadiusKm, detectLocation, setManualLocation, isDetecting } = useLocation();
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const { isProductSaved, toggleSaveProduct, isShopSaved, toggleSaveShop } = useSaved();
   const { isHindi, t } = useLanguage();
   const { openCart, cartCount } = useCart();
@@ -80,8 +82,9 @@ export const ExploreShopsScreen = () => {
 
   // 1. Fetch Shops & Products (SWR 0ms Cache First)
   const loadMarketplaceData = useCallback(async () => {
-    // 1. Check Local Cache First for 0ms Instant Display
-    const cachedShops = localCache.get(CACHE_KEYS.SHOPS);
+    // 1. Check Local Cache First for 0ms Instant Display (keyed by area)
+    const cacheCoordKey = coords?.lat ? `${CACHE_KEYS.SHOPS}_${coords.lat.toFixed(2)}_${coords.lng.toFixed(2)}` : CACHE_KEYS.SHOPS;
+    const cachedShops = localCache.get(cacheCoordKey);
     const cachedProds = localCache.get(CACHE_KEYS.PRODUCTS);
 
     let hasLocal = false;
@@ -158,7 +161,7 @@ export const ExploreShopsScreen = () => {
 
       if (shopList.length > 0) {
         setShops(shopList);
-        localCache.set(CACHE_KEYS.SHOPS, shopList, DEFAULT_TTL.SHOPS);
+        localCache.set(cacheCoordKey, shopList, DEFAULT_TTL.SHOPS);
       }
       if (normalizedProds.length > 0) {
         setProducts(normalizedProds);
@@ -254,83 +257,86 @@ export const ExploreShopsScreen = () => {
 
   return (
     <AppLayout>
-      {/* 1. LOCATION & GPS BAR */}
+      {/* 1. COMPACT 1-LINE GPS LOCATION & RADIUS CONTROL BAR */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '10px 0 6px 0',
+          padding: '6px 0',
           gap: '8px',
-          flexWrap: 'wrap',
         }}
       >
         <button
           type="button"
-          onClick={detectLocation}
+          onClick={() => setShowLocationModal(true)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
             background: 'transparent',
             border: 'none',
-            padding: '2px 0',
+            padding: 0,
             cursor: 'pointer',
             color: 'var(--text-primary)',
-            fontSize: '0.82rem',
-            fontWeight: 700,
+            fontSize: '0.8rem',
+            fontWeight: 800,
             maxWidth: '220px',
             textAlign: 'left',
           }}
           title={isHindi ? 'GPS लोकेशन अपडेट करें' : 'Update GPS Location'}
         >
-          <MapPin size={16} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          <MapPin size={15} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {isDetecting ? (isHindi ? 'लोकेशन खोज रहे हैं...' : 'Detecting...') : (locationName || 'Local Area')}
+            {isDetecting ? (isHindi ? 'लोकेशन...' : 'Detecting...') : (locationName || 'Local Area')}
           </span>
-          <ChevronDown size={14} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+          <ChevronDown size={13} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
         </button>
 
-        {/* Radius Selector Pills */}
-        <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '2px' }}>
-          {RADIUS_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setRadiusKm(opt.value)}
-              style={{
-                padding: '3px 8px',
-                borderRadius: 'var(--radius-full)',
-                border: radiusKm === opt.value ? 'none' : '1px solid var(--border-subtle)',
-                backgroundColor: radiusKm === opt.value ? 'var(--color-primary, #4f46e5)' : 'var(--bg-surface)',
-                color: radiusKm === opt.value ? '#ffffff' : 'var(--text-secondary)',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
+        {/* Compact Radius Dropdown Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            {isHindi ? 'दूरी:' : 'Radius:'}
+          </span>
+          <select
+            value={radiusKm}
+            onChange={(e) => setRadiusKm(Number(e.target.value))}
+            style={{
+              padding: '2px 6px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-surface-subtle)',
+              color: 'var(--color-primary, #4f46e5)',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            {RADIUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* 2. SIMPLE, CLEAN SEARCH INPUT BAR */}
-      <div style={{ margin: '8px 0 16px 0' }}>
+      {/* 2. SLEEK SEARCH INPUT BAR */}
+      <div style={{ margin: '6px 0 12px 0' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
+            borderRadius: '14px',
             border: '1px solid var(--border-subtle, #cbd5e1)',
-            padding: '10px 14px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            gap: '10px',
+            padding: '8px 12px',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+            gap: '8px',
           }}
         >
-          <Search size={18} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          <Search size={16} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
           <input
             type="search"
             placeholder={isHindi ? 'दुकानें, सामान या ब्रांड खोजें...' : 'Search local shops, products, brands...'}
@@ -340,7 +346,7 @@ export const ExploreShopsScreen = () => {
               border: 'none',
               outline: 'none',
               background: 'transparent',
-              fontSize: '0.86rem',
+              fontSize: '0.84rem',
               color: 'var(--text-primary, #0f172a)',
               width: '100%',
               fontWeight: 500,
@@ -352,7 +358,7 @@ export const ExploreShopsScreen = () => {
               onClick={() => setSearchTerm('')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)' }}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
 
@@ -362,17 +368,17 @@ export const ExploreShopsScreen = () => {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '4px',
               background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
               color: '#ffffff',
               border: 'none',
-              borderRadius: '12px',
-              padding: '6px 12px',
-              fontSize: '0.74rem',
+              borderRadius: '10px',
+              padding: '5px 10px',
+              fontSize: '0.72rem',
               fontWeight: 800,
               cursor: 'pointer',
               flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.2)',
               whiteSpace: 'nowrap',
             }}
             title={isHindi ? 'सामान कहाँ मिलेगा? मल्टी-शॉप तुलना' : 'Where is it available? Multi-Shop Search'}
@@ -383,15 +389,15 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 3. PROMO CAROUSEL */}
+      {/* 3. SLEEK PROMO CAROUSEL */}
       <div
         style={{
           display: 'flex',
-          gap: '12px',
+          gap: '10px',
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
-          paddingBottom: '8px',
-          marginBottom: '16px',
+          paddingBottom: '4px',
+          marginBottom: '12px',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
         }}
@@ -399,132 +405,108 @@ export const ExploreShopsScreen = () => {
         {/* Card 1: Smart Bargain */}
         <div
           style={{
-            minWidth: '82%',
-            maxWidth: '320px',
+            minWidth: '75%',
+            maxWidth: '280px',
             scrollSnapAlign: 'start',
-            borderRadius: '20px',
+            borderRadius: '14px',
             background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
             color: '#ffffff',
-            padding: '18px 20px',
-            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
+            padding: '12px 14px',
+            boxShadow: '0 6px 16px -4px rgba(15, 23, 42, 0.25)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span
-              style={{
-                backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
-                color: '#f59e0b',
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                padding: '3px 8px',
-                borderRadius: '8px',
-              }}
-            >
-              ✨ {isHindi ? 'स्मार्ट बार्गेन' : 'SMART BARGAIN'}
-            </span>
-            <Tag size={16} color="#f59e0b" />
-          </div>
-
           <div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', lineHeight: 1.2 }}>
-              {isHindi ? 'डायरेक्ट काउंटर नेगोशिएशन' : 'Direct Counter Negotiation'}
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+              {isHindi ? 'स्मार्ट बार्गेन' : 'Direct Negotiation'}
             </div>
-            <div style={{ fontSize: '0.76rem', color: '#94a3b8', lineHeight: 1.35 }}>
-              {isHindi ? 'दुकानदार को सीधे डिस्काउंट व बल्क प्राइस ऑफर भेजें' : 'Send bulk pricing offers directly to shopkeepers'}
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '2px' }}>
+              {isHindi ? 'दुकानदार को सीधे ऑफर भेजें' : 'Send bulk pricing offers directly'}
             </div>
           </div>
+          <span
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.2)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              color: '#f59e0b',
+              fontSize: '0.62rem',
+              fontWeight: 800,
+              padding: '3px 6px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            ✨ BARGAIN
+          </span>
         </div>
 
         {/* Card 2: Instant Pickup */}
         <div
           style={{
-            minWidth: '82%',
-            maxWidth: '320px',
+            minWidth: '75%',
+            maxWidth: '280px',
             scrollSnapAlign: 'start',
-            borderRadius: '20px',
+            borderRadius: '14px',
             background: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
             color: '#ffffff',
-            padding: '18px 20px',
-            boxShadow: '0 10px 25px -5px rgba(6, 78, 59, 0.3)',
+            padding: '12px 14px',
+            boxShadow: '0 6px 16px -4px rgba(6, 78, 59, 0.25)',
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span
-              style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
-                color: '#34d399',
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                padding: '3px 8px',
-                borderRadius: '8px',
-              }}
-            >
-              ⚡ 15-MIN OTP
-            </span>
-            <Zap size={16} color="#34d399" />
-          </div>
-
           <div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', lineHeight: 1.2 }}>
-              {isHindi ? '15-मिनट लोकल काउंटर पिकअप' : '15-Min Local Counter Pickup'}
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+              {isHindi ? '15-मिनट पिकअप' : '15-Min Pickup'}
             </div>
-            <div style={{ fontSize: '0.76rem', color: '#a7f3d0', lineHeight: 1.35 }}>
-              {isHindi ? 'बिना डिलीवरी चार्ज, सामान रिज़र्व करें और OTP से लें' : 'Zero delivery fee. Reserve & collect with OTP'}
+            <div style={{ fontSize: '0.7rem', color: '#a7f3d0', marginTop: '2px' }}>
+              {isHindi ? 'सामान रिज़र्व करें व OTP से लें' : 'Reserve & collect with OTP'}
             </div>
           </div>
+          <span
+            style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              color: '#34d399',
+              fontSize: '0.62rem',
+              fontWeight: 800,
+              padding: '3px 6px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            ⚡ OTP PASS
+          </span>
         </div>
       </div>
 
-      {/* 4. CATEGORY FILTER SECTION */}
-      <div style={{ marginBottom: '20px' }}>
-        {/* Category Header Card */}
+      {/* 4. COMPACT CATEGORY EXPLORER BAR */}
+      <div style={{ marginBottom: '14px' }}>
         <div
           onClick={() => setIsCategoryModalOpen(true)}
           style={{
             backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
+            borderRadius: '12px',
             border: '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '12px 14px',
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                backgroundColor: '#fef3c7',
-                color: '#d97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Folder size={18} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-secondary)', letterSpacing: '0.5px' }}>
-                CATEGORY FILTER
-              </div>
-              <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {selectedCategory === 'All'
-                  ? (isHindi ? 'सभी कैटेगरीज (चुनने के लिए टैप करें)' : 'All Categories (Tap to choose/search)')
-                  : selectedCategory}
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <Folder size={16} color="#d97706" style={{ flexShrink: 0 }} />
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {selectedCategory === 'All'
+                ? (isHindi ? 'सभी कैटेगरीज (44+ Choose Category)' : 'All Categories (44+ Choose Category)')
+                : selectedCategory}
             </div>
           </div>
 
@@ -532,18 +514,18 @@ export const ExploreShopsScreen = () => {
             style={{
               backgroundColor: 'rgba(99, 102, 241, 0.1)',
               color: 'var(--color-primary, #4f46e5)',
-              padding: '4px 10px',
-              borderRadius: '12px',
-              fontSize: '0.74rem',
+              padding: '2px 8px',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
               fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '3px',
               flexShrink: 0,
             }}
           >
             <span>44+</span>
-            <ChevronDown size={14} />
+            <ChevronDown size={13} />
           </div>
         </div>
       </div>
@@ -693,6 +675,7 @@ export const ExploreShopsScreen = () => {
       {inspectedShop && (
         <ShopDetailModal
           shop={inspectedShop}
+          coords={coords}
           onClose={() => setInspectedShop(null)}
         />
       )}
@@ -714,6 +697,132 @@ export const ExploreShopsScreen = () => {
         onClose={() => setIsSmartSearchOpen(false)}
         initialQuery={searchTerm}
       />
+      {/* LOCATION PICKER MODAL */}
+      {showLocationModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setShowLocationModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--bg-surface, #ffffff)',
+              color: 'var(--text-primary)',
+              borderRadius: '20px',
+              maxWidth: '440px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              border: '1px solid var(--border-subtle, #e5e7eb)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                  {isHindi ? '📍 अपनी लोकेशन चुनें' : '📍 Select Your Location'}
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {isHindi ? 'सटीक दुकान दूरी और डिलीवरी समय देखने के लिए' : 'To see exact store distance and travel times'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLocationModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  color: 'var(--text-muted)',
+                  padding: '4px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Live GPS Button */}
+            <button
+              type="button"
+              onClick={() => {
+                detectLocation();
+                setShowLocationModal(false);
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '12px 16px',
+                backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                border: '1px solid rgba(79, 70, 229, 0.3)',
+                borderRadius: '12px',
+                color: 'var(--color-primary, #4f46e5)',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                marginBottom: '18px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Navigation size={16} />
+              <span>{isHindi ? '🎯 लाइव GPS लोकेशन इस्तेमाल करें' : '🎯 Use Live GPS Location'}</span>
+            </button>
+
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {isHindi ? 'प्रमुख शहर / बाज़ार' : 'Popular Shopping Hubs'}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              {[
+                { name: 'Noida (Sector 15)', lat: 28.5828, lng: 77.3110, icon: '🏢' },
+                { name: 'Darbhanga', lat: 26.1542, lng: 85.8918, icon: '🏪' },
+                { name: 'Delhi NCR', lat: 28.6139, lng: 77.2090, icon: '🏙️' },
+                { name: 'Patna', lat: 25.6126, lng: 85.1444, icon: '🏛️' },
+                { name: 'Bengaluru', lat: 12.9716, lng: 77.5946, icon: '🌴' },
+                { name: 'Mumbai', lat: 19.0760, lng: 72.8777, icon: '🌊' },
+              ].map((hub) => (
+                <button
+                  key={hub.name}
+                  type="button"
+                  onClick={() => {
+                    setManualLocation(hub.name, hub.lat, hub.lng);
+                    setShowLocationModal(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 12px',
+                    backgroundColor: locationName === hub.name ? 'rgba(79, 70, 229, 0.12)' : 'var(--bg-surface-subtle, #f9fafb)',
+                    border: locationName === hub.name ? '1.5px solid var(--color-primary, #4f46e5)' : '1px solid var(--border-subtle, #e5e7eb)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    color: locationName === hub.name ? 'var(--color-primary, #4f46e5)' : 'var(--text-primary)',
+                    fontWeight: locationName === hub.name ? 800 : 600,
+                    fontSize: '0.82rem',
+                  }}
+                >
+                  <span>{hub.icon}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hub.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };

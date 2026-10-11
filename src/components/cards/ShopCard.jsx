@@ -105,7 +105,7 @@ const ShopCardInner = ({
             </span>
           </div>
 
-          {/* Live Travel Time Indicator (Walking or Driving) */}
+          {/* Live Travel Time Indicator (Walking, Driving or Distance) */}
           {travelInfo && (
             <div
               style={{
@@ -113,16 +113,30 @@ const ShopCardInner = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                backgroundColor: travelInfo.mode === 'walk' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                border: travelInfo.mode === 'walk' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(59, 130, 246, 0.25)',
-                color: travelInfo.mode === 'walk' ? '#047857' : '#1d4ed8',
+                backgroundColor:
+                  travelInfo.mode === 'walk'
+                    ? 'rgba(16, 185, 129, 0.1)'
+                    : travelInfo.mode === 'drive'
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'rgba(107, 114, 128, 0.08)',
+                border:
+                  travelInfo.mode === 'walk'
+                    ? '1px solid rgba(16, 185, 129, 0.25)'
+                    : travelInfo.mode === 'drive'
+                    ? '1px solid rgba(59, 130, 246, 0.25)'
+                    : '1px solid rgba(107, 114, 128, 0.2)',
+                color:
+                  travelInfo.mode === 'walk'
+                    ? '#047857'
+                    : travelInfo.mode === 'drive'
+                    ? '#1d4ed8'
+                    : 'var(--text-secondary, #6b7280)',
                 borderRadius: '8px',
                 padding: '3px 8px',
                 fontSize: '0.74rem',
                 fontWeight: 700,
               }}
             >
-              <span>{travelInfo.icon}</span>
               <span>{travelInfo.full}</span>
             </div>
           )}
