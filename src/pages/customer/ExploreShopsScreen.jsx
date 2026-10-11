@@ -39,6 +39,7 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
+import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 
 const RADIUS_OPTIONS = [
   { label: '1 km', value: 1 },
