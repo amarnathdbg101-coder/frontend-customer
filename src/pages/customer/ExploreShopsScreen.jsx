@@ -205,6 +205,14 @@ export const ExploreShopsScreen = () => {
   // 2. Filter Products
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      // Proximity Distance Filter
+      const lat = p.shop_latitude || p.latitude;
+      const lng = p.shop_longitude || p.longitude;
+      const distKm = calculateDistanceKm(coords?.lat, coords?.lng, lat, lng);
+      if (distKm != null && radiusKm > 0 && distKm > radiusKm) {
+        return false;
+      }
+
       if (debouncedSearch.trim()) {
         const query = debouncedSearch.toLowerCase();
         const matchesName = (p.name || '').toLowerCase().includes(query);
@@ -223,11 +231,17 @@ export const ExploreShopsScreen = () => {
 
       return true;
     });
-  }, [products, debouncedSearch, selectedCategory]);
+  }, [products, debouncedSearch, selectedCategory, coords, radiusKm]);
 
   // 3. Filter Shops
   const filteredShops = useMemo(() => {
     return shops.filter((s) => {
+      // Proximity Distance Filter
+      const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
+      if (distKm != null && radiusKm > 0 && distKm > radiusKm) {
+        return false;
+      }
+
       if (debouncedSearch.trim()) {
         const query = debouncedSearch.toLowerCase();
         const matchesName = (s.name || '').toLowerCase().includes(query);
@@ -246,7 +260,7 @@ export const ExploreShopsScreen = () => {
 
       return true;
     });
-  }, [shops, debouncedSearch, selectedCategory]);
+  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm]);
 
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
