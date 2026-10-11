@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Menu, Sun, Moon, User } from 'lucide-react';
+import { ArrowLeft, Menu, Sun, Moon, User, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { SideDrawer } from './SideDrawer';
 import { getImageUrl } from '../../utils/imageUrl';
 import { sessionState } from '../../utils/sessionState';
@@ -18,6 +19,7 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
   const { user } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { setLanguage, isHindi, t } = useLanguage();
+  const { cartCount, openCart } = useCart();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleBack = () => {
@@ -89,6 +91,49 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Shopping Cart Button with Live Badge */}
+          <button
+            type="button"
+            onClick={openCart}
+            style={{
+              position: 'relative',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-primary)',
+            }}
+            title={isHindi ? 'शॉपिंग कार्ट खोलें' : 'Open Shopping Cart'}
+          >
+            <ShoppingBag size={20} color="var(--color-primary)" />
+            {cartCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  right: '2px',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  fontSize: '0.62rem',
+                  fontWeight: 900,
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4)',
+                }}
+              >
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </button>
+
           {/* Language Switcher Pill */}
           <div
             style={{

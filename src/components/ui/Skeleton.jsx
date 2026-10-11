@@ -2,7 +2,7 @@
  * Skeleton Loader Components
  * 
  * Pulse-animated placeholder shapes displayed while content is loading.
- * Matches the design tokens from variables.css.
+ * Pixel-perfect match with ProductCard & ShopCard layouts to deliver 0 Cumulative Layout Shift (CLS).
  */
 
 import React from 'react';
@@ -41,18 +41,45 @@ export const SkeletonImage = ({ height = '160px' }) => (
   <Skeleton width="100%" height={height} borderRadius="var(--radius-sm)" />
 );
 
-/** Skeleton for a product card matching ProductCard layout */
+/** Skeleton for a product card matching exact ProductCard square layout */
 export const SkeletonProductCard = () => (
-  <div className="card" style={{ margin: 0, padding: '12px' }}>
-    <SkeletonImage height="160px" />
-    <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <Skeleton height="12px" width="40%" />
-      <Skeleton height="16px" width="85%" />
-      <Skeleton height="14px" width="55%" />
-      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-        <Skeleton height="20px" width="60px" />
-        <Skeleton height="20px" width="40px" />
+  <div
+    style={{
+      backgroundColor: 'var(--bg-surface, #ffffff)',
+      borderRadius: '14px',
+      border: '1px solid var(--border-subtle, #e2e8f0)',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      height: '100%',
+      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+    }}
+  >
+    <div>
+      {/* Square Image Placeholder (1:1 Ratio) */}
+      <div style={{ width: '100%', aspectRatio: '1 / 1', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', padding: '6px' }}>
+        <Skeleton width="100%" height="100%" borderRadius="10px" />
       </div>
+
+      {/* 1-Line Title Placeholder */}
+      <div style={{ padding: '8px 10px 4px 10px' }}>
+        <Skeleton height="14px" width="80%" borderRadius="4px" />
+      </div>
+    </div>
+
+    {/* Price & Button Placeholder Row */}
+    <div
+      style={{
+        padding: '0 10px 10px 10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '4px',
+      }}
+    >
+      <Skeleton height="18px" width="48px" borderRadius="4px" />
+      <Skeleton height="26px" width="54px" borderRadius="6px" />
     </div>
   </div>
 );
