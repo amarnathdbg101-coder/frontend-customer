@@ -58,6 +58,7 @@ export const StorefrontScreen = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('relevant');
 
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
@@ -146,21 +147,70 @@ export const StorefrontScreen = () => {
   const distKm = shop ? calculateDistanceKm(coords?.lat, coords?.lng, shop.latitude, shop.longitude) : null;
   const travelInfo = formatTravelTime(distKm, isHindi);
 
-  const filteredProducts = (Array.isArray(products) ? products : []).filter((p) =>
-    (p.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    const list = (Array.isArray(products) ? products : []).filter((p) => {
+      if (!searchTerm.trim()) return true;
+      const q = searchTerm.trim().toLowerCase();
+      const matchName = (p.name || '').toLowerCase().includes(q);
+      const matchBrand = (p.attributes?.brand || p.brand || '').toLowerCase().includes(q);
+      const matchCat = (p.category_name || p.category || '').toLowerCase().includes(q);
+      return matchName || matchBrand || matchCat;
+    });
+
+    return list.sort((a, b) => {
+      if (sortBy === 'price_low') {
+        return (Number(a.price) || 0) - (Number(b.price) || 0);
+      }
+      if (sortBy === 'price_high') {
+        return (Number(b.price) || 0) - (Number(a.price) || 0);
+      }
+      if (sortBy === 'discount') {
+        const mrpA = Number(a.compare_price || a.mrp || 0);
+        const mrpB = Number(b.compare_price || b.mrp || 0);
+        const pctA = mrpA > a.price ? ((mrpA - a.price) / mrpA) * 100 : 0;
+        const pctB = mrpB > b.price ? ((mrpB - b.price) / mrpB) * 100 : 0;
+        return pctB - pctA;
+      }
+      return 0;
+    });
+  }, [products, searchTerm, sortBy]);
 
   return (
     <AppLayout title={shop?.name || t('nav.explore')} showBack={true}>
-      {/* In-Store Search Bar */}
-      <div className="search-box" style={{ marginTop: '4px' }}>
-        <Search size={18} color="var(--text-muted)" />
-        <input
-          type="search"
-          placeholder={t('nav.search_placeholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* In-Store Search & Sorting Bar */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+        <div className="search-box" style={{ flex: 1, margin: 0 }}>
+          <Search size={18} color="var(--text-muted)" />
+          <input
+            type="search"
+            placeholder={t('nav.search_placeholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          style={{
+            height: '42px',
+            fontSize: '0.76rem',
+            fontWeight: 800,
+            padding: '0 10px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+            border: '1.5px solid var(--border-subtle, #e2e8f0)',
+            color: 'var(--color-primary, #2563eb)',
+            cursor: 'pointer',
+            outline: 'none',
+            flexShrink: 0,
+          }}
+        >
+          <option value="relevant">⚡ {isHindi ? 'लोकप्रिय' : 'Relevant'}</option>
+          <option value="price_low">💰 {isHindi ? 'कम कीमत' : 'Price: Low'}</option>
+          <option value="price_high">💎 {isHindi ? 'अधिक कीमत' : 'Price: High'}</option>
+          <option value="discount">🔥 {isHindi ? 'छूट % OFF' : 'Discount %'}</option>
+        </select>
       </div>
 
       {/* Products Grid */}

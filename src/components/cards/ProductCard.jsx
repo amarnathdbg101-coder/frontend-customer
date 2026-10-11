@@ -27,7 +27,13 @@ const ProductCardInner = ({
   const inStock = stock > 0;
   const mrp = Number(p.compare_price || p.mrp || 0);
   const price = Number(p.price || 0);
-  const hasDiscount = mrp > price;
+  const isPricePublic = p.is_price_public !== false && 
+                        p.isPricePublic !== false && 
+                        p.attributes?.is_price_public !== false && 
+                        p.attributes?.is_price_public !== 'false' && 
+                        price > 0 &&
+                        !p.hide_price;
+  const hasDiscount = isPricePublic && mrp > price;
   const discountPct = hasDiscount ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   return (
@@ -173,25 +179,44 @@ const ProductCardInner = ({
           gap: '4px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
-          <span style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
-            {formatCurrency(price)}
-          </span>
-          {hasDiscount && (
-            <span
-              style={{
-                fontSize: '0.68rem',
-                color: 'var(--text-muted, #94a3b8)',
-                textDecoration: 'line-through',
-                fontWeight: 600,
-              }}
-            >
-              {formatCurrency(mrp)}
+        {isPricePublic ? (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
+            <span style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
+              {formatCurrency(price)}
             </span>
-          )}
-        </div>
+            {hasDiscount && (
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  color: 'var(--text-muted, #94a3b8)',
+                  textDecoration: 'line-through',
+                  fontWeight: 600,
+                }}
+              >
+                {formatCurrency(mrp)}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              padding: '2px 6px',
+              borderRadius: '6px',
+              backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+              border: '1px solid var(--border-subtle, #cbd5e1)',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              color: 'var(--color-primary, #2563eb)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {isHindi ? '🔒 मोलभाव करें' : '🔒 Ask Price'}
+          </div>
+        )}
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart / Ask Price Button */}
         <button
           type="button"
           onClick={onClick}
@@ -199,8 +224,12 @@ const ProductCardInner = ({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '4px',
-            backgroundColor: inStock ? 'var(--color-primary, #4f46e5)' : 'rgba(148, 163, 184, 0.15)',
-            color: inStock ? '#ffffff' : '#64748b',
+            backgroundColor: !isPricePublic
+              ? '#25d366'
+              : inStock
+                ? 'var(--color-primary, #4f46e5)'
+                : 'rgba(148, 163, 184, 0.15)',
+            color: '#ffffff',
             border: 'none',
             padding: '4px 8px',
             borderRadius: '6px',
@@ -208,11 +237,17 @@ const ProductCardInner = ({
             fontWeight: 800,
             cursor: 'pointer',
             flexShrink: 0,
-            boxShadow: inStock ? '0 2px 6px rgba(79, 70, 229, 0.25)' : 'none',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <ShoppingCart size={12} strokeWidth={2.5} />
-          <span>{inStock ? (isHindi ? 'कार्ट' : 'Add') : (isHindi ? 'आउट' : 'Out')}</span>
+          {isPricePublic ? (
+            <>
+              <ShoppingCart size={12} strokeWidth={2.5} />
+              <span>{inStock ? (isHindi ? 'जोड़ें' : 'Add') : (isHindi ? 'खत्म' : 'Out')}</span>
+            </>
+          ) : (
+            <span>{isHindi ? 'रेट पूछें' : 'Ask Price'}</span>
+          )}
         </button>
       </div>
     </div>
