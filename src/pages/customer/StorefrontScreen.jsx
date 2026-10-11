@@ -36,10 +36,12 @@ import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLocation } from '../../context/LocationContext';
+import { ProductCard } from '../../components/cards/ProductCard';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { getImageUrl } from '../../utils/imageUrl';
+import { useSaved } from '../../context/SavedContext';
 import { useScreenState } from '../../hooks/useScreenState.js';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 
@@ -48,6 +50,7 @@ export const StorefrontScreen = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { coords } = useLocation();
+  const { isProductSaved, toggleSaveProduct } = useSaved();
   const { addItem, isInCart } = useCart();
   const { t, isHindi } = useLanguage();
 
@@ -163,20 +166,6 @@ export const StorefrontScreen = () => {
       {/* Products Grid */}
       <div className="customer-product-grid">
         {filteredProducts.map((p) => {
-          const stock = Number(
-            p.available_quantity ??
-            p.stock_quantity ??
-            p.inventory?.available_quantity ??
-            p.inventory?.quantity ??
-            p.stock ??
-            0
-          );
-          const inStock = stock > 0;
-          const hasDiscount = p.compare_price && p.compare_price > p.price;
-          const discountPct = hasDiscount ? Math.round(((p.compare_price - p.price) / p.compare_price) * 100) : 0;
-          const brand = p.attributes?.brand || p.attributes?.company;
-          const inCart = isInCart(p.id);
-
           const handleOpenModal = () => {
             const enriched = {
               ...p,
@@ -192,139 +181,13 @@ export const StorefrontScreen = () => {
           };
 
           return (
-            <div
+            <ProductCard
               key={p.id}
-              className="card card-clickable"
+              product={p}
+              isSaved={isProductSaved(p.id)}
+              onToggleSave={toggleSaveProduct}
               onClick={handleOpenModal}
-              style={{
-                margin: 0,
-                padding: '16px',
-                borderRadius: '18px',
-                border: '1.5px solid var(--border-subtle)',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.04)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    width: '100%',
-                    height: '160px',
-                    borderRadius: '14px',
-                    backgroundColor: '#ffffff',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '12px',
-                    border: '1.5px solid var(--border-subtle)',
-                    position: 'relative',
-                  }}
-                >
-                  {p.images && p.images.length > 0 ? (
-                    <img loading="lazy" decoding="async" 
-                      src={getImageUrl(p.images[0])}
-                      alt={p.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }}
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <Package size={44} color="var(--text-muted)" style={{ opacity: 0.4 }} />
-                  )}
-
-                  <span
-                    style={{
-                      position: 'absolute',
-                      bottom: '6px',
-                      left: '6px',
-                      right: '6px',
-                      textAlign: 'center',
-                      fontSize: '0.66rem',
-                      fontWeight: 800,
-                      padding: '3px 6px',
-                      borderRadius: '6px',
-                      backgroundColor: inStock ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
-                      color: '#ffffff',
-                    }}
-                  >
-                    {inStock ? `${stock} in store` : t('products.out_of_stock')}
-                  </span>
-                </div>
-
-                <div style={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.3, color: 'var(--text-primary)' }}>
-                  {p.name}
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px' }}>
-                  {brand && (
-                    <span style={{ fontSize: '0.72rem', background: 'rgba(37, 99, 235, 0.09)', color: '#2563eb', padding: '2px 7px', borderRadius: '6px', fontWeight: 700 }}>
-                      {brand}
-                    </span>
-                  )}
-                  {p.attributes?.size && (
-                    <span style={{ fontSize: '0.7rem', background: 'var(--bg-surface-subtle)', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                      {p.attributes.size}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom */}
-              <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
-                  <span style={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--color-primary)' }}>
-                    ₹{p.price}
-                  </span>
-                  {hasDiscount && (
-                    <>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                        ₹{p.compare_price}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: '#15803d', fontWeight: 800, background: '#dcfce7', padding: '1px 6px', borderRadius: '4px' }}>
-                        Save ₹{p.compare_price - p.price} ({discountPct}% OFF)
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
-                  {inStock ? (
-                    <button
-                      type="button"
-                      onClick={() => addItem(p, 1)}
-                      className="btn btn-primary btn-block btn-sm"
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: '10px',
-                        fontWeight: 800,
-                        fontSize: '0.86rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
-                      }}
-                    >
-                      <ShoppingCart size={16} />
-                      <span>{inCart ? (isHindi ? 'कार्ट में जोड़ा गया ✓' : 'In Cart ✓') : (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart')}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="btn btn-secondary btn-block btn-sm"
-                      style={{ padding: '10px 14px', borderRadius: '10px', fontWeight: 700, opacity: 0.6 }}
-                    >
-                      <span>{isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock'}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            />
           );
         })}
       </div>
