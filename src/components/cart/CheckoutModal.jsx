@@ -31,6 +31,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { reservationApi } from '../../api/reservation.api';
 import { RealQRCode } from '../common/RealQRCode';
+import { localCache, CACHE_KEYS } from '../../utils/localCache';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 
 export const CheckoutModal = () => {
   const navigate = useNavigate();
@@ -163,6 +165,9 @@ export const CheckoutModal = () => {
         const fourDigits = rawCode.length >= 4 ? rawCode.slice(-4) : String(random4Digit);
         result.token_display = `#${fourDigits}`;
       }
+
+      localCache.remove(CACHE_KEYS.RESERVATIONS);
+      cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED, result);
 
       setConfirmedReservation(result);
       clearCart();

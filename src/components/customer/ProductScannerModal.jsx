@@ -15,6 +15,7 @@ import { productApi } from '../../api/product.api';
 import { aiApi } from '../../api/ai.api';
 import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
+import { BaseModal, ModalHeader, ModalBody, Button } from '../ui';
 
 export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
   const { isHindi } = useLanguage();
@@ -200,90 +201,15 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.75)',
-        backdropFilter: 'blur(5px)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px',
-      }}
-      onClick={handleClose}
-    >
-      <div
-        style={{
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-xl)',
-          width: '100%',
-          maxWidth: '520px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
-          position: 'relative',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: '18px 20px',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                color: 'var(--color-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ScanBarcode size={22} />
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                Scan & Check Price
-              </div>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                {isHindi ? 'कैमरा फ़ोटो या बारकोड से उत्पाद खोजें' : 'Search items by camera photo or barcode'}
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            style={{
-              background: 'var(--bg-surface-subtle)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+    <BaseModal isOpen={isOpen} onClose={handleClose} maxWidth="520px" maxHeight="90vh" zIndex={9999}>
+      <ModalHeader
+        title={isHindi ? 'AI उत्पाद व बारकोड स्कैनर' : 'Scan & Check Price'}
+        subtitle={isHindi ? 'कैमरा फोटो या बारकोड से तुरंत खोजें' : 'Search items by camera photo or barcode'}
+        icon={ScanBarcode}
+        iconColor="#6366f1"
+        onClose={handleClose}
+      />
+      <ModalBody padding="0">
         {/* Tab Toggle */}
         <div style={{ display: 'flex', padding: '12px 20px 0 20px', gap: '10px' }}>
           <button
@@ -575,7 +501,7 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </BaseModal>
   );
 };

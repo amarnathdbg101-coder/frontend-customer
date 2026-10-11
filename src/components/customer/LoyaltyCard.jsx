@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Award, Sparkles, Gift } from 'lucide-react';
 import { loyaltyApi } from '../../api/loyalty.api';
+import { useLanguage } from '../../context/LanguageContext';
+import { Badge, Card } from '../ui';
 
 export const LoyaltyCard = () => {
+  const { isHindi } = useLanguage();
   const [loyalty, setLoyalty] = useState({
     points: 150,
     tier: 'Silver VIP',
@@ -53,23 +56,13 @@ export const LoyaltyCard = () => {
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '3px 10px',
-            borderRadius: '12px',
-            background: badgeBg,
-            border: `1px solid ${badgeColor}`,
-            color: badgeColor,
-            fontSize: '0.75rem',
-            fontWeight: 700,
-          }}
+        <Badge
+          variant={isGold ? 'warning' : isSilver ? 'neutral' : 'bargain'}
+          size="md"
+          icon={Award}
         >
-          <Award size={13} />
           {tier.toUpperCase()}
-        </div>
+        </Badge>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '0.5rem' }}>

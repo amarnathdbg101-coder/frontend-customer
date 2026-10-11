@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { X, Star, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Star, CheckCircle2 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
+import { useLanguage } from '../../context/LanguageContext';
+import { BaseModal, ModalHeader, ModalBody, Button, FormField, Textarea, AlertBanner, RatingStars } from '../ui';
 
 export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAdded }) => {
+  const { isHindi } = useLanguage();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,6 +25,8 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
         comment: comment.trim() || undefined,
       });
       setSuccess(true);
+      cacheEvents.emit(CACHE_EVENTS.STOREFRONT_MUTATED, { slug: shopSlug });
+      cacheEvents.emit(CACHE_EVENTS.SHOPS_MUTATED);
       if (onReviewAdded) onReviewAdded();
       setTimeout(() => {
         setSuccess(false);
@@ -28,128 +34,73 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
         onClose();
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Review submit karne me dikkat aayi.');
+      setError(err.response?.data?.message || err.message || (isHindi ? 'समीक्षा सबमिट करने में त्रुटि हुई।' : 'Failed to submit review.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.75)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: 'var(--bg-surface, #1e293b)',
-          border: '1px solid var(--border-subtle, #334155)',
-          borderRadius: '20px',
-          width: '100%',
-          maxWidth: '480px',
-          padding: '1.5rem',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Rate {shopName}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <X size={20} />
-          </button>
-        </div>
-
+    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="480px">
+      <ModalHeader
+        title={isHindi ? 'दुकान की समीक्षा लिखें' : 'Write Shop Review'}
+        subtitle={shopName}
+        icon={Star}
+        iconColor="#f59e0b"
+        onClose={onClose}
+      />
+      <ModalBody padding="20px">
         {success ? (
           <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-            <CheckCircle2 size={42} color="#22c55e" style={{ margin: '0 auto 0.5rem auto' }} />
-            <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)' }}>Review Submitted!</h4>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{isHindi ? 'आपकी समीक्षा दुकान प्रोफ़ाइल पर जुड़ गई है।' : 'Your review has been added to the store profile.'}</p>
+            <CheckCircle2 size={44} color="#10b981" style={{ margin: '0 auto 0.5rem auto' }} />
+            <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>
+              {isHindi ? 'समीक्षा दर्ज हो गई!' : 'Review Submitted!'}
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              {isHindi ? 'आपकी प्रतिक्रिया के लिए धन्यवाद।' : 'Thank you for your valuable feedback.'}
+            </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              How was your store shopping experience? / दुकान से खरीदारी का आपका अनुभव कैसा रहा?
-            </p>
-
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', padding: '0.5rem 0' }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  type="button"
-                  key={star}
-                  onClick={() => setRating(star)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                  }}
-                >
-                  <Star
-                    size={32}
-                    color="#eab308"
-                    fill={star <= rating ? '#eab308' : 'transparent'}
-                  />
-                </button>
-              ))}
-            </div>
-
-            {error && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef4444', fontSize: '0.85rem' }}>
-                <AlertCircle size={15} />
-                <span>{error}</span>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
+            <FormField label={isHindi ? 'रेटिंग चुनें' : 'Select Rating'}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <RatingStars
+                  rating={rating}
+                  interactive={true}
+                  onChange={setRating}
+                  size={26}
+                />
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b' }}>
+                  {rating}/5
+                </span>
               </div>
-            )}
+            </FormField>
 
-            <div>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-                Review / Feedback (Optional)
-              </label>
-              <textarea
+            <FormField label={isHindi ? 'अपनी टिप्पणी (वैकल्पिक)' : 'Your Feedback (Optional)'}>
+              <Textarea
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder={isHindi ? "उत्पाद गुणवत्ता, सेवा या बिलिंग गति..." : "Product quality, customer service, or billing speed..."}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-surface-subtle)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.9rem',
-                  resize: 'none',
-                }}
+                placeholder={isHindi ? 'दुकान की सेवा, उत्पाद गुणवत्ता आदि के बारे में लिखें...' : 'Share your experience with store service, product quality...'}
               />
-            </div>
+            </FormField>
 
-            <button
+            {error && <AlertBanner type="error" message={error} />}
+
+            <Button
               type="submit"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '12px',
-                border: 'none',
-                background: 'var(--color-primary, #3b82f6)',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
+              variant="primary"
+              loading={loading}
+              fullWidth={true}
             >
-              {loading ? 'Submitting...' : 'Submit Rating'}
-            </button>
+              {loading
+                ? (isHindi ? 'सबमिट हो रहा है...' : 'Submitting...')
+                : (isHindi ? 'समीक्षा सबमिट करें' : 'Submit Review')}
+            </Button>
           </form>
         )}
-      </div>
-    </div>
+      </ModalBody>
+    </BaseModal>
   );
 };
+export default AddReviewModal;

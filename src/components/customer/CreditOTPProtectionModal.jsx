@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, AlertCircle } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { customerKhataApi } from '../../api/khata.api';
+import { useLanguage } from '../../context/LanguageContext';
+import { BaseModal, ModalHeader, ModalBody, Button, AlertBanner } from '../ui';
 
 export const CreditOTPProtectionModal = ({ isOpen, onClose, khataId, shopName, currentEnabled, onUpdated }) => {
+  const { isHindi } = useLanguage();
   const [enabled, setEnabled] = useState(currentEnabled ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,83 +22,59 @@ export const CreditOTPProtectionModal = ({ isOpen, onClose, khataId, shopName, c
       if (onUpdated) onUpdated(targetState);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'OTP protection update karne me error.');
+      setError(err.response?.data?.message || err.message || (isHindi ? 'ओटीपी सुरक्षा अपडेट करने में त्रुटि।' : 'Failed to update OTP protection.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.75)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: 'var(--bg-surface, #1e293b)',
-          border: '1px solid var(--border-subtle, #334155)',
-          borderRadius: '20px',
-          width: '100%',
-          maxWidth: '460px',
-          padding: '1.5rem',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ShieldCheck size={20} color="#3b82f6" />
-            <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Credit OTP Protection</h3>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <X size={20} />
-          </button>
-        </div>
-
+    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="460px">
+      <ModalHeader
+        title={isHindi ? 'उधारी ओटीपी सुरक्षा' : 'Credit OTP Protection'}
+        icon={ShieldCheck}
+        iconColor="#3b82f6"
+        onClose={onClose}
+      />
+      <ModalBody padding="20px">
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 1rem 0' }}>
-          When this feature is active, <strong>{shopName}</strong> can only add credit entries to your ledger after you verify the secure 4-digit OTP. / जब यह सुरक्षा सक्रिय होगी, तब <strong>{shopName}</strong> केवल 4-अंकीय ओटीपी सत्यापन के बाद ही उधारी दर्ज कर सकेंगे।
+          {isHindi
+            ? `जब यह सुरक्षा सक्रिय होगी, तब ${shopName || 'दुकानदार'} केवल 4-अंकीय ओटीपी सत्यापन के बाद ही उधारी दर्ज कर सकेंगे।`
+            : `When active, ${shopName || 'the merchant'} can only add credit entries after you verify the secure 4-digit OTP.`}
         </p>
 
-        <div style={{ padding: '12px', borderRadius: '12px', background: enabled ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${enabled ? '#22c55e' : '#ef4444'}`, marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: enabled ? '#22c55e' : '#ef4444' }}>
-            Current Status: {enabled ? 'PROTECTED (OTP Required)' : 'UNLOCKED (Merchant Direct Entry Allowed)'}
+        <div
+          style={{
+            padding: '12px',
+            borderRadius: '12px',
+            background: enabled ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            border: `1px solid ${enabled ? '#10b981' : '#ef4444'}`,
+            marginBottom: '1.25rem',
+          }}
+        >
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: enabled ? '#059669' : '#dc2626' }}>
+            {enabled
+              ? (isHindi ? 'स्थिति: सुरक्षित (ओटीपी आवश्यक)' : 'Current Status: PROTECTED (OTP Required)')
+              : (isHindi ? 'स्थिति: खुली (दुकानदार सीधे दर्ज कर सकते हैं)' : 'Current Status: UNLOCKED (Direct Entry Allowed)')}
           </span>
         </div>
 
-        {error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef4444', fontSize: '0.85rem', marginBottom: '1rem' }}>
-            <AlertCircle size={15} />
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <AlertBanner type="error" message={error} />}
 
-        <button
+        <Button
+          variant={enabled ? 'danger' : 'success'}
+          loading={loading}
+          fullWidth={true}
           onClick={handleToggle}
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: '12px',
-            border: 'none',
-            background: enabled ? '#ef4444' : '#22c55e',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            cursor: loading ? 'not-allowed' : 'pointer',
-          }}
         >
-          {loading ? 'Updating...' : enabled ? 'Disable OTP Protection' : 'Enable OTP Protection (Recommended)'}
-        </button>
-      </div>
-    </div>
+          {loading
+            ? (isHindi ? 'अपडेट हो रहा है...' : 'Updating...')
+            : enabled
+              ? (isHindi ? 'सुरक्षा हटाएं' : 'Disable OTP Protection')
+              : (isHindi ? 'ओटीपी सुरक्षा चालू करें (अनुशंसित)' : 'Enable OTP Protection (Recommended)')}
+        </Button>
+      </ModalBody>
+    </BaseModal>
   );
 };
+export default CreditOTPProtectionModal;

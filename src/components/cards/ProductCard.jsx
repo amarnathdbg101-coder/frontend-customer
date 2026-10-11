@@ -1,12 +1,9 @@
-﻿/**
- * Customer Product Card Component (Pixel-perfect square layout, 1-line name truncation)
- */
-
 import React, { memo } from 'react';
-import { Package, ShoppingCart, Heart } from 'lucide-react';
+import { ShoppingCart, Heart, Package } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
+import { Badge, Button } from '../ui';
 
 const ProductCardInner = ({
   product,
@@ -49,7 +46,7 @@ const ProductCardInner = ({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        transition: 'transform 0.15s ease, boxShadow 0.15s ease',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         position: 'relative',
         height: '100%',
       }}
@@ -98,22 +95,10 @@ const ProductCardInner = ({
 
           {/* Discount Badge on Top-Left */}
           {hasDiscount && discountPct > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '6px',
-                left: '6px',
-                backgroundColor: '#ef4444',
-                color: '#ffffff',
-                fontSize: '0.64rem',
-                fontWeight: 800,
-                padding: '2px 6px',
-                borderRadius: '6px',
-                boxShadow: '0 2px 5px rgba(239, 68, 68, 0.3)',
-                letterSpacing: '0.2px',
-              }}
-            >
-              {discountPct}% OFF
+            <div style={{ position: 'absolute', top: '6px', left: '6px', zIndex: 2 }}>
+              <Badge variant="danger" size="sm">
+                {discountPct}% OFF
+              </Badge>
             </div>
           )}
 
@@ -138,6 +123,7 @@ const ProductCardInner = ({
               justifyContent: 'center',
               cursor: 'pointer',
               boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+              zIndex: 2,
             }}
             aria-label="Save item"
           >
@@ -198,22 +184,9 @@ const ProductCardInner = ({
             )}
           </div>
         ) : (
-          <div
-            style={{
-              padding: '2px 6px',
-              borderRadius: '6px',
-              backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
-              border: '1px solid var(--border-subtle, #cbd5e1)',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              color: 'var(--color-primary, #2563eb)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
+          <Badge variant="bargain" size="sm">
             {isHindi ? '🔒 मोलभाव करें' : '🔒 Ask Price'}
-          </div>
+          </Badge>
         )}
 
         {/* Add to Cart / Ask Price Button */}

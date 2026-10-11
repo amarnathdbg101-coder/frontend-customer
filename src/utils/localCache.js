@@ -6,11 +6,23 @@
  * 2. Background Revalidation: fresh API data updates cache silently without UI flashing.
  * 3. Offline Resilience: browsing continues seamlessly if the device is offline or network is slow.
  * 4. Quota-Safe: automatic eviction of expired entries if localStorage quota is exceeded.
- * 5. Memory Fallback: graceful degradation when localStorage is blocked or unavailable.
+ * 5. Memory Fallback: graceful degradation when localStorage is blocked or unavailable, capped to prevent memory leaks.
+ * 6. User Data Privacy: clearUserData() immediately purges private financial & order data on logout.
  */
 
-// In-memory fallback if localStorage is disabled or throws
+// In-memory fallback if localStorage is disabled or throws (capped at 100 entries with LRU eviction)
 const memoryCache = new Map();
+const MAX_MEMORY_ENTRIES = 100;
+
+const setMemoryCache = (key, val) => {
+  if (memoryCache.has(key)) {
+    memoryCache.delete(key);
+  } else if (memoryCache.size >= MAX_MEMORY_ENTRIES) {
+    const oldestKey = memoryCache.keys().next().value;
+    if (oldestKey) memoryCache.delete(oldestKey);
+  }
+  memoryCache.set(key, val);
+};
 
 const isStorageAvailable = () => {
   try {
@@ -26,7 +38,7 @@ const isStorageAvailable = () => {
 
 const hasLocalStorage = isStorageAvailable();
 
-const CURRENT_CACHE_VERSION = 'v2.2_build_20261011';
+const CURRENT_CACHE_VERSION = 'v2.3_build_20261011';
 
 // Auto-purge old local storage on startup if cache version changed
 if (hasLocalStorage) {
@@ -193,14 +205,14 @@ class LocalCacheService {
           try {
             window.localStorage.setItem(key, serialized);
           } catch {
-            memoryCache.set(key, serialized);
+            setMemoryCache(key, serialized);
           }
         } else {
-          memoryCache.set(key, serialized);
+          setMemoryCache(key, serialized);
         }
       }
     } else {
-      memoryCache.set(key, serialized);
+      setMemoryCache(key, serialized);
     }
   }
 
@@ -227,6 +239,32 @@ class LocalCacheService {
   }
 
   /**
+   * Invalidate all keys matching a regex or substring pattern
+   */
+  invalidatePattern(pattern) {
+    try {
+      const isRegex = pattern instanceof RegExp;
+      if (hasLocalStorage) {
+        const keysToRemove = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && (isRegex ? pattern.test(k) : k.includes(pattern))) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      }
+      for (const k of Array.from(memoryCache.keys())) {
+        if (isRegex ? pattern.test(k) : k.includes(pattern)) {
+          memoryCache.delete(k);
+        }
+      }
+    } catch (e) {
+      console.warn('[LocalCache] invalidatePattern error:', e);
+    }
+  }
+
+  /**
    * Clear all cache keys matching a prefix
    */
   clearPrefix(prefix = 'shopsilo_cache_') {
@@ -241,7 +279,7 @@ class LocalCacheService {
         }
         keysToRemove.forEach((k) => window.localStorage.removeItem(k));
       }
-      for (const k of memoryCache.keys()) {
+      for (const k of Array.from(memoryCache.keys())) {
         if (k.startsWith(prefix)) {
           memoryCache.delete(k);
         }
@@ -252,32 +290,58 @@ class LocalCacheService {
   }
 
   /**
+   * Security & Privacy Purge:
+   * Immediately clears all sensitive user data from cache on logout or account switch.
+   */
+  clearUserData() {
+    const userPrefixes = [
+      'shopsilo_cache_khata_',
+      'shopsilo_cache_reservations',
+      'shopsilo_cache_user',
+      'shopsilo_cache_addresses',
+      'shopsilo_customer_address',
+    ];
+    userPrefixes.forEach((prefix) => this.clearPrefix(prefix));
+  }
+
+  /**
    * Evict stale or older cache items when storage quota is tight
    */
   _evictStale() {
     try {
       if (!hasLocalStorage) return;
       const now = Date.now();
-      const keysToRemove = [];
+      const items = [];
 
       for (let i = 0; i < window.localStorage.length; i++) {
         const k = window.localStorage.key(i);
         if (k && k.startsWith('shopsilo_cache_')) {
           try {
-            const item = JSON.parse(window.localStorage.getItem(k));
-            if (item && item.__shopsilo_cached) {
-              const age = now - (item.timestamp || 0);
-              if (age > (item.ttlMs || 0)) {
-                keysToRemove.push(k);
-              }
+            const raw = window.localStorage.getItem(k);
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.__shopsilo_cached) {
+              const age = now - (parsed.timestamp || 0);
+              const isExpired = age > (parsed.ttlMs || 0);
+              items.push({ key: k, timestamp: parsed.timestamp || 0, isExpired });
             }
           } catch {
-            keysToRemove.push(k);
+            items.push({ key: k, timestamp: 0, isExpired: true });
           }
         }
       }
 
-      keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      // First pass: remove all expired items
+      const expiredKeys = items.filter((it) => it.isExpired).map((it) => it.key);
+      expiredKeys.forEach((k) => window.localStorage.removeItem(k));
+
+      // Second pass: if still tight, remove oldest 25% of items
+      if (expiredKeys.length === 0 && items.length > 0) {
+        items.sort((a, b) => a.timestamp - b.timestamp);
+        const purgeCount = Math.max(1, Math.floor(items.length * 0.25));
+        for (let i = 0; i < purgeCount; i++) {
+          window.localStorage.removeItem(items[i].key);
+        }
+      }
     } catch (e) {
       console.warn('[LocalCache] Eviction error:', e);
     }

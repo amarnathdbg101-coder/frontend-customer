@@ -9,6 +9,7 @@ import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck }
 import { authApi } from '../../api/auth.api';
 import { useLanguage } from '../../context/LanguageContext';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { AlertBanner, Button } from '../../components/ui';
 
 export const ResetPasswordScreen = () => {
   const navigate = useNavigate();

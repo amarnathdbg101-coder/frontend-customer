@@ -1,4 +1,5 @@
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
+import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
 import { sessionState } from '../../utils/sessionState.js';
 import { useScreenState } from '../../hooks/useScreenState.js';
 /**
@@ -202,6 +203,15 @@ export const ExploreShopsScreen = () => {
 
   useEffect(() => {
     loadMarketplaceData();
+
+    // Memory-Safe Event-Driven Cache Invalidation Subscription
+    const unsubShops = cacheEvents.on(CACHE_EVENTS.SHOPS_MUTATED, () => loadMarketplaceData());
+    const unsubProds = cacheEvents.on(CACHE_EVENTS.PRODUCTS_MUTATED, () => loadMarketplaceData());
+
+    return () => {
+      unsubShops();
+      unsubProds();
+    };
   }, [loadMarketplaceData]);
 
   // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
@@ -303,6 +313,7 @@ export const ExploreShopsScreen = () => {
         hold_hours,
         notes,
       });
+      cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED);
       alert(`${isHindi ? 'सामान रिज़र्व हो गया!' : 'Item Reserved!'} ${isHindi ? 'पिकअप OTP' : 'Pickup OTP'}: ${res.pickup_code || res.reservation_number || 'OK'}`);
       setInspectedProduct(null);
     } catch (err) {

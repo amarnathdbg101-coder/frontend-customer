@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Plus, CheckCircle, ThumbsUp } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { AddProductReviewModal } from './AddProductReviewModal';
+import { RatingStars, Button } from '../ui';
 
 export const ProductReviewsSection = ({ product }) => {
   const { t, isHindi } = useLanguage();
@@ -81,7 +82,7 @@ export const ProductReviewsSection = ({ product }) => {
         marginBottom: '16px',
       }}
     >
-      {/* Header */}
+            {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -106,153 +107,49 @@ export const ProductReviewsSection = ({ product }) => {
             <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)' }}>
               {avgRating}
             </span>
-            <div style={{ display: 'flex', gap: '2px' }}>
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star
-                  key={s}
-                  size={15}
-                  color="#eab308"
-                  fill={s <= Math.round(Number(avgRating)) ? '#eab308' : 'transparent'}
-                />
-              ))}
-            </div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              ({reviews.length})
+            <RatingStars rating={Number(avgRating)} size={16} />
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              ({reviews.length} {isHindi ? 'समीक्षाएं' : 'reviews'})
             </span>
           </div>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setIsAddModalOpen(true)}
-          className="btn btn-primary btn-sm"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            fontWeight: 700,
-            fontSize: '0.78rem',
-            borderRadius: 'var(--radius-full)',
-          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
         >
           <Plus size={14} />
-          <span>{t('products.write_review')}</span>
-        </button>
+          {isHindi ? 'समीक्षा लिखें' : 'Write Review'}
+        </Button>
       </div>
 
-      {/* Star Breakdown Bars */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
-        {[5, 4, 3, 2, 1].map((star) => {
-          const count = ratingCounts[star] || 0;
-          const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-
-          return (
-            <div
-              key={star}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.72rem',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              <span style={{ minWidth: '24px', fontWeight: 700 }}>{star} ★</span>
-              <div
-                style={{
-                  flex: 1,
-                  height: '6px',
-                  borderRadius: '3px',
-                  backgroundColor: 'var(--border-subtle)',
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${percentage}%`,
-                    backgroundColor: '#eab308',
-                    borderRadius: '3px',
-                    transition: 'width 0.3s ease',
-                  }}
-                />
-              </div>
-              <span style={{ minWidth: '20px', textAlign: 'right', fontWeight: 600 }}>{count}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Reviews Feed */}
+      {/* Reviews List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {reviews.map((rev) => (
           <div
             key={rev.id}
             style={{
+              padding: '10px 12px',
               backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
               borderRadius: 'var(--radius-sm)',
-              padding: '12px',
+              border: '1px solid var(--border-subtle)',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '6px',
-              }}
-            >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div
-                  style={{
-                    width: '26px',
-                    height: '26px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--color-primary-light)',
-                    color: 'var(--color-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                  }}
-                >
-                  {rev.user_name?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {rev.user_name}
-                  </div>
-                  {rev.verified_purchase && (
-                    <div
-                      style={{
-                        fontSize: '0.66rem',
-                        color: '#15803d',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                        fontWeight: 700,
-                      }}
-                    >
-                      <CheckCircle size={10} />
-                      <span>{t('products.verified_purchase')}</span>
-                    </div>
-                  )}
-                </div>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {rev.user_name}
+                </span>
+                {rev.verified_purchase && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.7rem', color: 'var(--color-primary)' }}>
+                    <CheckCircle size={10} />
+                    {isHindi ? 'सत्यापित' : 'Verified'}
+                  </span>
+                )}
               </div>
-
-              <div style={{ display: 'flex', gap: '2px' }}>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    size={12}
-                    color="#eab308"
-                    fill={s <= Number(rev.rating) ? '#eab308' : 'transparent'}
-                  />
-                ))}
-              </div>
+              <RatingStars rating={Number(rev.rating)} size={12} />
             </div>
 
             {rev.title && (

@@ -29,6 +29,7 @@ import {
 import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
+import { QuantityStepper, Button } from '../ui';
 
 export const CartDrawer = () => {
   const navigate = useNavigate();
@@ -400,57 +401,12 @@ export const CartDrawer = () => {
                           marginTop: '8px',
                         }}
                       >
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            backgroundColor: 'var(--bg-surface)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: 'var(--radius-full)',
-                            padding: '2px 6px',
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--text-primary)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: '3px',
-                            }}
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus size={13} />
-                          </button>
-
-                          <span style={{ fontWeight: 800, fontSize: '0.82rem', minWidth: '18px', textAlign: 'center' }}>
-                            {item.quantity}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--text-primary)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              padding: '3px',
-                            }}
-                            aria-label="Increase quantity"
-                          >
-                            <Plus size={13} />
-                          </button>
-                        </div>
+                        <QuantityStepper
+                          quantity={item.quantity}
+                          onIncrement={() => updateQuantity(item.id, item.quantity + 1)}
+                          onDecrement={() => updateQuantity(item.id, item.quantity - 1)}
+                          size="sm"
+                        />
 
                         <button
                           type="button"

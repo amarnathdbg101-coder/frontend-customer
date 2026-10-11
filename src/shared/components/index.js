@@ -1,4 +1,4 @@
-export { LoadingSpinner } from './LoadingSpinner';
-export { ErrorBoundary } from './ErrorBoundary';
-export { EmptyState } from './EmptyState';
-export { Skeleton, CardSkeleton } from './Skeleton';
+export { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+export { ErrorBoundary } from '../../components/ui/ErrorBoundary';
+export { EmptyState } from '../../components/ui/EmptyState';
+export { Skeleton, CardSkeleton } from '../../components/ui/Skeleton';

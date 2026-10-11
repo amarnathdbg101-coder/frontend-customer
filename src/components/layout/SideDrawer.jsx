@@ -31,6 +31,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
+import { Badge } from '../ui';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -206,21 +207,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 {user?.email || 'customer@shopsilo.in'}
               </div>
               <div>
-                <span
-                  style={{
-                    backgroundColor: '#dcfce7',
-                    color: '#15803d',
-                    fontSize: '0.64rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.5px',
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    textTransform: 'uppercase',
-                    display: 'inline-block',
-                  }}
-                >
-                  CUSTOMER
-                </span>
+                <Badge variant="success" size="sm">CUSTOMER</Badge>
               </div>
             </div>
           </div>

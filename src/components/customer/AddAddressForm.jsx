@@ -1,205 +1,98 @@
 import React, { useState } from 'react';
-import { Home, Briefcase, MapPin, Check } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { Button, FormField, Input, Select, AlertBanner } from '../ui';
 
-export const AddAddressForm = ({ onSave, onCancel }) => {
-  const [type, setType] = useState('Home');
+export const AddAddressForm = ({ onCancel, onSaved }) => {
+  const { isHindi } = useLanguage();
+  const [label, setLabel] = useState('Home');
   const [street, setStreet] = useState('');
-  const [city, setCity] = useState('Darbhanga');
+  const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
   const [phone, setPhone] = useState('');
-  const [isDefault, setIsDefault] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!street.trim()) {
-      alert(isHindi ? 'कृपया मकान संख्या या गली का विवरण दर्ज करें।' : 'Please enter house number or street details.');
+    if (!street.trim() || !city.trim()) {
+      setError(isHindi ? 'कृपया सड़क व शहर का नाम दर्ज करें।' : 'Please enter street and city.');
       return;
     }
-    onSave({
-      type,
+
+    const newAddr = {
+      id: `addr-${Date.now()}`,
+      label,
       street: street.trim(),
       city: city.trim(),
       pincode: pincode.trim(),
       phone: phone.trim(),
-      isDefault,
-    });
+    };
+
+    onSaved(newAddr);
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div>
-        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-          Address Type
-        </label>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {[
-            { label: 'Home', icon: <Home size={15} /> },
-            { label: 'Work', icon: <Briefcase size={15} /> },
-            { label: 'Other', icon: <MapPin size={15} /> },
-          ].map((item) => (
-            <button
-              type="button"
-              key={item.label}
-              onClick={() => setType(item.label)}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '10px',
-                border: `1px solid ${type === item.label ? 'var(--color-primary, #3b82f6)' : 'var(--border-subtle)'}`,
-                background: type === item.label ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-surface-subtle)',
-                color: type === item.label ? 'var(--color-primary, #3b82f6)' : 'var(--text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-              }}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
+      <FormField label={isHindi ? 'पते का प्रकार' : 'Address Label'}>
+        <Select
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          options={[
+            { value: 'Home', label: isHindi ? 'घर (Home)' : 'Home' },
+            { value: 'Work', label: isHindi ? 'ऑफिस / दुकान (Work)' : 'Work' },
+            { value: 'Other', label: isHindi ? 'अन्य (Other)' : 'Other' },
+          ]}
+        />
+      </FormField>
 
-      <div>
-        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-          Complete Street / House No. / Landmark *
-        </label>
-        <textarea
-          rows={2}
+      <FormField label={isHindi ? 'सड़क / मकान नंबर / क्षेत्र *' : 'Street / House / Area *'} required={true}>
+        <Input
+          required
+          placeholder={isHindi ? 'मकान नं, गली, मोहल्ला' : 'House No., Street, Landmark'}
           value={street}
           onChange={(e) => setStreet(e.target.value)}
-          placeholder="e.g. House No. 12, Near Gandhi Chowk, Station Road"
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            borderRadius: '10px',
-            border: '1px solid var(--border-subtle)',
-            background: 'var(--bg-surface-subtle)',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-            resize: 'none',
-          }}
-          required
         />
-      </div>
+      </FormField>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-        <div>
-          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-            City
-          </label>
-          <input
-            type="text"
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <FormField label={isHindi ? 'शहर / कस्बा *' : 'City / Town *'} required={true}>
+          <Input
+            required
+            placeholder={isHindi ? 'शहर' : 'City'}
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--bg-surface-subtle)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem',
-            }}
           />
-        </div>
-        <div>
-          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-            Pincode
-          </label>
-          <input
-            type="text"
+        </FormField>
+
+        <FormField label={isHindi ? 'पिनकोड' : 'Pincode'}>
+          <Input
+            placeholder="846001"
+            maxLength={6}
             value={pincode}
             onChange={(e) => setPincode(e.target.value)}
-            placeholder="846004"
-            maxLength={6}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--bg-surface-subtle)',
-              color: 'var(--text-primary)',
-              fontSize: '0.9rem',
-            }}
           />
-        </div>
+        </FormField>
       </div>
 
-      <div>
-        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-          Contact Phone (Optional)
-        </label>
-        <input
+      <FormField label={isHindi ? 'संपर्क फ़ोन नंबर' : 'Contact Phone'}>
+        <Input
           type="tel"
+          placeholder="9876543210"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          placeholder="10-digit mobile number"
-          maxLength={10}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            borderRadius: '10px',
-            border: '1px solid var(--border-subtle)',
-            background: 'var(--bg-surface-subtle)',
-            color: 'var(--text-primary)',
-            fontSize: '0.9rem',
-          }}
         />
-      </div>
+      </FormField>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-        <input
-          type="checkbox"
-          checked={isDefault}
-          onChange={(e) => setIsDefault(e.target.checked)}
-          style={{ width: '16px', height: '16px', accentColor: 'var(--color-primary, #3b82f6)' }}
-        />
-        <span>Make this my default address</span>
-      </label>
+      {error && <AlertBanner type="error" message={error} />}
 
-      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            flex: 1,
-            padding: '10px',
-            borderRadius: '10px',
-            border: '1px solid var(--border-subtle)',
-            background: 'transparent',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          style={{
-            flex: 1,
-            padding: '10px',
-            borderRadius: '10px',
-            border: 'none',
-            background: 'var(--color-primary, #3b82f6)',
-            color: 'white',
-            cursor: 'pointer',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-          }}
-        >
-          <Check size={16} />
-          Save Address
-        </button>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+        <Button variant="secondary" onClick={onCancel} style={{ flex: 1 }}>
+          {isHindi ? 'रद्द करें' : 'Cancel'}
+        </Button>
+        <Button type="submit" variant="primary" style={{ flex: 1 }}>
+          {isHindi ? 'पता सुरक्षित करें' : 'Save Address'}
+        </Button>
       </div>
     </form>
   );
 };
+export default AddAddressForm;

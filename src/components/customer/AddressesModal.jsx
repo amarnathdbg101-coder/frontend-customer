@@ -1,217 +1,167 @@
-import React, { useState, useEffect } from 'react';
-import { X, MapPin, Home, Briefcase, Plus, CheckCircle2, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { BaseModal, ModalHeader, ModalBody, Button } from '../ui';
 import { AddAddressForm } from './AddAddressForm';
 
-const STORAGE_KEY = 'shopsilo_customer_addresses';
-
-export const AddressesModal = ({ isOpen, onClose }) => {
-  const [addresses, setAddresses] = useState([]);
+export const AddressesModal = ({ isOpen, onClose, onSelectAddress }) => {
+  const { isHindi, t } = useLanguage();
+  const { user, updateUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          setAddresses(JSON.parse(stored));
-        } catch (e) {
-          console.error(e);
-        }
-      } else {
-        const initial = [
-          {
-            id: 'addr_1',
-            type: 'Home',
-            street: 'Station Road, Near Tower Chowk',
-            city: 'Darbhanga',
-            pincode: '846004',
-            phone: '9876543210',
-            isDefault: true,
-          }
-        ];
-        setAddresses(initial);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-      }
-    }
-  }, [isOpen]);
-
-  const saveToStorage = (list) => {
-    setAddresses(list);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  };
-
-  const handleSaveNew = (addrData) => {
-    let updated;
-    const newId = 'addr_' + Date.now();
-    if (addrData.isDefault || addresses.length === 0) {
-      updated = [
-        ...addresses.map((a) => ({ ...a, isDefault: false })),
-        { ...addrData, id: newId, isDefault: true },
-      ];
-    } else {
-      updated = [...addresses, { ...addrData, id: newId }];
-    }
-    saveToStorage(updated);
-    setShowAddForm(false);
-  };
-
-  const handleSetDefault = (id) => {
-    const updated = addresses.map((a) => ({
-      ...a,
-      isDefault: a.id === id,
-    }));
-    saveToStorage(updated);
-  };
-
-  const handleDelete = (id, e) => {
-    e.stopPropagation();
-    const updated = addresses.filter((a) => a.id !== id);
-    if (updated.length > 0 && !updated.some((a) => a.isDefault)) {
-      updated[0].isDefault = true;
-    }
-    saveToStorage(updated);
-  };
 
   if (!isOpen) return null;
 
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 1000,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: 'var(--bg-surface, #1e293b)',
-          border: '1px solid var(--border-subtle, #334155)',
-          borderRadius: '20px',
-          width: '100%',
-          maxWidth: '520px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          padding: '1.5rem',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', padding: '8px', borderRadius: '10px' }}>
-              <MapPin size={20} />
-            </div>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Saved Delivery Addresses</h3>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
-          >
-            <X size={20} />
-          </button>
-        </div>
+  const addresses = user?.addresses || [];
+  const defaultAddressId = user?.default_address_id;
 
+  const handleSelect = (addr) => {
+    if (onSelectAddress) {
+      onSelectAddress(addr);
+    }
+    onClose();
+  };
+
+  const handleDelete = (addrId, e) => {
+    e.stopPropagation();
+    const updated = addresses.filter(a => a.id !== addrId);
+    updateUser({ addresses: updated });
+  };
+
+  const handleSetDefault = (addrId, e) => {
+    e.stopPropagation();
+    updateUser({ default_address_id: addrId });
+  };
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="500px">
+      <ModalHeader
+        title={showAddForm ? (isHindi ? 'नया पता जोड़ें' : 'Add New Address') : (isHindi ? 'मेरे सुरक्षित पते' : 'Saved Addresses')}
+        subtitle={showAddForm ? (isHindi ? 'डिलीवरी और पिकअप के लिए' : 'For delivery & reservations') : `${addresses.length} ${isHindi ? 'पते सुरक्षित हैं' : 'saved'}`}
+        icon={MapPin}
+        onClose={onClose}
+      />
+      <ModalBody padding="20px">
         {showAddForm ? (
-          <AddAddressForm onSave={handleSaveNew} onCancel={() => setShowAddForm(false)} />
+          <AddAddressForm
+            onCancel={() => setShowAddForm(false)}
+            onSaved={(newAddr) => {
+              const updated = [...addresses, newAddr];
+              updateUser({
+                addresses: updated,
+                default_address_id: addresses.length === 0 ? newAddr.id : defaultAddressId,
+              });
+              setShowAddForm(false);
+              if (onSelectAddress) onSelectAddress(newAddr);
+            }}
+          />
         ) : (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {addresses.length} {addresses.length === 1 ? 'address' : 'addresses'} saved
-              </span>
-              <button
-                onClick={() => setShowAddForm(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--color-primary, #3b82f6)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '6px 14px',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                }}
-              >
-                <Plus size={16} />
-                Add New
-              </button>
-            </div>
-
             {addresses.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--text-secondary)' }}>
-                <MapPin size={36} style={{ margin: '0 auto 0.5rem auto', opacity: 0.4 }} />
-                <p style={{ margin: 0 }}>{isHindi ? 'कोई सुरक्षित पता उपलब्ध नहीं है।' : 'No saved addresses found.'}</p>
+              <div style={{ textAlign: 'center', padding: '30px 10px' }}>
+                <MapPin size={42} color="var(--text-muted)" style={{ margin: '0 auto 10px auto', opacity: 0.5 }} />
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                  {isHindi ? 'कोई सुरक्षित पता नहीं मिला' : 'No Saved Addresses'}
+                </h4>
+                <p style={{ margin: '0 0 16px 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  {isHindi ? 'आसानी से ऑर्डर करने के लिए अपना पता जोड़ें।' : 'Add your address for faster pickup & delivery.'}
+                </p>
+                <Button variant="primary" icon={Plus} onClick={() => setShowAddForm(true)}>
+                  {isHindi ? 'नया पता जोड़ें' : 'Add New Address'}
+                </Button>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {addresses.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleSetDefault(item.id)}
-                    style={{
-                      padding: '1rem',
-                      borderRadius: '14px',
-                      border: `1px solid ${item.isDefault ? 'var(--color-primary, #3b82f6)' : 'var(--border-subtle, #334155)'}`,
-                      background: item.isDefault ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-surface-subtle, #0f172a)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          background: item.type === 'Home' ? 'rgba(59, 130, 246, 0.2)' : item.type === 'Work' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                          color: item.type === 'Home' ? '#60a5fa' : item.type === 'Work' ? '#34d399' : '#fbbf24',
-                        }}>
-                          {item.type === 'Home' ? <Home size={12} /> : item.type === 'Work' ? <Briefcase size={12} /> : <MapPin size={12} />}
-                          {item.type}
-                        </span>
-                        {item.isDefault && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', color: '#22c55e', fontWeight: 600 }}>
-                            <CheckCircle2 size={12} /> Default
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {addresses.map((addr) => {
+                  const isDefault = addr.id === defaultAddressId;
+                  return (
+                    <div
+                      key={addr.id}
+                      onClick={() => handleSelect(addr)}
+                      style={{
+                        padding: '14px',
+                        borderRadius: '12px',
+                        border: isDefault ? '1.5px solid var(--color-primary, #4f46e5)' : '1px solid var(--border-subtle)',
+                        backgroundColor: isDefault ? 'rgba(79, 70, 229, 0.05)' : 'var(--bg-surface-subtle)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                            {addr.label || (isHindi ? 'घर' : 'Home')}
                           </span>
+                          {isDefault && (
+                            <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--color-primary)', color: 'white', fontWeight: 700 }}>
+                              {isHindi ? 'डिफ़ॉल्ट' : 'Default'}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                          {addr.street || addr.address}, {addr.city} {addr.pincode && `- ${addr.pincode}`}
+                        </div>
+                        {addr.phone && (
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                            {isHindi ? 'फ़ोन: ' : 'Phone: '} {addr.phone}
+                          </div>
                         )}
                       </div>
 
-                      <button
-                        onClick={(e) => handleDelete(item.id, e)}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
-                        title="Delete address"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {!isDefault && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleSetDefault(addr.id, e)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--color-primary)',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              padding: '4px',
+                            }}
+                          >
+                            {isHindi ? 'डिफ़ॉल्ट बनाएं' : 'Make Default'}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => handleDelete(addr.id, e)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
+                  );
+                })}
 
-                    <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                      {item.street}
-                    </p>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {item.city} {item.pincode ? `- ${item.pincode}` : ''} {item.phone ? `| Tel: ${item.phone}` : ''}
-                    </p>
-                  </div>
-                ))}
+                <Button
+                  variant="outline"
+                  icon={Plus}
+                  fullWidth={true}
+                  style={{ marginTop: '8px' }}
+                  onClick={() => setShowAddForm(true)}
+                >
+                  {isHindi ? 'नया पता जोड़ें' : 'Add Another Address'}
+                </Button>
               </div>
             )}
           </div>
         )}
-      </div>
-    </div>
+      </ModalBody>
+    </BaseModal>
   );
 };
+export default AddressesModal;

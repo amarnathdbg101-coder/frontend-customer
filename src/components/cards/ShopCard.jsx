@@ -9,6 +9,7 @@ import { Store, MapPin, Clock, Heart, Phone, ArrowRight, Navigation } from 'luci
 import { getImageUrl } from '../../utils/imageUrl';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { useLanguage } from '../../context/LanguageContext';
+import { Button, Badge } from '../ui';
 
 const ShopCardInner = ({
   shop,
@@ -191,13 +192,15 @@ const ShopCardInner = ({
           </a>
         )}
 
-        <button
+        <Button
+          variant="primary"
+          size="sm"
+          className="shop-card-storefront-btn"
+          icon={ArrowRight}
           onClick={() => onNavigate?.(`/shop/${s.slug}`)}
-          className="btn btn-primary btn-sm shop-card-storefront-btn"
         >
-          <span>{isHindi ? 'दुकान देखें' : 'Storefront'}</span>
-          <ArrowRight size={14} aria-hidden="true" />
-        </button>
+          {isHindi ? 'दुकान देखें' : 'Storefront'}
+        </Button>
       </div>
     </div>
   );

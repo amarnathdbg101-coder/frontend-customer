@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { getCategoryEmoji } from '../../utils/categoryMeta';
 import { getImageUrl } from '../../utils/imageUrl';
+import { QuantityStepper, Button, Badge } from '../ui';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -102,14 +103,29 @@ export const ProductDetailModal = ({
                         product.isPricePublic !== false && 
                         product.attributes?.is_price_public !== false && 
                         product.attributes?.is_price_public !== 'false' && 
-                        price > 0 &&
                         !product.hide_price;
 
-  const brand = product.brand ||
-                product.attributes?.brand ||
-                product.attributes?.Brand ||
-                product.attributes?.company ||
-                '';
+  // Safely parse attributes if stringified JSON
+  let rawAttributes = product.attributes || {};
+  if (typeof rawAttributes === 'string') {
+    try {
+      rawAttributes = JSON.parse(rawAttributes);
+    } catch (_) {
+      rawAttributes = {};
+    }
+  }
+
+  // Combine top-level fields & attributes map
+  const combinedSpecs = { ...(typeof rawAttributes === 'object' && rawAttributes !== null ? rawAttributes : {}) };
+  if (product.brand && !combinedSpecs.brand) combinedSpecs.brand = product.brand;
+  if (product.color && !combinedSpecs.color) combinedSpecs.color = product.color;
+  if (product.size && !combinedSpecs.size) combinedSpecs.size = product.size;
+  if (product.flavor && !combinedSpecs.flavor) combinedSpecs.flavor = product.flavor;
+  if (product.material && !combinedSpecs.material) combinedSpecs.material = product.material;
+  if (product.warranty && !combinedSpecs.warranty) combinedSpecs.warranty = product.warranty;
+  if (product.model && !combinedSpecs.model) combinedSpecs.model = product.model;
+
+  const brand = combinedSpecs.brand || combinedSpecs.Brand || combinedSpecs.company || '';
 
   // Strict Private Merchant Blocklist (Zero leakage of internal shop metrics to customer)
   const PRIVATE_KEYS = [
@@ -133,17 +149,17 @@ export const ProductDetailModal = ({
 
     // Internal System Flags & Redundant Category Keys
     'is_price_public', 'ispricepublic', 'hide_price', 'price_public', 'is_public', 'is_active', 'is_featured',
-    'category', 'category_name', 'category_id', 'category_slug', 'unit', 'brand'
+    'category', 'category_name', 'category_id', 'category_slug', 'unit'
   ];
 
-  const safeAttributes = Object.entries(product.attributes || {}).filter(([key, val]) => {
+  const safeAttributes = Object.entries(combinedSpecs).filter(([key, val]) => {
     if (val === null || val === undefined || val === '') return false;
     if (typeof val === 'boolean') return false; // Never render internal true/false flags
     if (PRIVATE_KEYS.includes(key.toLowerCase().trim())) return false;
     return true;
   });
 
-  const hasSpecifications = Boolean(categoryName || (product.weight && Number(product.weight) > 0) || safeAttributes.length > 0 || product.unit);
+  const hasSpecifications = Boolean(brand || categoryName || (product.weight && Number(product.weight) > 0) || safeAttributes.length > 0 || product.unit);
 
   const handleAddToCart = () => {
     addItem(product, cartQty);
@@ -808,68 +824,14 @@ export const ProductDetailModal = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
                     {/* Tactile Quantity Stepper */}
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                        borderRadius: '12px',
-                        padding: '6px 12px',
-                        backgroundColor: 'var(--bg-surface, #ffffff)',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setCartQty((q) => Math.max(1, q - 1))}
-                        disabled={cartQty <= 1}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: cartQty <= 1 ? 'not-allowed' : 'pointer',
-                          color: cartQty <= 1 ? 'var(--text-muted, #cbd5e1)' : 'var(--text-primary, #0f172a)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '2px',
-                        }}
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus size={16} />
-                      </button>
-
-                      <span
-                        style={{
-                          fontSize: '1rem',
-                          fontWeight: 800,
-                          minWidth: '24px',
-                          textAlign: 'center',
-                          color: 'var(--text-primary, #0f172a)',
-                        }}
-                      >
-                        {cartQty}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => setCartQty((q) => (currentStock > q ? q + 1 : q))}
-                        disabled={cartQty >= currentStock}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: cartQty >= currentStock ? 'not-allowed' : 'pointer',
-                          color: cartQty >= currentStock ? 'var(--text-muted, #cbd5e1)' : 'var(--text-primary, #0f172a)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '2px',
-                        }}
-                        aria-label="Increase quantity"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
+                    <QuantityStepper
+                        quantity={cartQty}
+                        onIncrement={() => setCartQty((q) => (currentStock > q ? q + 1 : q))}
+                        onDecrement={() => setCartQty((q) => Math.max(1, q - 1))}
+                        min={1}
+                        max={currentStock}
+                        size="md"
+                      />
 
                     {/* Primary Add to Cart Button */}
                     <button
@@ -1165,6 +1127,7 @@ export const ProductDetailModal = ({
                     )}
 
                     {safeAttributes.map(([key, val]) => {
+                      if (key.toLowerCase() === 'brand' && brand) return null;
                       const label = key.replace(/_/g, ' ').toUpperCase();
                       return (
                         <div

@@ -1,27 +1,17 @@
-/**
- * Dedicated Customer Profile Screen
- * Bilingual, accessible, responsive customer profile dashboard
- */
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  User,
-  Phone,
-  Mail,
-  LogOut,
-  Camera,
-} from 'lucide-react';
+import { Camera, Phone, Mail, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { uploadApi } from '../../api/upload.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { getImageUrl } from '../../utils/imageUrl';
 import { ThemeLanguageBar } from '../../components/common/ThemeLanguageBar';
+import { Card, Badge, Button } from '../../components/ui';
 
 export const CustomerProfileScreen = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUser, isMerchant } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { isHindi, t } = useLanguage();
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -62,41 +52,32 @@ export const CustomerProfileScreen = () => {
       <title>{t('nav.profile')} — ShopSilo</title>
 
       <div className="profile-container" style={{ padding: '0', maxWidth: '640px', margin: '0 auto' }}>
-        
         {/* User Card */}
-        <div
-          className="card profile-user-card"
-          style={{
-            padding: '24px 20px',
-            textAlign: 'center',
-            marginBottom: '16px',
-            background: 'var(--bg-surface)',
-            border: '1.5px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-xl)',
-            boxShadow: 'var(--shadow-sm)',
-          }}
-        >
+        <Card padding="24px 20px" style={{ textAlign: 'center', marginBottom: '16px' }}>
           <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 14px auto' }}>
-            <div style={{
-              width: '90px',
-              height: '90px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--color-primary)',
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '2.2rem',
-              fontWeight: 900,
-              overflow: 'hidden',
-              boxShadow: '0 6px 18px rgba(79, 70, 229, 0.35)',
-            }}>
+            <div
+              style={{
+                width: '90px',
+                height: '90px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '2.2rem',
+                fontWeight: 900,
+                overflow: 'hidden',
+                boxShadow: '0 6px 18px rgba(79, 70, 229, 0.35)',
+              }}
+            >
               {user?.avatar_url ? (
-                <img loading="lazy" decoding="async"  
-                  src={getImageUrl(user.avatar_url)} 
-                  alt={user?.name || 'Customer'} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                <img
+                  loading="lazy"
+                  decoding="async"
+                  src={getImageUrl(user.avatar_url)}
+                  alt={user?.name || 'Customer'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
@@ -106,7 +87,7 @@ export const CustomerProfileScreen = () => {
               )}
             </div>
 
-            <label 
+            <label
               htmlFor="customer-avatar-upload"
               style={{
                 position: 'absolute',
@@ -127,12 +108,12 @@ export const CustomerProfileScreen = () => {
             >
               <Camera size={15} />
             </label>
-            <input 
-              id="customer-avatar-upload" 
-              type="file" 
-              accept="image/*" 
-              onChange={handleAvatarChange} 
-              style={{ display: 'none' }} 
+            <input
+              id="customer-avatar-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              style={{ display: 'none' }}
               disabled={avatarUploading}
             />
           </div>
@@ -146,20 +127,25 @@ export const CustomerProfileScreen = () => {
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.25rem 0' }}>
             {user?.name || user?.full_name || (isHindi ? 'ग्राहक' : 'Customer')}
           </h2>
-          <span style={{ 
-            display: 'inline-block', 
-            background: 'var(--color-primary-light)', 
-            color: 'var(--color-primary)', 
-            fontSize: '0.76rem', 
-            padding: '3px 12px', 
-            borderRadius: 'var(--radius-full)',
-            fontWeight: 800,
-            marginBottom: '1.25rem'
-          }}>
-            {isHindi ? 'सत्यापित ग्राहक (Buyer)' : 'Verified Customer (Shopper)'}
-          </span>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', textAlign: 'left', background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-subtle)', padding: '12px 16px', borderRadius: 'var(--radius-md)' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <Badge variant="primary">
+              {isHindi ? 'सत्यापित ग्राहक (Buyer)' : 'Verified Customer (Shopper)'}
+            </Badge>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.6rem',
+              textAlign: 'left',
+              background: 'var(--bg-surface-subtle)',
+              border: '1px solid var(--border-subtle)',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.86rem' }}>
               <Phone size={15} style={{ color: 'var(--color-primary)' }} />
               <span>{user?.phone || (isHindi ? 'फ़ोन नंबर लिंक नहीं है' : 'No phone number linked')}</span>
@@ -169,7 +155,7 @@ export const CustomerProfileScreen = () => {
               <span>{user?.email || (isHindi ? 'ईमेल दर्ज नहीं है' : 'No email address linked')}</span>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Theme & Language Preferences Card */}
         <div style={{ marginBottom: '16px' }}>
@@ -177,29 +163,20 @@ export const CustomerProfileScreen = () => {
         </div>
 
         {/* Logout */}
-        <button
+        <Button
+          variant="danger"
+          icon={LogOut}
+          fullWidth={true}
           onClick={handleLogout}
           style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            padding: '12px',
             background: 'rgba(239, 68, 68, 0.1)',
             color: '#ef4444',
             border: '1px solid rgba(239, 68, 68, 0.25)',
-            borderRadius: 'var(--radius-md)',
-            cursor: 'pointer',
-            fontWeight: 800,
-            fontSize: '0.95rem',
-            transition: 'all 0.15s ease',
+            boxShadow: 'none',
           }}
         >
-          <LogOut size={18} />
-          <span>{isHindi ? 'लॉग आउट करें' : 'Sign Out'}</span>
-        </button>
-
+          {isHindi ? 'लॉग आउट करें' : 'Sign Out'}
+        </Button>
       </div>
     </AppLayout>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Plus } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { AddReviewModal } from './AddReviewModal';
+import { RatingStars, Button } from '../ui';
 
 export const ShopReviewsSection = ({ shopSlug, shopName }) => {
   const [reviews, setReviews] = useState([]);
@@ -42,36 +43,13 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
           <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>({reviews.length} reviews)</span>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'var(--color-primary, #3b82f6)',
-            color: 'white',
-            border: 'none',
-            padding: '6px 12px',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-          }}
-        >
-          <Plus size={15} />
-          Rate Shop
-        </button>
+        <Button variant="primary" size="sm" icon={Plus} onClick={() => setShowAddModal(true)}>Rate Shop</Button>
       </div>
 
       {reviews.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '1.5rem', background: 'var(--bg-surface-subtle, #0f172a)', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
           <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No reviews yet. Be the first to review! / अभी तक कोई समीक्षा नहीं है। पहली समीक्षा आप दर्ज करें!</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            style={{ background: 'none', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
-          >
-            Write First Review
-          </button>
+          <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>Write First Review</Button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -95,16 +73,7 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      size={13}
-                      color="#eab308"
-                      fill={s <= (rev.rating || 5) ? '#eab308' : 'transparent'}
-                    />
-                  ))}
-                </div>
+                <RatingStars rating={rev.rating || 5} size={13} />
               </div>
 
               {rev.comment && (
