@@ -78,10 +78,29 @@ export const ExploreShopsScreen = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 
-  // 1. Fetch Shops & Products
+  // 1. Fetch Shops & Products (SWR 0ms Cache First)
   const loadMarketplaceData = useCallback(async () => {
-    try {
+    // 1. Check Local Cache First for 0ms Instant Display
+    const cachedShops = localCache.get(CACHE_KEYS.SHOPS);
+    const cachedProds = localCache.get(CACHE_KEYS.PRODUCTS);
+
+    let hasLocal = false;
+    if (cachedShops && Array.isArray(cachedShops) && cachedShops.length > 0) {
+      setShops(cachedShops);
+      hasLocal = true;
+    }
+    if (cachedProds && Array.isArray(cachedProds) && cachedProds.length > 0) {
+      setProducts(cachedProds);
+      hasLocal = true;
+    }
+
+    if (hasLocal) {
+      setLoading(false); // 0ms Instant Render!
+    } else {
       setLoading(true);
+    }
+
+    try {
       const params = {
         lat: coords?.lat,
         lng: coords?.lng,
@@ -137,14 +156,20 @@ export const ExploreShopsScreen = () => {
         };
       });
 
-      setShops(shopList);
-      setProducts(normalizedProds);
+      if (shopList.length > 0) {
+        setShops(shopList);
+        localCache.set(CACHE_KEYS.SHOPS, shopList, DEFAULT_TTL.SHOPS);
+      }
+      if (normalizedProds.length > 0) {
+        setProducts(normalizedProds);
+        localCache.set(CACHE_KEYS.PRODUCTS, normalizedProds, DEFAULT_TTL.PRODUCTS);
+      }
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
     } finally {
       setLoading(false);
     }
-  }, [coords, radiusKm]);
+  }, [coords?.lat, coords?.lng, radiusKm]);
 
   useEffect(() => {
     loadMarketplaceData();
@@ -458,181 +483,7 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 4. QUICK 2x2 FEATURE GRID */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '10px',
-          marginBottom: '20px',
-        }}
-      >
-        {/* Box 1: Instant Pickup */}
-        <div
-          onClick={() => navigate('/saved')}
-          style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '12px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-            transition: 'transform 0.15s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              backgroundColor: '#ecfdf5',
-              color: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Zap size={18} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {isHindi ? 'इंस्टेंट पिकअप' : 'Instant Pickup'}
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              {isHindi ? 'ऑर्डर व कोड' : 'Orders & OTP'}
-            </div>
-          </div>
-        </div>
-
-        {/* Box 2: Local Shops */}
-        <div
-          onClick={handleSelectShopTab}
-          style={{
-            backgroundColor: activeTab === 'shops' ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
-            border: activeTab === 'shops' ? '1.5px solid #3b82f6' : '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '12px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-            transition: 'transform 0.15s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              backgroundColor: '#eff6ff',
-              color: '#3b82f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Store size={18} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {isHindi ? 'आस-पास दुकानें' : 'Local Shops'}
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              {filteredShops.length} {isHindi ? 'स्टोर्स' : 'Stores'}
-            </div>
-          </div>
-        </div>
-
-        {/* Box 3: Mera Khata */}
-        <div
-          onClick={() => navigate('/khata')}
-          style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '12px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-            transition: 'transform 0.15s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              backgroundColor: '#fef2f2',
-              color: '#ef4444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <BookOpen size={18} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {isHindi ? 'मेरा खाता' : 'My Khata'}
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              {isHindi ? 'उधार पासबुक' : 'Credit Ledger'}
-            </div>
-          </div>
-        </div>
-
-        {/* Box 4: Live Deals */}
-        <div
-          onClick={() => navigate('/deals')}
-          style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '12px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-            transition: 'transform 0.15s ease',
-          }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              backgroundColor: '#fffbeb',
-              color: '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Tag size={18} />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {isHindi ? 'लाइव ऑफर्स' : 'Live Deals'}
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              {isHindi ? 'दुकान डिस्काउंट' : 'Store Offers'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. CATEGORY FILTER SECTION */}
+      {/* 4. CATEGORY FILTER SECTION */}
       <div style={{ marginBottom: '20px' }}>
         {/* Category Header Card */}
         <div
@@ -645,7 +496,6 @@ export const ExploreShopsScreen = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '10px',
             cursor: 'pointer',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
           }}
@@ -696,82 +546,9 @@ export const ExploreShopsScreen = () => {
             <ChevronDown size={14} />
           </div>
         </div>
-
-        {/* Horizontal Category Pills */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-            paddingBottom: '4px',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {/* "All" Pill */}
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('All')}
-            style={{
-              padding: '7px 16px',
-              borderRadius: '20px',
-              border: selectedCategory === 'All' ? 'none' : '1px solid var(--border-subtle, #cbd5e1)',
-              backgroundColor: selectedCategory === 'All' ? 'var(--color-primary, #4f46e5)' : 'var(--bg-surface, #ffffff)',
-              color: selectedCategory === 'All' ? '#ffffff' : 'var(--text-primary, #0f172a)',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: selectedCategory === 'All' ? '0 4px 10px rgba(79, 70, 229, 0.3)' : 'none',
-            }}
-          >
-            <span>☰</span>
-            <span>{isHindi ? 'सभी' : 'All'}</span>
-          </button>
-
-          {/* Quick Popular Category Pills */}
-          {[
-            { id: 'Edible Oils', nameHi: 'खाद्य तेल', nameEn: 'Edible Oils', icon: '🍾' },
-            { id: 'Atta & Flour', nameHi: 'आटा व दालें', nameEn: 'Flour & Atta', icon: '🌾' },
-            { id: 'Dairy & Eggs', nameHi: 'दूध व डेयरी', nameEn: 'Milk & Dairy', icon: '🥛' },
-            { id: 'Personal Care', nameHi: 'साबुन व शैम्पू', nameEn: 'Soap & Care', icon: '🧼' },
-            { id: 'Snacks & Instant Food', nameHi: 'नमकीन व बिस्कुट', nameEn: 'Snacks & Food', icon: '🍪' },
-            { id: 'Spices & Salt', nameHi: 'मसाले व नमक', nameEn: 'Spices & Salt', icon: '🧂' },
-            { id: 'Beverages', nameHi: 'चाय व कॉफ़ी', nameEn: 'Tea & Coffee', icon: '☕' },
-          ].map((cat) => {
-            const isSelected = selectedCategory === cat.id || selectedCategory === cat.nameEn;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCategory(isSelected ? 'All' : cat.id)}
-                style={{
-                  padding: '7px 14px',
-                  borderRadius: '20px',
-                  border: isSelected ? 'none' : '1px solid var(--border-subtle, #cbd5e1)',
-                  backgroundColor: isSelected ? 'var(--color-primary, #4f46e5)' : 'var(--bg-surface, #ffffff)',
-                  color: isSelected ? '#ffffff' : 'var(--text-primary, #0f172a)',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: isSelected ? '0 4px 10px rgba(79, 70, 229, 0.3)' : 'none',
-                }}
-              >
-                <span>{cat.icon}</span>
-                <span>{isHindi ? cat.nameHi : cat.nameEn}</span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* 6. TAB SELECTOR: PRODUCTS vs LOCAL SHOPS */}
+      {/* 5. TAB SELECTOR: PRODUCTS vs LOCAL SHOPS */}
       <div
         id="marketplace-feed-header"
         style={{

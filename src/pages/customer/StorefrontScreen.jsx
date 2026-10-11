@@ -62,18 +62,47 @@ export const StorefrontScreen = () => {
   }, [slug]);
 
   const loadShopAndProducts = async () => {
-    try {
+    if (!slug) return;
+
+    // 1. Check Local Cache First (0ms Instant Display)
+    const cachedShop = localCache.get(CACHE_KEYS.STOREFRONT(slug));
+    const cachedProds = localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug));
+
+    let hasLocalData = false;
+    if (cachedShop) {
+      setShop(cachedShop);
+      hasLocalData = true;
+    }
+    if (cachedProds && Array.isArray(cachedProds) && cachedProds.length > 0) {
+      setProducts(cachedProds);
+      hasLocalData = true;
+    }
+
+    if (hasLocalData) {
+      setLoading(false); // Render 0ms instantly!
+    } else {
       setLoading(true);
+    }
+
+    // 2. Background Server Revalidation
+    try {
       const [shopData, prodData] = await Promise.all([
         shopApi.getShopBySlug(slug),
         productApi.listByShopSlug(slug),
       ]);
-      setShop(shopData);
+
+      if (shopData) {
+        setShop(shopData);
+        localCache.set(CACHE_KEYS.STOREFRONT(slug), shopData, DEFAULT_TTL.STOREFRONT);
+      }
+
       const list = Array.isArray(prodData?.products) ? prodData.products : (Array.isArray(prodData) ? prodData : []);
-      setProducts(list);
+      if (list.length > 0 || !hasLocalData) {
+        setProducts(list);
+        localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), list, DEFAULT_TTL.PRODUCTS);
+      }
     } catch (err) {
       console.error('Failed to load shop:', err);
-      setProducts([]);
     } finally {
       setLoading(false);
     }
