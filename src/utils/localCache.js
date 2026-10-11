@@ -26,6 +26,28 @@ const isStorageAvailable = () => {
 
 const hasLocalStorage = isStorageAvailable();
 
+const CURRENT_CACHE_VERSION = 'v2.2_build_20261011';
+
+// Auto-purge old local storage on startup if cache version changed
+if (hasLocalStorage) {
+  try {
+    const savedVer = window.localStorage.getItem('shopsilo_cache_version');
+    if (savedVer !== CURRENT_CACHE_VERSION) {
+      const keysToRemove = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith('shopsilo_cache_')) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      window.localStorage.setItem('shopsilo_cache_version', CURRENT_CACHE_VERSION);
+    }
+  } catch (e) {
+    console.warn('[LocalCache] Cache version migration error:', e);
+  }
+}
+
 export const CACHE_KEYS = {
   SHOPS: 'shopsilo_cache_shops',
   PRODUCTS: 'shopsilo_cache_products',
