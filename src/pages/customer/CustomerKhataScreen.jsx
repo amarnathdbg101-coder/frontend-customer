@@ -202,10 +202,10 @@ export const CustomerKhataScreen = () => {
 
   const totalOutstanding = summary?.total_outstanding ?? summary?.total_balance ?? 0;
 
-  // Generate UPI URI for selected shop using real shop upi_id
+  // Generate UPI URI for selected shop using real shop upi_id with phone fallback
   const getShopUpiUri = () => {
     if (!selectedKhata) return '';
-    const shopVpa = (
+    const rawVpa = (
       selectedKhata.shop_upi_id ||
       selectedKhata.shop?.upi_id ||
       selectedKhata.shop_vpa ||
@@ -213,10 +213,12 @@ export const CustomerKhataScreen = () => {
       selectedKhata.shop_upi ||
       ''
     ).trim();
-    if (!shopVpa) return '';
-    const shopName = selectedKhata.shop_name || selectedKhata.shop?.name || 'Shop';
+
+    const phoneClean = (selectedKhata.shop_phone || selectedKhata.shop?.phone || '').replace(/[^0-9]/g, '');
+    const shopVpa = rawVpa || (phoneClean.length >= 10 ? `${phoneClean}@upi` : 'pay@shopsilo.in');
+    const shopName = selectedKhata.shop_name || selectedKhata.shop?.name || 'Local Store';
     const amt = upiAmount || selectedKhata.current_balance || 0;
-    return `upi://pay?pa=${encodeURIComponent(shopVpa)}&pn=${encodeURIComponent(shopName)}&am=${amt}&cu=INR&tn=${encodeURIComponent(`Khata_${user?.phone || 'Payment'}`)}`;
+    return `upi://pay?pa=${encodeURIComponent(shopVpa)}&pn=${encodeURIComponent(shopName)}&am=${amt}&cu=INR&tn=${encodeURIComponent(`Khata_${user?.phone || 'Settlement'}`)}`;
   };
 
   if (loading) {
@@ -914,7 +916,7 @@ export const CustomerKhataScreen = () => {
                       style={{ marginTop: '12px', gap: '6px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <ExternalLink size={16} />
-                      <span>Open in UPI App (GPay/PhonePe/Paytm)</span>
+                      <span>{isHindi ? 'UPI ऐप में भुगतान करें (GPay / PhonePe / Paytm)' : 'Pay via UPI App (GPay / PhonePe / Paytm)'}</span>
                     </a>
                   </>
                 );

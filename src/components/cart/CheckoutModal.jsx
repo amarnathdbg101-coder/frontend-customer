@@ -1,11 +1,12 @@
 /**
- * CheckoutModal Component (Counter Pickup Reservation Flow)
+ * CheckoutModal Component (Instant Click & Collect Pickup Reservation Flow)
  * 
  * Features:
  * - Multi-step interactive checkout flow
- * - Customer contact verification and auto-fill
- * - Time slot selection and special packing notes
- * - Instant token generation with QR code and 4-digit pickup code
+ * - Live applied coupons & festival discounts support
+ * - Time slot selection and packing notes
+ * - Instant 4-digit token generation (#4812) & high-resolution QR pass
+ * - 10-second instant counter pickup instructions
  * - Complete i18n support (English & Formal Hindi)
  */
 
@@ -21,6 +22,9 @@ import {
   AlertCircle,
   User,
   FileText,
+  Tag,
+  Copy,
+  Ticket,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -31,17 +35,30 @@ import { RealQRCode } from '../common/RealQRCode';
 export const CheckoutModal = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { items, subtotal, isCheckoutOpen, closeCheckout, clearCart } = useCart();
-  const { t } = useLanguage();
+  const {
+    items,
+    subtotal,
+    appliedCoupon,
+    couponDiscount,
+    finalTotal,
+    applyCoupon,
+    removeCoupon,
+    isCheckoutOpen,
+    closeCheckout,
+    clearCart,
+  } = useCart();
+  const { t, isHindi } = useLanguage();
 
   const [step, setStep] = useState(1); // 1: Details & Review, 2: Confirmation
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [timeSlot, setTimeSlot] = useState('30min');
   const [notes, setNotes] = useState('');
+  const [couponInput, setCouponInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [confirmedReservation, setConfirmedReservation] = useState(null);
+  const [copiedToken, setCopiedToken] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -55,10 +72,22 @@ export const CheckoutModal = () => {
       setStep(1);
       setError('');
       setConfirmedReservation(null);
+      setCopiedToken(false);
     }
   }, [isCheckoutOpen]);
 
   if (!isCheckoutOpen) return null;
+
+  const handleApplyCouponInput = (e) => {
+    e.preventDefault();
+    if (!couponInput.trim()) return;
+    applyCoupon({
+      code: couponInput.trim().toUpperCase(),
+      title: couponInput.trim().toUpperCase(),
+      discount_text: couponInput.trim().toUpperCase(),
+    });
+    setCouponInput('');
+  };
 
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
@@ -78,8 +107,6 @@ export const CheckoutModal = () => {
     setSubmitting(true);
 
     try {
-      // Create reservations for the cart items
-      // Process first product or primary reservation batch
       const primaryItem = items[0];
       const holdHoursMap = {
         '30min': 1,
@@ -88,14 +115,20 @@ export const CheckoutModal = () => {
         'evening': 6,
       };
 
+      // Generate a clean 4-digit pickup token e.g. "4812"
+      const random4Digit = Math.floor(1000 + Math.random() * 9000);
+      const tokenNumber = `#${random4Digit}`;
+
       const payload = {
         product_id: primaryItem.id,
         quantity: primaryItem.quantity || 1,
         hold_hours: holdHoursMap[timeSlot] || 2,
         notes: [
+          `Pickup Token: ${tokenNumber}`,
           notes ? `Note: ${notes}` : null,
           `Customer: ${customerName} (${customerPhone})`,
-          items.length > 1 ? `Multi-item Cart Total: ₹${subtotal} (${items.length} unique items)` : null,
+          appliedCoupon ? `Coupon: ${appliedCoupon.code || appliedCoupon.title} (-₹${couponDiscount})` : null,
+          `Payable: ₹${finalTotal || subtotal} (${items.length} unique items)`,
         ]
           .filter(Boolean)
           .join(' | '),
@@ -104,17 +137,27 @@ export const CheckoutModal = () => {
       let result = null;
       try {
         result = await reservationApi.createReservation(payload);
+        if (!result.pickup_code) {
+          result.pickup_code = `${random4Digit}`;
+        }
       } catch (apiErr) {
-        console.warn('Backend reservation API call:', apiErr);
-        // Fallback robust reservation object if backend endpoint returns standard payload
+        console.warn('Backend reservation API call fallback:', apiErr);
         result = {
-          pickup_code: `PKP-${Math.floor(1000 + Math.random() * 9000)}`,
+          pickup_code: `${random4Digit}`,
+          token_display: tokenNumber,
           reservation_number: `ORD-${Date.now().toString().slice(-6)}`,
           expires_at: new Date(Date.now() + (holdHoursMap[timeSlot] || 2) * 3600000).toISOString(),
-          status: 'pending',
+          status: 'ready',
           items_count: items.length,
-          total_amount: subtotal,
+          total_amount: finalTotal || subtotal,
         };
+      }
+
+      // Ensure token_display is formatted cleanly
+      if (!result.token_display) {
+        const rawCode = String(result.pickup_code || random4Digit).replace(/[^0-9]/g, '');
+        const fourDigits = rawCode.length >= 4 ? rawCode.slice(-4) : String(random4Digit);
+        result.token_display = `#${fourDigits}`;
       }
 
       setConfirmedReservation(result);
@@ -125,6 +168,13 @@ export const CheckoutModal = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCopyToken = () => {
+    const code = confirmedReservation?.token_display || confirmedReservation?.pickup_code || '#4812';
+    navigator.clipboard?.writeText(code);
+    setCopiedToken(true);
+    setTimeout(() => setCopiedToken(false), 2500);
   };
 
   const handleFinish = () => {
@@ -155,7 +205,7 @@ export const CheckoutModal = () => {
         style={{
           width: '100%',
           maxWidth: '540px',
-          maxHeight: '90vh',
+          maxHeight: '92vh',
           backgroundColor: 'var(--bg-surface, #ffffff)',
           color: 'var(--text-primary)',
           borderRadius: 'var(--radius-lg, 16px)',
@@ -189,14 +239,18 @@ export const CheckoutModal = () => {
                 color: 'var(--color-primary)',
               }}
             >
-              <Store size={20} />
+              {step === 1 ? <Store size={20} /> : <Ticket size={20} />}
             </div>
             <div>
               <h2 id="checkout-modal-title" style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
-                {step === 1 ? t('checkout.reservation_title') : t('checkout.reservation_success_title')}
+                {step === 1
+                  ? (isHindi ? 'क्लिक एंड कलेक्ट पिकअप' : 'Click & Collect Pickup')
+                  : (isHindi ? '🎟️ इंस्टेंट पिकअप पास जनरेटेड' : '🎟️ Instant Pickup Pass Generated')}
               </h2>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                {step === 1 ? t('checkout.reservation_subtitle') : t('checkout.reservation_success_desc')}
+                {step === 1
+                  ? (isHindi ? 'दुकान से 10-सेकंड में सीधा सामान उठाएं' : '10-Second instant counter pickup pass')
+                  : (isHindi ? 'काउंटर पर यह टोकन दिखाकर सामान प्राप्त करें' : 'Show this token at the store counter')}
               </span>
             </div>
           </div>
@@ -253,10 +307,10 @@ export const CheckoutModal = () => {
                     <ShoppingBag size={14} color="var(--color-primary)" />
                     {t('checkout.order_items')}
                   </span>
-                  <span>{items.length} items</span>
+                  <span>{items.length} {isHindi ? 'सामान' : 'items'}</span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '130px', overflowY: 'auto' }}>
                   {items.map((it) => (
                     <div
                       key={it.id}
@@ -275,21 +329,78 @@ export const CheckoutModal = () => {
                   ))}
                 </div>
 
+                {/* Applied Coupon / Input */}
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border-subtle)' }}>
+                  {appliedCoupon ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        borderRadius: '8px',
+                        fontSize: '0.78rem',
+                        color: '#065f46',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}>
+                        <Tag size={13} color="#10b981" />
+                        <span>{appliedCoupon.code || appliedCoupon.title}: -₹{couponDiscount}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        style={{ background: 'none', border: 'none', color: '#b91c1c', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        {isHindi ? 'हटाएं' : 'Remove'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder={isHindi ? "कूपन कोड दर्ज करें (उदा. FESTIVE20)" : "Promo / Coupon Code (e.g. FESTIVE20)"}
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        style={{
+                          flex: 1,
+                          fontSize: '0.76rem',
+                          padding: '6px 10px',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: '8px',
+                          background: 'var(--bg-surface)',
+                          textTransform: 'uppercase',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCouponInput}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800 }}
+                      >
+                        {isHindi ? 'लागू करें' : 'Apply'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Subtotal & Final Payable */}
                 <div
                   style={{
                     marginTop: '10px',
-                    paddingTop: '10px',
-                    borderTop: '1px dashed var(--border-subtle)',
+                    paddingTop: '8px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    fontSize: '0.92rem',
+                    fontSize: '0.94rem',
                     fontWeight: 900,
                     color: 'var(--color-primary)',
                   }}
                 >
                   <span>{t('checkout.payable_amount')}</span>
-                  <span>₹{subtotal}</span>
+                  <span>₹{finalTotal || subtotal}</span>
                 </div>
               </div>
 
@@ -321,7 +432,7 @@ export const CheckoutModal = () => {
                       type="text"
                       required
                       className="form-input"
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder={isHindi ? "उदा. राहुल शर्मा" : "e.g. Rahul Sharma"}
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                     />
@@ -335,7 +446,7 @@ export const CheckoutModal = () => {
                       type="tel"
                       required
                       className="form-input"
-                      placeholder="10-digit mobile number"
+                      placeholder={isHindi ? "10-अंकों का मोबाइल नंबर" : "10-digit mobile number"}
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                     />
@@ -422,7 +533,7 @@ export const CheckoutModal = () => {
                 />
               </div>
 
-              {/* Physical inspection & payment notice */}
+              {/* Physical inspection notice */}
               <div
                 style={{
                   backgroundColor: 'rgba(16, 185, 129, 0.08)',
@@ -439,7 +550,11 @@ export const CheckoutModal = () => {
                 }}
               >
                 <ShieldCheck size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>{t('checkout.pickup_instructions')}</span>
+                <span>
+                  {isHindi
+                    ? 'दुकान पर सामान की जांच करने के बाद ही भुगतान करें। शून्य डिलीवरी शुल्क।'
+                    : 'Zero delivery fee. Inspect your packed items at store counter before settling payment.'}
+                </span>
               </div>
 
               {error && (
@@ -479,11 +594,15 @@ export const CheckoutModal = () => {
                 }}
               >
                 <CheckCircle size={18} />
-                <span>{submitting ? t('common.processing') : `${t('checkout.confirm_reservation')} (₹${subtotal})`}</span>
+                <span>
+                  {submitting
+                    ? t('common.processing')
+                    : `${isHindi ? 'पिकअप टोकन जनरेट करें' : 'Generate Pickup Token'} (₹${finalTotal || subtotal})`}
+                </span>
               </button>
             </form>
           ) : (
-            /* Step 2: Instant Confirmation with Token & QR */
+            /* Step 2: Instant 4-Digit Pickup Code & QR Pass */
             <div style={{ textAlign: 'center', padding: '10px 0' }}>
               <div
                 style={{
@@ -502,47 +621,87 @@ export const CheckoutModal = () => {
               </div>
 
               <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: '0 0 6px 0' }}>
-                {t('checkout.reservation_success_title')}
+                {isHindi ? 'पिकअप टोकन पास तैयार है!' : 'Pickup Pass Ready!'}
               </h3>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '380px', margin: '0 auto 16px auto' }}>
-                {t('checkout.reservation_success_desc')}
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 16px auto', lineHeight: 1.4 }}>
+                {isHindi
+                  ? 'दुकान के काउंटर पर पहुँचकर सिर्फ यह 4-अंकों का टोकन नंबर दिखाएं, दुकानदार POS पर दर्ज करते ही 10 सेकंड में आपका पैक किया सामान मिल जाएगा!'
+                  : 'Show this 4-digit token or QR pass at the counter. The shopkeeper enters it in POS for 10-second instant pickup!'}
               </p>
 
-              {/* QR Code & Token Card */}
+              {/* Digital Pass Ticket Box */}
               <div
                 style={{
                   backgroundColor: 'var(--bg-surface-subtle)',
                   border: '2px dashed var(--color-primary)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '20px',
-                  maxWidth: '340px',
+                  borderRadius: 'var(--radius-xl, 20px)',
+                  padding: '22px 18px',
+                  maxWidth: '360px',
                   margin: '0 auto 20px auto',
+                  boxShadow: '0 8px 24px rgba(79, 70, 229, 0.12)',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                {/* Status indicator */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#dcfce7', color: '#15803d', padding: '4px 12px', borderRadius: '12px', fontSize: '0.74rem', fontWeight: 800, marginBottom: '14px' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                  <span>{isHindi ? 'काउंटर पिकअप के लिए तैयार' : 'Ready for Counter Pickup'}</span>
+                </div>
+
+                {/* QR Code Pass */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
                   <RealQRCode
-                    value={`SHOP-PICKUP:${confirmedReservation?.pickup_code || confirmedReservation?.reservation_number || 'OK'}`}
-                    size={150}
+                    value={`SHOP-PICKUP:${confirmedReservation?.pickup_code || confirmedReservation?.token_display || '4812'}`}
+                    size={170}
+                    logoText="PICKUP"
+                    showDownload={true}
+                    downloadFilename={`pickup-pass-${confirmedReservation?.token_display || 'token'}`}
                   />
                 </div>
 
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {t('checkout.pickup_otp')}
-                </div>
-                <div
-                  style={{
-                    fontSize: '1.8rem',
-                    fontWeight: 900,
-                    color: 'var(--color-primary)',
-                    letterSpacing: '3px',
-                    margin: '4px 0',
-                  }}
-                >
-                  {confirmedReservation?.pickup_code || confirmedReservation?.reservation_number || '7890'}
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isHindi ? '4-अंकों का पिकअप टोकन कोड' : '4-DIGIT PICKUP TOKEN'}
                 </div>
 
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  Amount Payable: <strong style={{ color: 'var(--text-primary)' }}>₹{subtotal}</strong>
+                {/* Large 4-Digit Token Display */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    margin: '6px 0',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '2.4rem',
+                      fontWeight: 900,
+                      color: 'var(--color-primary)',
+                      letterSpacing: '4px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {confirmedReservation?.token_display || `#${confirmedReservation?.pickup_code || '4812'}`}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyToken}
+                    style={{
+                      background: 'rgba(79, 70, 229, 0.1)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '6px 8px',
+                      cursor: 'pointer',
+                      color: 'var(--color-primary)',
+                    }}
+                    title={isHindi ? 'टोकन कॉपी करें' : 'Copy Token'}
+                  >
+                    {copiedToken ? <CheckCircle size={16} color="#10b981" /> : <Copy size={16} />}
+                  </button>
+                </div>
+
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                  {isHindi ? 'देय राशि:' : 'Amount Payable:'} <strong style={{ color: 'var(--text-primary)', fontSize: '0.92rem' }}>₹{finalTotal || subtotal}</strong>
                 </div>
               </div>
 
@@ -551,18 +710,18 @@ export const CheckoutModal = () => {
                   type="button"
                   onClick={handleFinish}
                   className="btn btn-primary"
-                  style={{ flex: 1, padding: '10px', fontWeight: 700, borderRadius: 'var(--radius-md)' }}
+                  style={{ flex: 1, padding: '12px', fontWeight: 800, borderRadius: 'var(--radius-md)' }}
                 >
-                  {t('checkout.view_token')}
+                  {isHindi ? 'मेरे सभी पिकअप टोकन देखें' : 'View My Reservations'}
                 </button>
 
                 <button
                   type="button"
                   onClick={closeCheckout}
                   className="btn btn-secondary"
-                  style={{ padding: '10px 16px', fontWeight: 600, borderRadius: 'var(--radius-md)' }}
+                  style={{ padding: '12px 18px', fontWeight: 700, borderRadius: 'var(--radius-md)' }}
                 >
-                  {t('common.close')}
+                  {isHindi ? 'पूर्ण' : 'Done'}
                 </button>
               </div>
             </div>
@@ -572,3 +731,4 @@ export const CheckoutModal = () => {
     </div>
   );
 };
+export default CheckoutModal;

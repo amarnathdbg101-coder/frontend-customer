@@ -9,14 +9,8 @@ import {
   User,
   Phone,
   Mail,
-  ShoppingBag,
-  Store,
-  BookOpen,
   LogOut,
   Camera,
-  ChevronRight,
-  LayoutDashboard,
-  PlusCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -175,140 +169,6 @@ export const CustomerProfileScreen = () => {
               <span>{user?.email || (isHindi ? 'ईमेल दर्ज नहीं है' : 'No email address linked')}</span>
             </div>
           </div>
-        </div>
-
-        {/* Action Shortcuts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-          
-          {/* Merchant OS Terminal Tile / Create Shop Tile (Role-based conditional) */}
-          <a
-            href={isMerchant ? "https://shop.shopsilo.in" : "https://shop.shopsilo.in/register"}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 16px',
-              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1.5px solid rgba(79, 70, 229, 0.25)',
-              boxShadow: 'var(--shadow-xs)',
-              textDecoration: 'none',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ background: 'var(--color-primary)', color: '#ffffff', padding: '10px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {isMerchant ? <LayoutDashboard size={20} /> : <PlusCircle size={20} />}
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--color-primary)', fontWeight: 800 }}>
-                  {isMerchant ? (isHindi ? '🏪 दुकानदार डैशबोर्ड (Merchant OS)' : '🏪 Open Merchant Dashboard') : (isHindi ? '🏪 दुकान बनाएं / सेलर बनें' : '🏪 Start Selling / Create Shop')}
-                </h4>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {isMerchant
-                    ? (isHindi ? 'POS काउंटर, लाइव स्टॉक, डिजिटल खाता व रिपोर्ट्स' : 'Access POS Counter, Live Inventory, Khata & Analytics')
-                    : (isHindi ? 'अपनी दुकान रजिस्टर करें, डिजिटल बिलिंग व खाता शुरू करें' : 'Register your store on ShopSilo and start billing')}
-                </p>
-              </div>
-            </div>
-            <ChevronRight size={18} style={{ color: 'var(--color-primary)' }} />
-          </a>
-
-          <div 
-            onClick={() => navigate('/khata')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 16px',
-              background: 'var(--bg-surface)',
-              borderRadius: 'var(--radius-lg)',
-              cursor: 'pointer',
-              border: '1px solid var(--border-subtle)',
-              boxShadow: 'var(--shadow-xs)',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ background: 'rgba(217, 119, 6, 0.15)', color: '#d97706', padding: '10px', borderRadius: '12px' }}>
-                <BookOpen size={20} />
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800 }}>
-                  {isHindi ? 'मेरा डिजिटल खाता एवं पासबुक' : 'My Khata & Credit Passbook'}
-                </h4>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {isHindi ? 'उधार बही, ऑनलाइन यूपीआई भुगतान व क्यूआर' : 'Store credit balances, UPI payments & passbook'}
-                </p>
-              </div>
-            </div>
-            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-          </div>
-
-          <div 
-            onClick={() => navigate('/reservations')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 16px',
-              background: 'var(--bg-surface)',
-              borderRadius: 'var(--radius-lg)',
-              cursor: 'pointer',
-              border: '1px solid var(--border-subtle)',
-              boxShadow: 'var(--shadow-xs)',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '10px', borderRadius: '12px' }}>
-                <ShoppingBag size={20} />
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800 }}>
-                  {isHindi ? 'मेरी बुकिंग्स एवं पिकअप ऑर्डर्स' : 'My Store Pickups & Reservations'}
-                </h4>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {isHindi ? 'दुकान से पिकअप हेतु आरक्षित सामान व ओटीपी' : 'Reserved items held for store pickup with OTP codes'}
-                </p>
-              </div>
-            </div>
-            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-          </div>
-
-          <div 
-            onClick={() => navigate('/')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 16px',
-              background: 'var(--bg-surface)',
-              borderRadius: 'var(--radius-lg)',
-              cursor: 'pointer',
-              border: '1px solid var(--border-subtle)',
-              boxShadow: 'var(--shadow-xs)',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ background: 'rgba(79, 70, 229, 0.15)', color: 'var(--color-primary)', padding: '10px', borderRadius: '12px' }}>
-                <Store size={20} />
-              </div>
-              <div>
-                <h4 style={{ margin: 0, fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800 }}>
-                  {isHindi ? 'आस-पास की दुकानें खोजें' : 'Explore Neighborhood Stores'}
-                </h4>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {isHindi ? 'अपने इलाके की प्रमाणित दुकानों का लाइव स्टॉक देखें' : 'Browse certified local stores & live inventory'}
-                </p>
-              </div>
-            </div>
-            <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
-          </div>
-
         </div>
 
         {/* Theme & Language Preferences Card */}

@@ -5,6 +5,7 @@
  * - Persistent cart across page reloads via localStorage
  * - Multi-item and quantity management with stock boundary guards
  * - Subtotal, savings, and total payable calculation
+ * - Applied coupons & festival deals engine with auto-deduction
  * - Open/Close state controls for CartDrawer and CheckoutModal
  */
 
@@ -13,6 +14,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 const CartContext = createContext(null);
 
 const STORAGE_KEY = 'shopsilo_customer_cart';
+const COUPON_STORAGE_KEY = 'shopsilo_applied_coupon';
 
 export const CartProvider = ({ children }) => {
   const [items, setItems] = useState(() => {
@@ -26,10 +28,19 @@ export const CartProvider = ({ children }) => {
     }
   });
 
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    try {
+      const saved = localStorage.getItem(COUPON_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  // Sync to localStorage
+  // Sync cart to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -37,6 +48,19 @@ export const CartProvider = ({ children }) => {
       console.warn('Unable to persist cart to localStorage', e);
     }
   }, [items]);
+
+  // Sync coupon to localStorage
+  useEffect(() => {
+    try {
+      if (appliedCoupon) {
+        localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(appliedCoupon));
+      } else {
+        localStorage.removeItem(COUPON_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn('Unable to persist coupon to localStorage', e);
+    }
+  }, [appliedCoupon]);
 
   const openCart = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
@@ -139,7 +163,26 @@ export const CartProvider = ({ children }) => {
     [items]
   );
 
-  // Calculations
+  // Apply or remove promotional coupon
+  const applyCoupon = useCallback((coupon) => {
+    if (!coupon) return;
+    const couponObj = typeof coupon === 'string'
+      ? { code: coupon.toUpperCase(), title: coupon, discount_text: coupon }
+      : {
+          code: coupon.code || coupon.discount_text || coupon.title,
+          title: coupon.title || coupon.code,
+          discount_text: coupon.discount_text || coupon.title,
+          shop_id: coupon.shop_id,
+          shop_name: coupon.shop_name,
+        };
+    setAppliedCoupon(couponObj);
+  }, []);
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+  }, []);
+
+  // Base Calculations
   const cartCount = useMemo(() => {
     return items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   }, [items]);
@@ -159,6 +202,38 @@ export const CartProvider = ({ children }) => {
     return Math.max(0, mrpTotal - subtotal);
   }, [mrpTotal, subtotal]);
 
+  // Coupon discount calculation
+  const couponDiscount = useMemo(() => {
+    if (!appliedCoupon || subtotal <= 0) return 0;
+    const text = String(appliedCoupon.discount_text || appliedCoupon.title || appliedCoupon.code || '').toLowerCase();
+
+    // Check percentage discount e.g. "20% OFF", "15% off", "Flat 25%"
+    const pctMatch = text.match(/(\d+)%/);
+    if (pctMatch) {
+      const pct = Number(pctMatch[1]);
+      return Math.round((subtotal * pct) / 100);
+    }
+
+    // Check flat rupee amount e.g. "₹50", "Flat ₹100", "Rs 50"
+    const flatMatch = text.match(/(?:₹|rs\.?|flat\s*)(\d+)/i);
+    if (flatMatch) {
+      const flatAmt = Number(flatMatch[1]);
+      return Math.min(subtotal, flatAmt);
+    }
+
+    // Buy 1 Get 1 or BOGO offers: give 25% order value equivalent
+    if (text.includes('bogo') || text.includes('buy 1 get 1') || text.includes('buy x')) {
+      return Math.round(subtotal * 0.25);
+    }
+
+    // Standard festival default: 15% discount
+    return Math.min(subtotal, Math.round(subtotal * 0.15));
+  }, [appliedCoupon, subtotal]);
+
+  const finalTotal = useMemo(() => {
+    return Math.max(0, subtotal - couponDiscount);
+  }, [subtotal, couponDiscount]);
+
   const contextValue = useMemo(
     () => ({
       items,
@@ -166,6 +241,11 @@ export const CartProvider = ({ children }) => {
       subtotal,
       mrpTotal,
       totalSavings,
+      appliedCoupon,
+      couponDiscount,
+      finalTotal,
+      applyCoupon,
+      removeCoupon,
       isCartOpen,
       isCheckoutOpen,
       openCart,
@@ -186,6 +266,11 @@ export const CartProvider = ({ children }) => {
       subtotal,
       mrpTotal,
       totalSavings,
+      appliedCoupon,
+      couponDiscount,
+      finalTotal,
+      applyCoupon,
+      removeCoupon,
       isCartOpen,
       isCheckoutOpen,
       openCart,

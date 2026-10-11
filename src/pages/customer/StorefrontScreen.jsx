@@ -62,18 +62,47 @@ export const StorefrontScreen = () => {
   }, [slug]);
 
   const loadShopAndProducts = async () => {
-    try {
+    if (!slug) return;
+
+    // 1. Check Local Cache First (0ms Instant Display)
+    const cachedShop = localCache.get(CACHE_KEYS.STOREFRONT(slug));
+    const cachedProds = localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug));
+
+    let hasLocalData = false;
+    if (cachedShop) {
+      setShop(cachedShop);
+      hasLocalData = true;
+    }
+    if (cachedProds && Array.isArray(cachedProds) && cachedProds.length > 0) {
+      setProducts(cachedProds);
+      hasLocalData = true;
+    }
+
+    if (hasLocalData) {
+      setLoading(false); // Render 0ms instantly!
+    } else {
       setLoading(true);
+    }
+
+    // 2. Background Server Revalidation
+    try {
       const [shopData, prodData] = await Promise.all([
         shopApi.getShopBySlug(slug),
         productApi.listByShopSlug(slug),
       ]);
-      setShop(shopData);
+
+      if (shopData) {
+        setShop(shopData);
+        localCache.set(CACHE_KEYS.STOREFRONT(slug), shopData, DEFAULT_TTL.STOREFRONT);
+      }
+
       const list = Array.isArray(prodData?.products) ? prodData.products : (Array.isArray(prodData) ? prodData : []);
-      setProducts(list);
+      if (list.length > 0 || !hasLocalData) {
+        setProducts(list);
+        localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), list, DEFAULT_TTL.PRODUCTS);
+      }
     } catch (err) {
       console.error('Failed to load shop:', err);
-      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -202,27 +231,33 @@ export const StorefrontScreen = () => {
               </span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {shop.phone && (
-                  <a
-                    href={`https://wa.me/91${shop.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(shop.name)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      backgroundColor: '#25d366',
-                      color: '#ffffff',
-                      padding: '3px 8px',
-                      borderRadius: 'var(--radius-full)',
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      fontSize: '0.72rem',
-                    }}
-                  >
-                    <MessageCircle size={12} /> WhatsApp
-                  </a>
-                )}
+                {shop.phone && (() => {
+                  const cleanPhone = shop.phone.replace(/[^0-9]/g, '');
+                  const waMsg = isHindi
+                    ? `नमस्ते ${shop.name}! मैं ShopSilo पर आपकी दुकान देख रहा हूँ और कुछ सामान के बारे में जानकारी चाहिए।`
+                    : `Hello ${shop.name}! I am browsing your store on ShopSilo and have an inquiry.`;
+                  return (
+                    <a
+                      href={`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(waMsg)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        backgroundColor: '#25d366',
+                        color: '#ffffff',
+                        padding: '4px 10px',
+                        borderRadius: 'var(--radius-full)',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        fontSize: '0.74rem',
+                      }}
+                    >
+                      <MessageCircle size={13} /> {isHindi ? 'व्हाट्सएप पूछताछ' : 'WhatsApp Shop'}
+                    </a>
+                  );
+                })()}
 
                 <span
                   style={{

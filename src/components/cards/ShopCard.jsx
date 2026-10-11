@@ -1,12 +1,13 @@
 /**
  * Reusable Shop Card Component
- * Bilingual, responsive, and accessible card with live open/closed status & GPS distance
+ * Bilingual, responsive, and accessible card with live open/closed status,
+ * live GPS walking/driving travel time indicators, and 1-tap Google Maps directions.
  */
 
 import React, { memo } from 'react';
-import { Store, MapPin, Clock, Heart, Phone, ArrowRight } from 'lucide-react';
+import { Store, MapPin, Clock, Heart, Phone, ArrowRight, Navigation } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
-import { calculateDistanceKm, formatDistance } from '../../utils/distance';
+import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { useLanguage } from '../../context/LanguageContext';
 
 const ShopCardInner = ({
@@ -21,6 +22,7 @@ const ShopCardInner = ({
   const s = shop;
   const isShopOpen = Boolean(s.is_currently_open ?? s.is_open ?? s.is_active);
   const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
+  const travelInfo = formatTravelTime(distKm, isHindi);
   const hasBanner = Array.isArray(s.banners) && s.banners.length > 0 && s.banners[0];
 
   return (
@@ -28,7 +30,7 @@ const ShopCardInner = ({
       className="card card-clickable shop-card"
       onClick={onClick}
       role="article"
-      aria-label={`Shop: ${s.name}, ${isShopOpen ? 'Open Now' : 'Closed'}`}
+      aria-label={`Shop: ${s.name}, ${isShopOpen ? (isHindi ? 'खुली है' : 'Open Now') : (isHindi ? 'बंद है' : 'Closed')}`}
     >
       {/* Banner Preview */}
       {hasBanner && (
@@ -83,7 +85,7 @@ const ShopCardInner = ({
             </button>
           </div>
 
-          {/* Status */}
+          {/* Status & Timing */}
           <div className="shop-card-status-row">
             <span className={`shop-card-status ${isShopOpen ? 'open' : 'closed'}`}>
               <span className="shop-card-status-dot" />
@@ -95,18 +97,35 @@ const ShopCardInner = ({
             </span>
           </div>
 
-          {/* Location */}
+          {/* Location & Live GPS Distance */}
           <div className="shop-card-location">
             <MapPin size={13} color="var(--color-primary)" style={{ flexShrink: 0 }} aria-hidden="true" />
             <span className="shop-card-address">
               {[s.address, s.city].filter(Boolean).join(', ') || (isHindi ? 'स्थानीय दुकान' : 'Local Store')}
             </span>
-            {distKm != null && (
-              <span className="shop-card-distance">
-                • {formatDistance(distKm)}
-              </span>
-            )}
           </div>
+
+          {/* Live Travel Time Indicator (Walking or Driving) */}
+          {travelInfo && (
+            <div
+              style={{
+                marginTop: '6px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: travelInfo.mode === 'walk' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                border: travelInfo.mode === 'walk' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(59, 130, 246, 0.25)',
+                color: travelInfo.mode === 'walk' ? '#047857' : '#1d4ed8',
+                borderRadius: '8px',
+                padding: '3px 8px',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+              }}
+            >
+              <span>{travelInfo.icon}</span>
+              <span>{travelInfo.full}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -125,15 +144,39 @@ const ShopCardInner = ({
 
       {/* Actions */}
       <div className="shop-card-actions" onClick={(e) => e.stopPropagation()}>
+        {/* Directions button */}
+        {s.latitude && s.longitude && (
+          <a
+            href={getDirectionsUrl(s.latitude, s.longitude, s.name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline btn-sm shop-card-call-btn"
+            style={{
+              gap: '4px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+            title={isHindi ? 'गूगल मैप्स पर रास्ता देखें' : 'Get Directions on Google Maps'}
+          >
+            <Navigation size={13} color="var(--color-primary)" />
+            <span>{isHindi ? 'रास्ता देखें' : 'Directions'}</span>
+          </a>
+        )}
+
         {s.phone && (
           <a
             href={`tel:${s.phone}`}
             className="btn btn-secondary btn-sm shop-card-call-btn"
             aria-label={`Call ${s.name}`}
           >
-            <Phone size={13} aria-hidden="true" /> {isHindi ? 'कॉल करें' : 'Call'}
+            <Phone size={13} aria-hidden="true" />
+            <span>{isHindi ? 'कॉल करें' : 'Call'}</span>
           </a>
         )}
+
         <button
           onClick={() => onNavigate?.(`/shop/${s.slug}`)}
           className="btn btn-primary btn-sm shop-card-storefront-btn"
