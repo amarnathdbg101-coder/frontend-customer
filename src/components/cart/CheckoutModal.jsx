@@ -119,16 +119,20 @@ export const CheckoutModal = () => {
       const random4Digit = Math.floor(1000 + Math.random() * 9000);
       const tokenNumber = `#${random4Digit}`;
 
+            // Build itemized breakdown for merchant counter
+      const itemsSummary = items.map((i) => `${i.name || 'Item'} (x${i.quantity || 1})`).join(', ');
+
       const payload = {
         product_id: primaryItem.id,
         quantity: primaryItem.quantity || 1,
         hold_hours: holdHoursMap[timeSlot] || 2,
         notes: [
           `Pickup Token: ${tokenNumber}`,
-          notes ? `Note: ${notes}` : null,
           `Customer: ${customerName} (${customerPhone})`,
+          items.length > 1 ? `Items: ${itemsSummary}` : null,
+          notes ? `Note: ${notes}` : null,
           appliedCoupon ? `Coupon: ${appliedCoupon.code || appliedCoupon.title} (-₹${couponDiscount})` : null,
-          `Payable: ₹${finalTotal || subtotal} (${items.length} unique items)`,
+          `Payable: ₹${finalTotal || subtotal} (${items.length} items)`,
         ]
           .filter(Boolean)
           .join(' | '),
