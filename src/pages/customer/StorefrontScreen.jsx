@@ -72,7 +72,7 @@ export const StorefrontScreen = () => {
     try {
       const [shopData, prodData] = await Promise.all([
         shopApi.getShopBySlug(slug),
-        productApi.listByShopSlug(slug),
+        productApi.listByShopSlug(slug, { limit: 100 }),
       ]);
 
       if (shopData) {

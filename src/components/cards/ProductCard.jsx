@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { ShoppingCart, Heart, Package } from 'lucide-react';
-import { getImageUrl } from '../../utils/imageUrl';
+import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
 import { Badge, Button } from '../ui';
@@ -30,6 +30,7 @@ const ProductCardInner = ({
                         p.attributes?.is_price_public !== 'false' && 
                         price > 0 &&
                         !p.hide_price;
+  const firstImage = extractFirstImage(p.images || p.image || p.image_url);
   const hasDiscount = isPricePublic && mrp > price;
   const discountPct = hasDiscount ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
@@ -73,11 +74,12 @@ const ProductCardInner = ({
             overflow: 'hidden',
           }}
         >
-          {p.images && p.images[0] ? (
+          {firstImage ? (
             <img
-              src={getImageUrl(p.images[0])}
+              src={getImageUrl(firstImage)}
               alt={p.name}
               loading="lazy"
+              decoding="async"
               style={{
                 width: '100%',
                 height: '100%',

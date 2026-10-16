@@ -60,3 +60,28 @@ export const getImageUrl = (url) => {
 
   return trimmed;
 };
+
+/**
+ * Robust First Image Extractor
+ * Handles arrays, JSON strings, bare strings, or empty values safely
+ */
+export const extractFirstImage = (images) => {
+  if (!images) return '';
+  if (Array.isArray(images)) {
+    return images.length > 0 && typeof images[0] === 'string' ? images[0].trim() : '';
+  }
+  if (typeof images === 'string') {
+    const trimmed = images.trim();
+    if (!trimmed || trimmed === '[]' || trimmed === '""') return '';
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return typeof parsed[0] === 'string' ? parsed[0].trim() : '';
+        }
+      } catch (e) {}
+    }
+    return trimmed;
+  }
+  return '';
+};

@@ -22,6 +22,7 @@ import { sessionState } from './utils/sessionState';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { CheckoutModal } from './components/cart/CheckoutModal';
 import { FloatingCartBar } from './components/cart/FloatingCartBar';
+import OfflineBanner from './components/common/OfflineBanner';
 
 // Code-split / Lazy-loaded Customer Pages
 const ExploreShopsScreen = lazy(() =>
@@ -142,6 +143,7 @@ function App() {
                     <RouteSessionKeeper />
                     <CartDrawer />
                     <CheckoutModal />
+                    <OfflineBanner />
                     <FloatingCartBar />
                     <Suspense fallback={<LoadingSpinner fullScreen />}>
                       <Routes>

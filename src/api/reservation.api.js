@@ -14,7 +14,13 @@ export const reservationApi = {
   // Grahak ke dwara item reserve karna
   // payload: { product_id, quantity, hold_hours, notes }
   createReservation: async (data) => {
-    const res = await client.post('/reservations', data);
+    // Generate unique client-side idempotency key to prevent double-charging / duplicate reservations
+    const idempotencyKey = `res_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const res = await client.post('/reservations', data, {
+      headers: {
+        'X-Idempotency-Key': idempotencyKey,
+      },
+    });
     return res.data;
   },
 

@@ -36,11 +36,15 @@ import { ProductCard } from '../../components/cards/ProductCard';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skeleton';
+import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
+
+const PAGE_LIMIT = 20;
 
 const RADIUS_OPTIONS = [
   { label: '1 km', value: 1 },
@@ -83,6 +87,11 @@ export const ExploreShopsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
   const [sortBy, setSortBy] = useState('relevant');
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalProductCount, setTotalProductCount] = useState(0);
 
   // Automatic scroll position restoration
   useScreenState('explore', {
@@ -130,6 +139,9 @@ export const ExploreShopsScreen = () => {
       setLoading(true);
     }
 
+    setPage(1);
+    setHasMore(true);
+
     try {
       const params = {
         lat: coords?.lat,
@@ -144,9 +156,10 @@ export const ExploreShopsScreen = () => {
               lat: coords.lat,
               lng: coords.lng,
               radius_km: radiusKm === 999 ? 20 : radiusKm,
-              limit: 100,
-            }).catch(() => productApi.listProducts({ limit: 100 }))
-          : productApi.listProducts({ limit: 100 }),
+              page: 1,
+              limit: PAGE_LIMIT,
+            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT }))
+          : productApi.listProducts({ page: 1, limit: PAGE_LIMIT }),
       ]);
 
       let shopList = shopsRes.status === 'fulfilled' ? extractArray(shopsRes.value, 'shops') : [];
@@ -159,14 +172,24 @@ export const ExploreShopsScreen = () => {
         }
       }
 
-      let rawProdList = prodsRes.status === 'fulfilled' ? extractArray(prodsRes.value, 'products') : [];
+      const prodData = prodsRes.status === 'fulfilled' ? prodsRes.value : null;
+      let rawProdList = extractArray(prodData, 'products');
       if (rawProdList.length === 0) {
         try {
-          const fallbackProds = await productApi.listProducts({ limit: 100 });
+          const fallbackProds = await productApi.listProducts({ page: 1, limit: PAGE_LIMIT });
           rawProdList = extractArray(fallbackProds, 'products');
         } catch (e) {
           console.warn('Fallback products fetch error:', e);
         }
+      }
+
+      const totalCount = prodData?.total_count || prodData?.data?.total_count || rawProdList.length;
+      const totalPages = prodData?.total_pages || prodData?.data?.total_pages || Math.ceil(totalCount / PAGE_LIMIT);
+      setTotalProductCount(totalCount);
+      if (rawProdList.length < PAGE_LIMIT || totalPages <= 1) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
       }
 
       const normalizedProds = rawProdList.map((p) => {
@@ -213,6 +236,98 @@ export const ExploreShopsScreen = () => {
       unsubProds();
     };
   }, [loadMarketplaceData]);
+  // 1b. Infinite Scroll Pagination: Fetch next page of products on scroll
+  const loadMoreProducts = useCallback(async () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      let rawProdList = [];
+      let totalPages = 1;
+      let totalCount = 0;
+
+      if (coords?.lat && coords?.lng) {
+        const res = await productApi.findNearbyProducts({
+          lat: coords.lat,
+          lng: coords.lng,
+          radius_km: radiusKm === 999 ? 20 : radiusKm,
+          page: nextPage,
+          limit: PAGE_LIMIT,
+        });
+        rawProdList = extractArray(res, 'products');
+        totalPages = res?.total_pages || res?.data?.total_pages || 1;
+        totalCount = res?.total_count || res?.data?.total_count || 0;
+      } else {
+        const res = await productApi.listProducts({ page: nextPage, limit: PAGE_LIMIT });
+        rawProdList = extractArray(res, 'products');
+        totalPages = res?.total_pages || res?.data?.total_pages || 1;
+        totalCount = res?.total_count || res?.data?.total_count || 0;
+      }
+
+      if (totalCount > 0) {
+        setTotalProductCount(totalCount);
+      }
+
+      if (rawProdList.length === 0 || nextPage >= totalPages || rawProdList.length < PAGE_LIMIT) {
+        setHasMore(false);
+      }
+
+      if (rawProdList.length > 0) {
+        const normalizedProds = rawProdList.map((p) => {
+          const qty = Number(
+            p.available_quantity ??
+            p.stock_quantity ??
+            p.inventory?.available_quantity ??
+            p.inventory?.quantity ??
+            p.stock ??
+            0
+          );
+          return {
+            ...p,
+            id: p.id || p.product_id,
+            stock_quantity: qty,
+            available_quantity: qty,
+          };
+        });
+
+        setProducts((prev) => {
+          const existingIds = new Set(prev.map((item) => item.id));
+          const newItems = normalizedProds.filter((item) => !existingIds.has(item.id));
+          const updated = [...prev, ...newItems];
+          localCache.set(CACHE_KEYS.PRODUCTS, updated, DEFAULT_TTL.PRODUCTS);
+          return updated;
+        });
+        setPage(nextPage);
+      }
+    } catch (err) {
+      console.error('Failed to load more products:', err);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, loading, page, coords?.lat, coords?.lng, radiusKm]);
+
+  // Automatic Infinite Scroll Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (activeTab !== 'products') return;
+      if (!hasMore || loadingMore || loading) return;
+
+      const scrollY = window.scrollY || window.pageYOffset;
+      const visibleHeight = window.innerHeight;
+      const totalHeight = document.documentElement.scrollHeight;
+
+      // Trigger next batch when user reaches within 350px of bottom
+      if (visibleHeight + scrollY >= totalHeight - 350) {
+        loadMoreProducts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab, hasMore, loadingMore, loading, loadMoreProducts]);
+
 
   // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
   const filteredProducts = useMemo(() => {
@@ -285,6 +400,10 @@ export const ExploreShopsScreen = () => {
         const matchesCity = (s.city || '').toLowerCase().includes(query);
         const matchesCat = (s.category || '').toLowerCase().includes(query);
         if (!matchesName && !matchesAddr && !matchesCity && !matchesCat) return false;
+      }
+
+      if (showOpenOnly && s.is_open === false && s.isCurrentlyOpen === false) {
+        return false;
       }
 
       if (selectedCategory && selectedCategory !== 'All') {
@@ -401,6 +520,29 @@ export const ExploreShopsScreen = () => {
               </option>
             ))}
           </select>
+
+          {/* Open Stores Only Pill Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowOpenOnly((prev) => !prev)}
+            style={{
+              padding: '2px 8px',
+              borderRadius: '8px',
+              border: showOpenOnly ? '1.5px solid #10b981' : '1px solid var(--border-subtle)',
+              backgroundColor: showOpenOnly ? '#dcfce7' : 'var(--bg-surface-subtle)',
+              color: showOpenOnly ? '#15803d' : 'var(--text-secondary)',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginLeft: '4px',
+            }}
+          >
+            <span>🟢</span>
+            <span>{isHindi ? 'खुली दुकानें' : 'Open Stores'}</span>
+          </button>
         </div>
       </div>
 
@@ -770,17 +912,73 @@ export const ExploreShopsScreen = () => {
             description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
           />
         ) : (
-          <div className="customer-product-grid">
-            {filteredProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                isSaved={isProductSaved(p.id)}
-                onToggleSave={toggleSaveProduct}
-                onClick={() => setInspectedProduct(p)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="customer-product-grid">
+              {filteredProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  isSaved={isProductSaved(p.id)}
+                  onToggleSave={toggleSaveProduct}
+                  onClick={() => setInspectedProduct(p)}
+                />
+              ))}
+            </div>
+
+            {/* Seamless Infinite Scroll Loading Animation */}
+            {loadingMore && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '30px 0',
+                  color: 'var(--color-primary, #2563eb)',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                }}
+              >
+                <LoadingSpinner size="sm" />
+                <span>{isHindi ? 'Aur products load ho rahe hain...' : 'Loading more products...'}</span>
+              </div>
+            )}
+
+            {/* Manual fallback load more button */}
+            {!loadingMore && hasMore && filteredProducts.length >= PAGE_LIMIT && (
+              <div style={{ textAlign: 'center', margin: '28px 0 12px' }}>
+                <Button
+                  variant="outline"
+                  onClick={loadMoreProducts}
+                  style={{
+                    borderRadius: '24px',
+                    padding: '10px 32px',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  {isHindi ? 'Aur Products Dekhein ⬇' : 'Load More Products ⬇'}
+                </Button>
+              </div>
+            )}
+
+            {/* End of results indication */}
+            {!hasMore && filteredProducts.length > 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '28px 0 12px',
+                  color: 'var(--text-tertiary, #94a3b8)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {isHindi ? '✓ Sabhi nazdeeki products dekh liye gaye hain' : "✓ All available products nearby loaded"}
+              </div>
+            )}
+          </>
         )}
       </div>
 
