@@ -105,11 +105,11 @@ export const CustomerKhataScreen = () => {
         setSummary(data);
         localCache.set(CACHE_KEYS.KHATA_SUMMARY, data, DEFAULT_TTL.KHATA);
       }
-      const accountsList = data?.accounts || data?.khatas || [];
+      const accountsList = data?.shops || data?.accounts || data?.khatas || [];
       if (accountsList.length > 0 && !selectedKhata) {
         // Auto-select first account for desktop passbook view
         setSelectedKhata(accountsList[0]);
-        loadPassbookForAccount(accountsList[0].id);
+        loadPassbookForAccount(accountsList[0].khata_id || accountsList[0].id);
       }
     } catch (err) {
       console.error('Failed to load khata summary:', err);
@@ -126,14 +126,14 @@ export const CustomerKhataScreen = () => {
     fetchSummary();
     const unsub = cacheEvents.on(CACHE_EVENTS.KHATA_MUTATED, () => {
       fetchSummary();
-      if (selectedKhata) loadPassbookForAccount(selectedKhata.id);
+      if (selectedKhata) loadPassbookForAccount(selectedKhata.khata_id || selectedKhata.id);
     });
     return () => unsub();
   }, [fetchSummary, selectedKhata, loadPassbookForAccount]);
 
   const handleSelectKhata = (khata, isMobileTrigger = false) => {
     setSelectedKhata(khata);
-    loadPassbookForAccount(khata.id);
+    loadPassbookForAccount(khata.khata_id || khata.id);
     if (isMobileTrigger) {
       setShowMobilePassbookModal(true);
     }
@@ -226,7 +226,7 @@ export const CustomerKhataScreen = () => {
   };
 
   // Filtered accounts
-  const accounts = summary?.accounts || summary?.khatas || [];
+  const accounts = summary?.shops || summary?.accounts || summary?.khatas || [];
   const filteredAccounts = accounts.filter((acc) => {
     const q = searchQuery.toLowerCase();
     const name = (acc.shop_name || acc.shop?.name || '').toLowerCase();
@@ -234,7 +234,7 @@ export const CustomerKhataScreen = () => {
     return name.includes(q) || phone.includes(q);
   });
 
-  const totalOutstanding = summary?.total_outstanding ?? summary?.total_balance ?? 0;
+  const totalOutstanding = summary?.total_market_due ?? summary?.total_outstanding ?? summary?.total_balance ?? 0;
 
   // Generate UPI URI for selected shop using real shop upi_id with phone fallback
   const getShopUpiUri = () => {
