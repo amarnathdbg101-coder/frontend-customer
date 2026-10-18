@@ -11,12 +11,15 @@ export const GOOGLE_CLIENT_ID =
 
 export const STORAGE_KEYS = {
   TOKEN: 'shopsilo_token',
+  AUTH_TOKEN: 'shopsilo_token',
   USER: 'shopsilo_user',
+  USER_INFO: 'shopsilo_user',
   CART: 'shopsilo_cart',
   SAVED_SHOPS: 'shopsilo_saved_shops',
   SAVED_PRODUCTS: 'shopsilo_saved_products',
   THEME: 'shopsilo_theme',
   LANG: 'shopsilo_lang',
+  RECENT_SEARCHES: 'shopme_recent_searches',
 } as const;
 
 export const DEFAULT_PAGE_LIMIT = 20;

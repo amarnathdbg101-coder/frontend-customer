@@ -5,18 +5,14 @@ import { useScreenState } from '../../hooks/useScreenState.js';
 /**
  * Customer Explore & Marketplace Screen
  * Clean, modern, responsive layout with location discovery, search, promo carousel, 
- * 44-category system, and responsive shop & product feeds.
+ * category system, and responsive shop & product feeds.
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
-  Zap,
   Store,
-  BookOpen,
-  Tag,
-  Folder,
   ChevronDown,
   MapPin,
   X,
@@ -36,11 +32,17 @@ import { ProductCard } from '../../components/cards/ProductCard';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skeleton';
+import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
-import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
+import { CategoryBar } from '../../components/customer/CategoryBar';
+import { calculateDistanceKm } from '../../utils/distance';
+import { isProductInCategory, isShopInCategory } from '../../utils/categoryMatcher';
+
+const PAGE_LIMIT = 20;
 
 const RADIUS_OPTIONS = [
   { label: '1 km', value: 1 },
@@ -83,6 +85,11 @@ export const ExploreShopsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
   const [sortBy, setSortBy] = useState('relevant');
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalProductCount, setTotalProductCount] = useState(0);
 
   // Automatic scroll position restoration
   useScreenState('explore', {
@@ -109,10 +116,11 @@ export const ExploreShopsScreen = () => {
 
   // 1. Fetch Shops & Products (SWR 0ms Cache First)
   const loadMarketplaceData = useCallback(async () => {
-    // 1. Check Local Cache First for 0ms Instant Display (keyed by area)
+    const isCatActive = selectedCategory && selectedCategory !== 'All';
     const cacheCoordKey = coords?.lat ? `${CACHE_KEYS.SHOPS}_${coords.lat.toFixed(2)}_${coords.lng.toFixed(2)}` : CACHE_KEYS.SHOPS;
+    const cacheProdKey = isCatActive ? `${CACHE_KEYS.PRODUCTS}_${selectedCategory}` : CACHE_KEYS.PRODUCTS;
     const cachedShops = localCache.get(cacheCoordKey);
-    const cachedProds = localCache.get(CACHE_KEYS.PRODUCTS);
+    const cachedProds = localCache.get(cacheProdKey);
 
     let hasLocal = false;
     if (cachedShops && Array.isArray(cachedShops) && cachedShops.length > 0) {
@@ -130,11 +138,16 @@ export const ExploreShopsScreen = () => {
       setLoading(true);
     }
 
+    setPage(1);
+    setHasMore(true);
+
     try {
+      const categoryParam = isCatActive ? selectedCategory : undefined;
       const params = {
         lat: coords?.lat,
         lng: coords?.lng,
         radius_km: radiusKm === 999 ? undefined : radiusKm,
+        category: categoryParam,
       };
 
       const [shopsRes, prodsRes] = await Promise.allSettled([
@@ -144,9 +157,11 @@ export const ExploreShopsScreen = () => {
               lat: coords.lat,
               lng: coords.lng,
               radius_km: radiusKm === 999 ? 20 : radiusKm,
-              limit: 100,
-            }).catch(() => productApi.listProducts({ limit: 100 }))
-          : productApi.listProducts({ limit: 100 }),
+              category: categoryParam,
+              page: 1,
+              limit: PAGE_LIMIT,
+            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam }))
+          : productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam }),
       ]);
 
       let shopList = shopsRes.status === 'fulfilled' ? extractArray(shopsRes.value, 'shops') : [];
@@ -159,14 +174,24 @@ export const ExploreShopsScreen = () => {
         }
       }
 
-      let rawProdList = prodsRes.status === 'fulfilled' ? extractArray(prodsRes.value, 'products') : [];
+      const prodData = prodsRes.status === 'fulfilled' ? prodsRes.value : null;
+      let rawProdList = extractArray(prodData, 'products');
       if (rawProdList.length === 0) {
         try {
-          const fallbackProds = await productApi.listProducts({ limit: 100 });
+          const fallbackProds = await productApi.listProducts({ page: 1, limit: PAGE_LIMIT });
           rawProdList = extractArray(fallbackProds, 'products');
         } catch (e) {
           console.warn('Fallback products fetch error:', e);
         }
+      }
+
+      const totalCount = prodData?.total_count || prodData?.data?.total_count || rawProdList.length;
+      const totalPages = prodData?.total_pages || prodData?.data?.total_pages || Math.ceil(totalCount / PAGE_LIMIT);
+      setTotalProductCount(totalCount);
+      if (rawProdList.length < PAGE_LIMIT || totalPages <= 1) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
       }
 
       const normalizedProds = rawProdList.map((p) => {
@@ -192,14 +217,14 @@ export const ExploreShopsScreen = () => {
       }
       if (normalizedProds.length > 0) {
         setProducts(normalizedProds);
-        localCache.set(CACHE_KEYS.PRODUCTS, normalizedProds, DEFAULT_TTL.PRODUCTS);
+        localCache.set(cacheProdKey, normalizedProds, DEFAULT_TTL.PRODUCTS);
       }
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
     } finally {
       setLoading(false);
     }
-  }, [coords?.lat, coords?.lng, radiusKm]);
+  }, [coords?.lat, coords?.lng, radiusKm, selectedCategory]);
 
   useEffect(() => {
     loadMarketplaceData();
@@ -213,6 +238,100 @@ export const ExploreShopsScreen = () => {
       unsubProds();
     };
   }, [loadMarketplaceData]);
+
+  // 1b. Infinite Scroll Pagination: Fetch next page of products on scroll
+  const loadMoreProducts = useCallback(async () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      let rawProdList = [];
+      let totalPages = 1;
+      let totalCount = 0;
+
+      const categoryParam = (selectedCategory && selectedCategory !== 'All') ? selectedCategory : undefined;
+      if (coords?.lat && coords?.lng) {
+        const res = await productApi.findNearbyProducts({
+          lat: coords.lat,
+          lng: coords.lng,
+          radius_km: radiusKm === 999 ? 20 : radiusKm,
+          category: categoryParam,
+          page: nextPage,
+          limit: PAGE_LIMIT,
+        });
+        rawProdList = extractArray(res, 'products');
+        totalPages = res?.total_pages || res?.data?.total_pages || 1;
+        totalCount = res?.total_count || res?.data?.total_count || 0;
+      } else {
+        const res = await productApi.listProducts({ page: nextPage, limit: PAGE_LIMIT, category: categoryParam });
+        rawProdList = extractArray(res, 'products');
+        totalPages = res?.total_pages || res?.data?.total_pages || 1;
+        totalCount = res?.total_count || res?.data?.total_count || 0;
+      }
+
+      if (totalCount > 0) {
+        setTotalProductCount(totalCount);
+      }
+
+      if (rawProdList.length === 0 || nextPage >= totalPages || rawProdList.length < PAGE_LIMIT) {
+        setHasMore(false);
+      }
+
+      if (rawProdList.length > 0) {
+        const normalizedProds = rawProdList.map((p) => {
+          const qty = Number(
+            p.available_quantity ??
+            p.stock_quantity ??
+            p.inventory?.available_quantity ??
+            p.inventory?.quantity ??
+            p.stock ??
+            0
+          );
+          return {
+            ...p,
+            id: p.id || p.product_id,
+            stock_quantity: qty,
+            available_quantity: qty,
+          };
+        });
+
+        setProducts((prev) => {
+          const existingIds = new Set(prev.map((item) => item.id));
+          const newItems = normalizedProds.filter((item) => !existingIds.has(item.id));
+          const updated = [...prev, ...newItems];
+          localCache.set(CACHE_KEYS.PRODUCTS, updated, DEFAULT_TTL.PRODUCTS);
+          return updated;
+        });
+        setPage(nextPage);
+      }
+    } catch (err) {
+      console.error('Failed to load more products:', err);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, loading, page, coords?.lat, coords?.lng, radiusKm, selectedCategory]);
+
+  // Automatic Infinite Scroll Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (activeTab !== 'products') return;
+      if (!hasMore || loadingMore || loading) return;
+
+      const scrollY = window.scrollY || window.pageYOffset;
+      const visibleHeight = window.innerHeight;
+      const totalHeight = document.documentElement.scrollHeight;
+
+      // Trigger next batch when user reaches within 350px of bottom
+      if (visibleHeight + scrollY >= totalHeight - 350) {
+        loadMoreProducts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab, hasMore, loadingMore, loading, loadMoreProducts]);
 
   // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
   const filteredProducts = useMemo(() => {
@@ -237,10 +356,7 @@ export const ExploreShopsScreen = () => {
       }
 
       if (selectedCategory && selectedCategory !== 'All') {
-        const catLower = selectedCategory.toLowerCase();
-        const pCat = (p.category_name || p.category_id || p.category_slug || p.category?.name || p.category?.slug || '').toLowerCase();
-        const matchesCat = pCat.includes(catLower) || catLower.includes(pCat) || (p.name || '').toLowerCase().includes(catLower);
-        if (!matchesCat) return false;
+        if (!isProductInCategory(p, selectedCategory)) return false;
       }
 
       return true;
@@ -267,10 +383,9 @@ export const ExploreShopsScreen = () => {
     });
   }, [products, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
 
-  // 3. Filter & Sort Shops (Location-Aware + Fast Proximity)
+  // 3. Filter & Sort Shops
   const filteredShops = useMemo(() => {
     const list = shops.filter((s) => {
-      // Proximity Distance Filter
       const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
       s._distKm = distKm;
 
@@ -287,11 +402,12 @@ export const ExploreShopsScreen = () => {
         if (!matchesName && !matchesAddr && !matchesCity && !matchesCat) return false;
       }
 
+      if (showOpenOnly && s.is_open === false && s.isCurrentlyOpen === false) {
+        return false;
+      }
+
       if (selectedCategory && selectedCategory !== 'All') {
-        const catLower = selectedCategory.toLowerCase();
-        const sCat = (s.category || '').toLowerCase();
-        const matchesCat = sCat.includes(catLower) || catLower.includes(sCat) || (s.name || '').toLowerCase().includes(catLower);
-        if (!matchesCat) return false;
+        if (!isShopInCategory(s, selectedCategory)) return false;
       }
 
       return true;
@@ -303,12 +419,13 @@ export const ExploreShopsScreen = () => {
       }
       return 0;
     });
-  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
+  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm, sortBy, showOpenOnly]);
 
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
       const res = await reservationApi.createReservation({
         product_id: product.id,
+        shop_id: product.shop_id || product.shopId || product.shop?.id || '',
         quantity,
         hold_hours,
         notes,
@@ -401,6 +518,29 @@ export const ExploreShopsScreen = () => {
               </option>
             ))}
           </select>
+
+          {/* Open Stores Only Pill Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowOpenOnly((prev) => !prev)}
+            style={{
+              padding: '2px 8px',
+              borderRadius: '8px',
+              border: showOpenOnly ? '1.5px solid #10b981' : '1px solid var(--border-subtle)',
+              backgroundColor: showOpenOnly ? '#dcfce7' : 'var(--bg-surface-subtle)',
+              color: showOpenOnly ? '#15803d' : 'var(--text-secondary)',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginLeft: '4px',
+            }}
+          >
+            <span>🟢</span>
+            <span>{isHindi ? 'खुली दुकानें' : 'Open Stores'}</span>
+          </button>
         </div>
       </div>
 
@@ -479,12 +619,12 @@ export const ExploreShopsScreen = () => {
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
           paddingBottom: '4px',
-          marginBottom: '12px',
+          marginBottom: '14px',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
         }}
       >
-        {/* Card 1: Smart Bargain */}
+        {/* Card 1: Direct Bargain */}
         <div
           style={{
             minWidth: '75%',
@@ -567,50 +707,11 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 4. COMPACT CATEGORY EXPLORER BAR */}
-      <div style={{ marginBottom: '14px' }}>
-        <div
-          onClick={() => setIsCategoryModalOpen(true)}
-          style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '12px',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '8px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-            <Folder size={16} color="#d97706" style={{ flexShrink: 0 }} />
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {selectedCategory === 'All'
-                ? (isHindi ? 'सभी कैटेगरीज (44+ Choose Category)' : 'All Categories (44+ Choose Category)')
-                : selectedCategory}
-            </div>
-          </div>
-
-          <div
-            style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              color: 'var(--color-primary, #4f46e5)',
-              padding: '2px 8px',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '3px',
-              flexShrink: 0,
-            }}
-          >
-            <span>44+</span>
-            <ChevronDown size={13} />
-          </div>
-        </div>
-      </div>
+      {/* 4. VISUAL CATEGORY RAIL & DEPARTMENTS */}
+      <CategoryBar
+        selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
+        onSelectCategory={(catId) => setSelectedCategory(catId || 'All')}
+      />
 
       {/* 5. TAB SELECTOR: PRODUCTS vs LOCAL SHOPS */}
       <div
@@ -697,7 +798,7 @@ export const ExploreShopsScreen = () => {
         </button>
       </div>
 
-      {/* 6.5 SMART SORTING CONTROL BAR */}
+      {/* 6. SMART SORTING CONTROL BAR */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 0 12px 0', gap: '8px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary, #64748b)' }}>
           {activeTab === 'products'
@@ -770,17 +871,73 @@ export const ExploreShopsScreen = () => {
             description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
           />
         ) : (
-          <div className="customer-product-grid">
-            {filteredProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                isSaved={isProductSaved(p.id)}
-                onToggleSave={toggleSaveProduct}
-                onClick={() => setInspectedProduct(p)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="customer-product-grid">
+              {filteredProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  isSaved={isProductSaved(p.id)}
+                  onToggleSave={toggleSaveProduct}
+                  onClick={() => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                />
+              ))}
+            </div>
+
+            {/* Seamless Infinite Scroll Loading Animation */}
+            {loadingMore && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '30px 0',
+                  color: 'var(--color-primary, #2563eb)',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                }}
+              >
+                <LoadingSpinner size="sm" />
+                <span>{isHindi ? 'Aur products load ho rahe hain...' : 'Loading more products...'}</span>
+              </div>
+            )}
+
+            {/* Manual fallback load more button */}
+            {!loadingMore && hasMore && filteredProducts.length >= PAGE_LIMIT && (
+              <div style={{ textAlign: 'center', margin: '28px 0 12px' }}>
+                <Button
+                  variant="outline"
+                  onClick={loadMoreProducts}
+                  style={{
+                    borderRadius: '24px',
+                    padding: '10px 32px',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  {isHindi ? 'Aur Products Dekhein ⬇' : 'Load More Products ⬇'}
+                </Button>
+              </div>
+            )}
+
+            {/* End of results indication */}
+            {!hasMore && filteredProducts.length > 0 && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '28px 0 12px',
+                  color: 'var(--text-tertiary, #94a3b8)',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {isHindi ? '✓ Sabhi nazdeeki products dekh liye gaye hain' : "✓ All available products nearby loaded"}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -819,6 +976,7 @@ export const ExploreShopsScreen = () => {
         onClose={() => setIsSmartSearchOpen(false)}
         initialQuery={searchTerm}
       />
+
       {/* LOCATION PICKER MODAL */}
       {showLocationModal && (
         <div
@@ -901,47 +1059,6 @@ export const ExploreShopsScreen = () => {
               <Navigation size={16} />
               <span>{isHindi ? '🎯 लाइव GPS लोकेशन इस्तेमाल करें' : '🎯 Use Live GPS Location'}</span>
             </button>
-
-            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {isHindi ? 'प्रमुख शहर / बाज़ार' : 'Popular Shopping Hubs'}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-              {[
-                { name: 'Noida (Sector 15)', lat: 28.5828, lng: 77.3110, icon: '🏢' },
-                { name: 'Darbhanga', lat: 26.1542, lng: 85.8918, icon: '🏪' },
-                { name: 'Delhi NCR', lat: 28.6139, lng: 77.2090, icon: '🏙️' },
-                { name: 'Patna', lat: 25.6126, lng: 85.1444, icon: '🏛️' },
-                { name: 'Bengaluru', lat: 12.9716, lng: 77.5946, icon: '🌴' },
-                { name: 'Mumbai', lat: 19.0760, lng: 72.8777, icon: '🌊' },
-              ].map((hub) => (
-                <button
-                  key={hub.name}
-                  type="button"
-                  onClick={() => {
-                    setManualLocation(hub.name, hub.lat, hub.lng);
-                    setShowLocationModal(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 12px',
-                    backgroundColor: locationName === hub.name ? 'rgba(79, 70, 229, 0.12)' : 'var(--bg-surface-subtle, #f9fafb)',
-                    border: locationName === hub.name ? '1.5px solid var(--color-primary, #4f46e5)' : '1px solid var(--border-subtle, #e5e7eb)',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    color: locationName === hub.name ? 'var(--color-primary, #4f46e5)' : 'var(--text-primary)',
-                    fontWeight: locationName === hub.name ? 800 : 600,
-                    fontSize: '0.82rem',
-                  }}
-                >
-                  <span>{hub.icon}</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hub.name}</span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       )}

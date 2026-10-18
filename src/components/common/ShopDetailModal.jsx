@@ -276,17 +276,32 @@ export const ShopDetailModal = ({ shop, coords, onClose }) => {
           ) : null}
         </div>
 
-        {/* Directions on Google Maps */}
+        {/* Directions on Google Maps (High Visibility) */}
         {shop.latitude && shop.longitude && (
-          <Button
-            variant="outline"
-            icon={Navigation}
-            fullWidth={true}
-            style={{ marginBottom: '16px' }}
+          <button
+            type="button"
             onClick={() => window.open(getDirectionsUrl(shop.latitude, shop.longitude, shop.name), '_blank')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              backgroundColor: '#f1f5f9',
+              color: '#0f172a',
+              border: '1.5px solid #cbd5e1',
+              borderRadius: '12px',
+              padding: '12px 18px',
+              fontWeight: 800,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              marginBottom: '16px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+            }}
           >
-            {isHindi ? 'गूगल मैप्स पर रास्ता देखें (GPS Directions)' : 'Get Live Directions on Google Maps'}
-          </Button>
+            <Navigation size={18} color="#2563eb" strokeWidth={2.5} />
+            <span>{isHindi ? 'गूगल मैप्स पर रास्ता देखें (GPS Directions)' : 'Get Live Directions on Google Maps'}</span>
+          </button>
         )}
 
         {/* Visit Live Storefront CTA */}

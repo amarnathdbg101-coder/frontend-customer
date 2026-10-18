@@ -242,21 +242,23 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const handleReserve = async (item) => {
     try {
       setReservingId(item.id);
-      const random4Digit = Math.floor(1000 + Math.random() * 9000);
+      const random6Digit = Math.floor(100000 + Math.random() * 900000);
       let res = null;
       try {
         res = await reservationApi.createReservation({
           product_id: item.id,
+          shop_id: item.shop_id || item.shopId || item.shop?.id || '',
           quantity: 1,
           hold_hours: 2,
           notes: `Instant reserve from multi-shop search: ${item.name}`,
         });
       } catch (e) {
         console.warn('Backend reservation call fallback:', e);
-        res = { pickup_code: `${random4Digit}` };
+        res = { pickup_code: `${random6Digit}` };
       }
 
-      const code = res?.pickup_code ? `#${String(res.pickup_code).replace(/[^0-9]/g, '').slice(-4)}` : `#${random4Digit}`;
+      const fullCode = String(res?.pickup_code || random6Digit).trim();
+      const code = fullCode.startsWith('#') ? fullCode : `#${fullCode}`;
       cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED);
       setReservedProduct({
         name: item.name,
@@ -575,8 +577,12 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                       </div>
                     </div>
 
-                    {/* Middle Row: Product Name, Price & Stock */}
+                    {/* Middle Row: Product Name, Price & Stock (Clickable to open Product Details) */}
                     <div
+                      onClick={() => {
+                        onClose();
+                        navigate(`/shop/${item.shop_slug || 'store'}/product/${item.id}`, { state: { product: item } });
+                      }}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -585,7 +591,10 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                         backgroundColor: 'var(--bg-surface-subtle)',
                         borderRadius: '10px',
                         border: '1px solid var(--border-subtle)',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.15s ease',
                       }}
+                      title={isHindi ? 'उत्पाद विवरण देखें' : 'View Product Details'}
                     >
                       <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
                         <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

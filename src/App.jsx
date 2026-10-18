@@ -22,6 +22,8 @@ import { sessionState } from './utils/sessionState';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { CheckoutModal } from './components/cart/CheckoutModal';
 import { FloatingCartBar } from './components/cart/FloatingCartBar';
+import OfflineBanner from './components/common/OfflineBanner';
+import PWAInstallBanner from './components/common/PWAInstallBanner';
 
 // Code-split / Lazy-loaded Customer Pages
 const ExploreShopsScreen = lazy(() =>
@@ -35,6 +37,9 @@ const SavedScreen = lazy(() =>
 );
 const StorefrontScreen = lazy(() =>
   import('./pages/customer/StorefrontScreen').then((m) => ({ default: m.StorefrontScreen }))
+);
+const ProductDetailScreen = lazy(() =>
+  import('./pages/customer/ProductDetailScreen').then((m) => ({ default: m.ProductDetailScreen }))
 );
 const ReservationsScreen = lazy(() =>
   import('./pages/customer/ReservationsScreen').then((m) => ({ default: m.ReservationsScreen }))
@@ -142,7 +147,9 @@ function App() {
                     <RouteSessionKeeper />
                     <CartDrawer />
                     <CheckoutModal />
+                    <OfflineBanner />
                     <FloatingCartBar />
+                    <PWAInstallBanner />
                     <Suspense fallback={<LoadingSpinner fullScreen />}>
                       <Routes>
                         {/* Public Store Discovery, Deals & Shopping */}
@@ -150,6 +157,8 @@ function App() {
                         <Route path="/deals" element={<DealsScreen />} />
                         <Route path="/saved" element={<SavedScreen />} />
                         <Route path="/shop/:slug" element={<StorefrontScreen />} />
+                        <Route path="/shop/:slug/product/:productId" element={<ProductDetailScreen />} />
+                        <Route path="/product/:productId" element={<ProductDetailScreen />} />
 
                         {/* Customer Pickups & Orders */}
                         <Route path="/reservations" element={<ReservationsScreen />} />

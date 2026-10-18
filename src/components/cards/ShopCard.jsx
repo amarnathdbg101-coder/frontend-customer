@@ -159,24 +159,30 @@ const ShopCardInner = ({
 
       {/* Actions */}
       <div className="shop-card-actions" onClick={(e) => e.stopPropagation()}>
-        {/* Directions button */}
+        {/* Directions button (High Visibility) */}
         {s.latitude && s.longitude && (
           <a
             href={getDirectionsUrl(s.latitude, s.longitude, s.name)}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-outline btn-sm shop-card-call-btn"
             style={{
-              gap: '4px',
-              fontSize: '0.74rem',
-              fontWeight: 700,
+              gap: '5px',
+              fontSize: '0.78rem',
+              fontWeight: 800,
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
+              backgroundColor: '#f1f5f9',
+              color: '#0f172a',
+              border: '1px solid #cbd5e1',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              transition: 'all 0.15s ease',
             }}
             title={isHindi ? 'गूगल मैप्स पर रास्ता देखें' : 'Get Directions on Google Maps'}
           >
-            <Navigation size={13} color="var(--color-primary)" />
+            <Navigation size={14} color="#2563eb" strokeWidth={2.5} />
             <span>{isHindi ? 'रास्ता देखें' : 'Directions'}</span>
           </a>
         )}

@@ -1,17 +1,177 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Clock, Store, QrCode } from 'lucide-react';
+import {
+  ShoppingBag,
+  Clock,
+  Store,
+  QrCode,
+  MapPin,
+  Phone,
+  MessageCircle,
+  Share2,
+  Copy,
+  Check,
+  CheckCircle2,
+  Navigation,
+  AlertTriangle,
+  ArrowRight,
+  Package,
+} from 'lucide-react';
 import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { sessionState } from '../../utils/sessionState.js';
-import { useScreenState } from '../../hooks/useScreenState.js';
 import { useSWR } from '../../hooks/useSWR.js';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { RealQRCode } from '../../components/common/RealQRCode';
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
+import { getDirectionsUrl } from '../../utils/distance.js';
+import { getImageUrl } from '../../utils/imageUrl.js';
 import { BaseModal, ModalHeader, ModalBody, EmptyState, Card, Badge, Button } from '../../components/ui';
+
+const PickupStepper = ({ status, isHindi }) => {
+  const isCancelled = status === 'cancelled';
+  const isCompleted = status === 'completed' || status === 'verified';
+  const isReady = status === 'ready';
+
+  if (isCancelled) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '6px 10px',
+          borderRadius: '8px',
+          background: 'rgba(239, 68, 68, 0.08)',
+          color: 'var(--color-danger, #ef4444)',
+          fontSize: '0.74rem',
+          fontWeight: 700,
+          margin: '8px 0',
+        }}
+      >
+        <AlertTriangle size={14} />
+        <span>{isHindi ? 'यह रिजर्वेशन निरस्त कर दिया गया है' : 'This reservation was cancelled'}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'var(--surface-subtle, rgba(0,0,0,0.03))',
+        borderRadius: '10px',
+        padding: '8px 12px',
+        margin: '10px 0',
+        border: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+      }}
+    >
+      {/* Step 1: Booked */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            backgroundColor: '#10b981',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 800,
+          }}
+        >
+          ✓
+        </div>
+        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>
+          {isHindi ? 'बुक हुआ' : 'Booked'}
+        </span>
+      </div>
+
+      {/* Divider 1-2 */}
+      <div
+        style={{
+          flex: 1,
+          height: '2px',
+          backgroundColor: isReady || isCompleted ? '#10b981' : 'var(--border-subtle, #cbd5e1)',
+          margin: '0 8px',
+        }}
+      />
+
+      {/* Step 2: Ready at Store Counter */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            backgroundColor: isCompleted ? '#10b981' : (isReady ? '#f59e0b' : 'var(--color-primary, #3b82f6)'),
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 800,
+          }}
+        >
+          {isCompleted ? '✓' : (isReady ? '⚡' : '2')}
+        </div>
+        <span
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            color: isCompleted ? '#10b981' : (isReady ? '#b45309' : 'var(--color-primary, #3b82f6)'),
+          }}
+        >
+          {isReady ? (isHindi ? 'काउंटर पर तैयार' : 'Ready at Store') : (isHindi ? 'पैकिंग जारी' : 'Packing')}
+        </span>
+      </div>
+
+      {/* Divider 2-3 */}
+      <div
+        style={{
+          flex: 1,
+          height: '2px',
+          backgroundColor: isCompleted ? '#10b981' : 'var(--border-subtle, #cbd5e1)',
+          margin: '0 8px',
+        }}
+      />
+
+      {/* Step 3: Collected */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            backgroundColor: isCompleted ? '#10b981' : 'var(--text-muted, #94a3b8)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 800,
+          }}
+        >
+          {isCompleted ? '✓' : '3'}
+        </div>
+        <span
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            color: isCompleted ? '#10b981' : 'var(--text-muted, #64748b)',
+          }}
+        >
+          {isCompleted ? (isHindi ? 'प्राप्त हुआ' : 'Collected') : (isHindi ? 'पिकअप' : 'Pickup')}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const ReservationsScreen = () => {
   const navigate = useNavigate();
@@ -20,6 +180,14 @@ export const ReservationsScreen = () => {
 
   const [activeStatusTab, setActiveStatusTab] = useState('all');
   const [inspectToken, setInspectToken] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Dynamic live countdown refresh every 30 seconds
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Authenticated redirect guard
   useEffect(() => {
@@ -57,6 +225,21 @@ export const ReservationsScreen = () => {
     }
   };
 
+  const handleCopyCode = (code, id) => {
+    if (!code) return;
+    navigator.clipboard?.writeText(code);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleSharePickup = (r, displayId) => {
+    const storeName = r.shop?.name || 'Local Store';
+    const prodName = r.product?.name || 'Item';
+    const directionsUrl = getDirectionsUrl(r.shop?.latitude, r.shop?.longitude, storeName, r.shop?.address);
+    const text = `*ShopSilo Store Pickup Pass:*%0A📦 Item: ${prodName} (Qty: ${r.quantity || 1})%0A🏪 Store: ${storeName}%0A🔢 Pickup PIN: *#${displayId}*%0A📍 Directions: ${directionsUrl}`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
   const filteredReservations = useMemo(() => {
     if (activeStatusTab === 'all') return reservations;
     return reservations.filter((r) => {
@@ -76,6 +259,35 @@ export const ReservationsScreen = () => {
     } catch {
       return isoStr;
     }
+  };
+
+  const getCountdownInfo = (expiresAt) => {
+    if (!expiresAt) return null;
+    const diffMs = new Date(expiresAt).getTime() - now;
+    if (diffMs <= 0) {
+      return {
+        isExpired: true,
+        isUrgent: true,
+        text: isHindi ? 'समय समाप्त (Expired)' : 'Hold Expired',
+      };
+    }
+    const totalMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
+    const isUrgent = totalMins <= 30;
+
+    let timeStr = '';
+    if (hours > 0) {
+      timeStr = isHindi ? `${hours} घंटे ${mins} मिनट बाकी` : `${hours}h ${mins}m left`;
+    } else {
+      timeStr = isHindi ? `${mins} मिनट बाकी` : `${mins}m left`;
+    }
+
+    return {
+      isExpired: false,
+      isUrgent,
+      text: isUrgent ? (isHindi ? `⚡ जल्दी करें, ${mins} मिनट बाकी` : `⚡ Hurry, ${mins}m left!`) : `⏳ ${timeStr}`,
+    };
   };
 
   return (
@@ -121,37 +333,94 @@ export const ReservationsScreen = () => {
           }
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {filteredReservations.map((r) => {
             const displayId = r.pickup_code || r.reservation_number || String(r.id || '').slice(-6).toUpperCase();
             const isActive = r.status === 'active' || r.status === 'pending' || !r.status || r.status === 'ready';
             const isDone = r.status === 'completed' || r.status === 'verified';
             const isCancelled = r.status === 'cancelled';
+            const countdown = isActive ? getCountdownInfo(r.expires_at) : null;
+            const directionsUrl = getDirectionsUrl(r.shop?.latitude, r.shop?.longitude, r.shop?.name, r.shop?.address);
 
             return (
               <Card
-                key={r.id || Math.random()}
+                key={r.id || r.pickup_code || r.reservation_number || `res_${r.created_at || 'item'}_${r.product_id || 'idx'}`}
                 padding="16px"
                 style={{
                   margin: 0,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  gap: '12px',
+                  gap: '10px',
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                        {r.product?.name || `Reservation #${displayId}`}
+                  {/* Top Row: Product Thumbnail, Title & Status Badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', minWidth: 0, flex: 1, alignItems: 'center' }}>
+                      <div
+                        onClick={() => {
+                          const targetProdId = r.product_id || r.product?.id;
+                          if (targetProdId) {
+                            navigate(`/shop/${r.shop?.slug || 'store'}/product/${targetProdId}`, {
+                              state: { product: r.product, shop: r.shop },
+                            });
+                          }
+                        }}
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '10px',
+                          backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                          border: '1px solid var(--border-subtle, #e2e8f0)',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          cursor: (r.product_id || r.product?.id) ? 'pointer' : 'default',
+                        }}
+                      >
+                        {(r.product?.image || (Array.isArray(r.product?.images) && r.product.images[0])) ? (
+                          <img
+                            src={getImageUrl(r.product?.image || r.product.images[0])}
+                            alt={r.product?.name || 'Item'}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <Package size={22} color="var(--text-muted)" style={{ opacity: 0.5 }} />
+                        )}
                       </div>
-                      {r.shop?.name && (
-                        <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '3px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Store size={12} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.shop.name}</span>
+
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          onClick={() => {
+                            const targetProdId = r.product_id || r.product?.id;
+                            if (targetProdId) {
+                              navigate(`/shop/${r.shop?.slug || 'store'}/product/${targetProdId}`, {
+                                state: { product: r.product, shop: r.shop },
+                              });
+                            }
+                          }}
+                          style={{
+                            fontWeight: 800,
+                            fontSize: '0.98rem',
+                            color: 'var(--text-primary)',
+                            lineHeight: 1.3,
+                            cursor: (r.product_id || r.product?.id) ? 'pointer' : 'default',
+                          }}
+                          title={r.product?.name}
+                        >
+                          {r.product?.name || `Reservation #${displayId}`}
                         </div>
-                      )}
+                        {r.shop?.name && (
+                          <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Store size={12} />
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.shop.name}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <Badge
@@ -162,39 +431,90 @@ export const ReservationsScreen = () => {
                     </Badge>
                   </div>
 
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {/* Visual Status Stepper */}
+                  <PickupStepper status={r.status} isHindi={isHindi} />
+
+                  {/* Quantity, Time & Live Countdown */}
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span>{t('cart.quantity')}: <strong>{r.quantity || 1}</strong></span>
+                      {r.product?.price && (
+                        <>
+                          <span>•</span>
+                          <span>{t('common.price', 'Price')}: <strong>₹{Number(r.product.price * (r.quantity || 1)).toFixed(0)}</strong></span>
+                        </>
+                      )}
                       <span>•</span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-primary)', fontWeight: 600 }}>
                         <Clock size={12} color="var(--color-primary)" />
                         <span>{isHindi ? 'आरक्षित किया:' : 'Booked at:'} <strong>{formatLocalTime(r.created_at)}</strong></span>
                       </span>
                     </div>
-                    {r.expires_at && (
-                      <div style={{ fontSize: '0.72rem', color: isActive ? '#b45309' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                        <span>⏳ {isHindi ? 'पिकअप अंतिम समय:' : 'Pickup Deadline:'} <strong>{formatLocalTime(r.expires_at)}</strong> ({isHindi ? 'तक मान्य' : 'valid till'})</span>
+
+                    {/* Countdown Banner */}
+                    {countdown && (
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: countdown.isUrgent ? '#dc2626' : 'var(--color-primary)',
+                          backgroundColor: countdown.isUrgent ? 'rgba(239, 68, 68, 0.08)' : 'var(--color-primary-light, rgba(59, 130, 246, 0.08))',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontWeight: 700,
+                          marginTop: '2px',
+                          width: 'fit-content',
+                        }}
+                      >
+                        <span>{countdown.text}</span>
+                        {r.expires_at && (
+                          <span style={{ opacity: 0.8, fontWeight: 500 }}>
+                            ({isHindi ? 'मान्यता:' : 'valid till'} {formatLocalTime(r.expires_at)})
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Pickup Code & Actions */}
+                {/* Pickup Code & Action Buttons */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     paddingTop: '12px',
-                    borderTop: '1px solid var(--border-subtle)',
+                    borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
                     gap: '8px',
                     flexWrap: 'wrap',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Badge variant="primary" size="md">
-                      {displayId}
-                    </Badge>
+                  {/* Left: Code Badge & QR Pass */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div
+                      onClick={() => handleCopyCode(displayId, r.id)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: 'var(--color-primary-light, rgba(59, 130, 246, 0.1))',
+                        color: 'var(--color-primary, #2563eb)',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontWeight: 900,
+                        fontSize: '0.88rem',
+                        fontFamily: 'monospace',
+                        letterSpacing: '1px',
+                        cursor: 'pointer',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                      }}
+                      title={isHindi ? 'क्लिक करके कोड कॉपी करें' : 'Click to copy PIN'}
+                    >
+                      <span>#{displayId}</span>
+                      {copiedId === r.id ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                    </div>
 
                     <Button
                       variant="secondary"
@@ -206,23 +526,62 @@ export const ReservationsScreen = () => {
                     </Button>
                   </div>
 
-                  {isActive && (
-                    <button
-                      type="button"
-                      onClick={() => handleCancel(r.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--color-danger, #ef4444)',
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                      }}
+                  {/* Right: Directions, Call, Share, Cancel */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {/* Directions Button */}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Navigation}
+                      onClick={() => window.open(directionsUrl, '_blank', 'noopener,noreferrer')}
+                      title={isHindi ? 'दुकान का रास्ता देखें' : 'Get Store Directions'}
                     >
-                      {t('checkout.cancel_reservation')}
-                    </button>
-                  )}
+                      {isHindi ? 'रास्ता' : 'Map'}
+                    </Button>
+
+                    {/* Direct Call to Shop */}
+                    {r.shop?.phone && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Phone}
+                        onClick={() => window.open(`tel:${r.shop.phone}`, '_self')}
+                        title={isHindi ? 'दुकान पर कॉल करें' : 'Call Store'}
+                      >
+                        {isHindi ? 'कॉल' : 'Call'}
+                      </Button>
+                    )}
+
+                    {/* Share on WhatsApp */}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Share2}
+                      onClick={() => handleSharePickup(r, displayId)}
+                      title={isHindi ? 'व्हाट्सएप पर शेयर करें' : 'Share Pickup Code'}
+                    >
+                      {isHindi ? 'शेयर' : 'Share'}
+                    </Button>
+
+                    {/* Cancel Button if Active */}
+                    {isActive && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(r.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--color-danger, #ef4444)',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                        }}
+                      >
+                        {t('checkout.cancel_reservation')}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             );
@@ -251,20 +610,54 @@ export const ReservationsScreen = () => {
             </div>
 
             {(() => {
-              const rawNums = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').replace(/[^0-9]/g, '');
-              const tokenCode = inspectToken.token_display || (rawNums.length >= 4 ? `#${rawNums.slice(-4)}` : `#${rawNums || '4812'}`);
+              const fullCode = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').trim();
+              const tokenCode = inspectToken.token_display || (fullCode.startsWith('#') ? fullCode : `#${fullCode}`);
+              const cleanCode = tokenCode.replace('#', '');
+              const dirUrl = getDirectionsUrl(inspectToken.shop?.latitude, inspectToken.shop?.longitude, inspectToken.shop?.name, inspectToken.shop?.address);
+
               return (
                 <>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {isHindi ? '4-अंकों का पिकअप कोड' : '4-DIGIT PICKUP CODE'}
+                    {isHindi ? '6-अंकों का पिकअप कोड' : '6-DIGIT PICKUP CODE'}
                   </div>
                   <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '4px', margin: '6px 0', fontFamily: 'monospace' }}>
                     {tokenCode}
                   </div>
+
+                  {/* 1-Tap Quick Action Buttons inside Modal */}
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '12px 0', flexWrap: 'wrap' }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={copiedId === inspectToken.id ? Check : Copy}
+                      onClick={() => handleCopyCode(cleanCode, inspectToken.id)}
+                    >
+                      {copiedId === inspectToken.id ? (isHindi ? 'कॉपी हुआ!' : 'Copied!') : (isHindi ? 'कोड कॉपी करें' : 'Copy PIN')}
+                    </Button>
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Navigation}
+                      onClick={() => window.open(dirUrl, '_blank', 'noopener,noreferrer')}
+                    >
+                      {isHindi ? 'दुकान का रास्ता' : 'Store Directions'}
+                    </Button>
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={Share2}
+                      onClick={() => handleSharePickup(inspectToken, cleanCode)}
+                    >
+                      {isHindi ? 'व्हाट्सएप पर भेजें' : 'Share on WhatsApp'}
+                    </Button>
+                  </div>
+
                   <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#065f46', borderRadius: '10px', padding: '10px 14px', fontSize: '0.78rem', lineHeight: 1.45, fontWeight: 600, marginTop: '8px', textAlign: 'left' }}>
                     ⚡ {isHindi
                       ? 'दुकान के काउंटर पर पहुँचकर केवल यह टोकन नंबर (#...) दिखाएं या QR कोड स्कैन करवाएं। दुकानदार POS में दर्ज करते ही आपका पैक किया हुआ सामान 10 सेकंड में मिल जाएगा!'
-                      : 'Show this 4-digit token or QR pass at the store counter. The merchant enters it into POS to hand over your packed goods in 10 seconds!'}
+                      : 'Show this 6-digit token or QR pass at the store counter. The merchant enters it into POS to hand over your packed goods in 10 seconds!'}
                   </div>
                 </>
               );

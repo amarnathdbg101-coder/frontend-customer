@@ -24,7 +24,7 @@ const setMemoryCache = (key, val) => {
   memoryCache.set(key, val);
 };
 
-const isStorageAvailable = () => {
+export const isStorageAvailable = () => {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return false;
     const testKey = '__shopsilo_cache_test__';
@@ -36,23 +36,19 @@ const isStorageAvailable = () => {
   }
 };
 
-const hasLocalStorage = isStorageAvailable();
-
 const CURRENT_CACHE_VERSION = 'v2.3_build_20261011';
 
 // Auto-purge old local storage on startup if cache version changed
-if (hasLocalStorage) {
+if (isStorageAvailable()) {
   try {
     const savedVer = window.localStorage.getItem('shopsilo_cache_version');
     if (savedVer !== CURRENT_CACHE_VERSION) {
-      const keysToRemove = [];
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
+      const keys = Object.keys(window.localStorage);
+      keys.forEach((k) => {
         if (k && k.startsWith('shopsilo_cache_')) {
-          keysToRemove.push(k);
+          window.localStorage.removeItem(k);
         }
-      }
-      keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      });
       window.localStorage.setItem('shopsilo_cache_version', CURRENT_CACHE_VERSION);
     }
   } catch (e) {
@@ -92,7 +88,7 @@ class LocalCacheService {
   get(key, fallback = null) {
     try {
       let raw = null;
-      if (hasLocalStorage) {
+      if (isStorageAvailable()) {
         raw = window.localStorage.getItem(key);
       } else {
         raw = memoryCache.get(key) || null;
@@ -120,7 +116,7 @@ class LocalCacheService {
   getFresh(key, fallback = null) {
     try {
       let raw = null;
-      if (hasLocalStorage) {
+      if (isStorageAvailable()) {
         raw = window.localStorage.getItem(key);
       } else {
         raw = memoryCache.get(key) || null;
@@ -150,7 +146,7 @@ class LocalCacheService {
   getMeta(key) {
     try {
       let raw = null;
-      if (hasLocalStorage) {
+      if (isStorageAvailable()) {
         raw = window.localStorage.getItem(key);
       } else {
         raw = memoryCache.get(key) || null;
@@ -194,7 +190,7 @@ class LocalCacheService {
 
     const serialized = JSON.stringify(payload);
 
-    if (hasLocalStorage) {
+    if (isStorageAvailable()) {
       try {
         window.localStorage.setItem(key, serialized);
       } catch (err) {
@@ -229,7 +225,7 @@ class LocalCacheService {
    */
   remove(key) {
     try {
-      if (hasLocalStorage) {
+      if (isStorageAvailable()) {
         window.localStorage.removeItem(key);
       }
       memoryCache.delete(key);
@@ -244,15 +240,13 @@ class LocalCacheService {
   invalidatePattern(pattern) {
     try {
       const isRegex = pattern instanceof RegExp;
-      if (hasLocalStorage) {
-        const keysToRemove = [];
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const k = window.localStorage.key(i);
+      if (isStorageAvailable()) {
+        const keys = Object.keys(window.localStorage);
+        for (const k of keys) {
           if (k && (isRegex ? pattern.test(k) : k.includes(pattern))) {
-            keysToRemove.push(k);
+            window.localStorage.removeItem(k);
           }
         }
-        keysToRemove.forEach((k) => window.localStorage.removeItem(k));
       }
       for (const k of Array.from(memoryCache.keys())) {
         if (isRegex ? pattern.test(k) : k.includes(pattern)) {
@@ -269,15 +263,13 @@ class LocalCacheService {
    */
   clearPrefix(prefix = 'shopsilo_cache_') {
     try {
-      if (hasLocalStorage) {
-        const keysToRemove = [];
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const k = window.localStorage.key(i);
+      if (isStorageAvailable()) {
+        const keys = Object.keys(window.localStorage);
+        for (const k of keys) {
           if (k && k.startsWith(prefix)) {
-            keysToRemove.push(k);
+            window.localStorage.removeItem(k);
           }
         }
-        keysToRemove.forEach((k) => window.localStorage.removeItem(k));
       }
       for (const k of Array.from(memoryCache.keys())) {
         if (k.startsWith(prefix)) {
@@ -309,12 +301,12 @@ class LocalCacheService {
    */
   _evictStale() {
     try {
-      if (!hasLocalStorage) return;
+      if (!isStorageAvailable()) return;
       const now = Date.now();
       const items = [];
+      const keys = Object.keys(window.localStorage);
 
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
+      for (const k of keys) {
         if (k && k.startsWith('shopsilo_cache_')) {
           try {
             const raw = window.localStorage.getItem(k);
