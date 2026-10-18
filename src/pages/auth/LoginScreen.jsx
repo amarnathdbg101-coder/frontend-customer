@@ -17,6 +17,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { authApi } from '../../api/auth.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
+import { ShopSiloLogo } from '../../components/common/ShopSiloLogo';
 import { BaseModal, ModalHeader, ModalBody, Button, AlertBanner } from '../../components/ui';
 
 export const LoginScreen = () => {
@@ -148,21 +149,7 @@ export const LoginScreen = () => {
 
         {/* Brand Banner */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              backgroundColor: 'var(--color-primary-light)',
-              color: 'var(--color-primary)',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px auto',
-            }}
-          >
-            <Store size={36} />
-          </div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px" }}><ShopSiloLogo size={64} showText={false} variant="tint" /></div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
             {t('auth.login_title')}
           </h1>

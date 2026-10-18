@@ -11,6 +11,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { SideDrawer } from './SideDrawer';
+import { ShopSiloLogo } from '../common/ShopSiloLogo';
 import { getImageUrl } from '../../utils/imageUrl';
 import { sessionState } from '../../utils/sessionState';
 
@@ -70,6 +71,10 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
             >
               <Menu size={22} />
             </button>
+          )}
+
+          {!showBack && (
+            <ShopSiloLogo size={32} showText={false} variant="gradient" />
           )}
 
           <div>

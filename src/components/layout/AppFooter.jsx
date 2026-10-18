@@ -8,6 +8,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
+import { ShopSiloLogo } from '../common/ShopSiloLogo';
 
 export const AppFooter = () => {
   const { isHindi } = useLanguage();
@@ -34,28 +35,7 @@ export const AppFooter = () => {
         >
           {/* Col 1: Brand & Info */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: '1rem',
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-                }}
-              >
-                S
-              </div>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-                ShopSilo
-              </span>
-            </div>
+            <ShopSiloLogo size={32} showText={true} variant="gradient" style={{ marginBottom: "14px" }} />
             <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px 0' }}>
               {isHindi
                 ? 'भारत का प्रमुख हाइपरलोकल रिटेल नेटवर्क। आस-पास की दुकानों का लाइव सामान खोजें और 30 मिनट में पिकअप पाएं।'

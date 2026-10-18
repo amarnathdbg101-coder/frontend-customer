@@ -95,6 +95,15 @@ export const CheckoutModal = () => {
     e.preventDefault();
     setError('');
 
+    if (!user) {
+      setError(isHindi ? 'पिकअप बुक करने के लिए कृपया पहले लॉगिन करें' : 'Please sign in to reserve items for store pickup');
+      setTimeout(() => {
+        closeCheckout();
+        navigate('/login');
+      }, 1500);
+      return;
+    }
+
     const phoneClean = customerPhone.replace(/[^0-9]/g, '');
     if (phoneClean.length < 10) {
       setError(t('auth.invalid_phone'));
@@ -138,26 +147,13 @@ export const CheckoutModal = () => {
           `Payable: ₹${finalTotal || subtotal} (${items.length} items)`,
         ]
           .filter(Boolean)
-          .join(' | '),
+          .join(' | ')
+          .slice(0, 500),
       };
 
-      let result = null;
-      try {
-        result = await reservationApi.createReservation(payload);
-        if (!result.pickup_code) {
-          result.pickup_code = `${random6Digit}`;
-        }
-      } catch (apiErr) {
-        console.warn('Backend reservation API call fallback:', apiErr);
-        result = {
-          pickup_code: `${random6Digit}`,
-          token_display: tokenNumber,
-          reservation_number: `ORD-${Date.now().toString().slice(-6)}`,
-          expires_at: new Date(Date.now() + (holdHoursMap[timeSlot] || 2) * 3600000).toISOString(),
-          status: 'ready',
-          items_count: items.length,
-          total_amount: finalTotal || subtotal,
-        };
+      const result = await reservationApi.createReservation(payload);
+      if (!result.pickup_code) {
+        result.pickup_code = `${random6Digit}`;
       }
 
       // Ensure token_display preserves full 6-digit database code
@@ -637,6 +633,49 @@ export const CheckoutModal = () => {
                   ? 'दुकान के काउंटर पर पहुँचकर सिर्फ यह 6-अंकों का टोकन नंबर दिखाएं, दुकानदार POS पर दर्ज करते ही 10 सेकंड में आपका पैक किया सामान मिल जाएगा!'
                   : 'Show this 6-digit token or QR pass at the counter. The shopkeeper enters it in POS for 10-second instant pickup!'}
               </p>
+
+              {/* Ordered Items Summary */}
+              {items.length > 0 && (
+                <div
+                  style={{
+                    backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                    border: '1px solid var(--border-subtle, #e2e8f0)',
+                    borderRadius: '14px',
+                    padding: '12px 14px',
+                    maxWidth: '360px',
+                    margin: '0 auto 16px auto',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>
+                    {isHindi ? 'ऑर्डर किए गए उत्पाद' : 'RESERVED PRODUCTS'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {items.slice(0, 3).map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.name}
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>x{item.quantity}</span>
+                        </div>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-primary)', flexShrink: 0 }}>
+                          ₹{((item.price || 0) * item.quantity).toFixed(0)}
+                        </span>
+                      </div>
+                    ))}
+                    {items.length > 3 && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        +{items.length - 3} {isHindi ? 'और सामान' : 'more items'}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ borderTop: '1px dashed var(--border-subtle, #cbd5e1)', marginTop: '8px', paddingTop: '6px', display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 900 }}>
+                    <span>{isHindi ? 'कुल देय राशि:' : 'Total Payable:'}</span>
+                    <span style={{ color: '#059669' }}>₹{finalTotal || subtotal}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Digital Pass Ticket Box */}
               <div

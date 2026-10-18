@@ -28,7 +28,7 @@ import { QuantityStepper } from '../ui';
 import { formatCurrency } from '../../utils/format';
 import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { shareProduct } from '../../utils/productShare';
+import { shareProduct, getProductShareUrl } from '../../utils/productShare';
 import { parseProductDetails } from '../../utils/productDetailsHelper';
 
 export const ProductDetailModal = ({
@@ -184,7 +184,8 @@ export const ProductDetailModal = ({
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } else if (!res.success && res.method !== 'cancelled') {
-      navigator.clipboard?.writeText(window.location.href);
+      const shareUrl = res?.url || getProductShareUrl({ product, shopSlug: product.shop_slug });
+      navigator.clipboard?.writeText(shareUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
