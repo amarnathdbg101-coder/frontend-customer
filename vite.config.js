@@ -1,12 +1,20 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { compression } from 'vite-plugin-compression2'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     compression({ algorithm: 'gzip', threshold: 1024 }),
+    visualizer({
+      filename: './dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+      title: 'ShopSilo Customer Frontend Bundle Analysis',
+    }),
   ],
   server: {
     port: 5174,

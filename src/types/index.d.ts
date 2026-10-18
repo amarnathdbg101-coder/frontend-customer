@@ -8,7 +8,9 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
+  name?: string;
   phone?: string | null;
+  address?: string | null;
   avatar_url?: string | null;
   role: 'customer' | 'shop' | 'admin' | 'merchant';
   is_active: boolean;
@@ -19,6 +21,7 @@ export interface User {
 
 export interface AuthResponse {
   access_token?: string;
+  token?: string;
   token_type?: string;
   expires_in?: number;
   user?: User;
@@ -64,6 +67,7 @@ export interface Product {
   name: string;
   slug: string;
   description?: string;
+  category?: string;
   category_id?: string;
   category_name?: string;
   price: number;
@@ -105,6 +109,7 @@ export interface CustomerKhata {
   customer_name: string;
   customer_phone: string;
   current_balance: number;
+  balance?: number;
   credit_limit?: number;
   is_active?: boolean;
   last_transaction_at?: string;
@@ -118,6 +123,7 @@ export interface KhataTransaction {
   amount: number;
   balance_after: number;
   notes?: string;
+  description?: string;
   bill_number?: string;
   payment_mode?: string;
   status: 'completed' | 'disputed' | 'reversed';
@@ -137,8 +143,10 @@ export interface Reservation {
   product_id?: string;
   product_name?: string;
   product_price?: number;
+  total_amount?: number;
   quantity: number;
   pickup_code: string;
+  pickup_time?: string;
   status: 'pending' | 'ready' | 'completed' | 'cancelled' | 'expired';
   expires_at: string;
   completed_at?: string;
@@ -155,10 +163,19 @@ export interface CartItem {
   shopName: string;
 }
 
-// 8. API Standard Response Wrapper
+// 8. API Standard Response Wrappers
 export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
   error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages?: number;
+  total_count?: number;
 }
