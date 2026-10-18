@@ -1,26 +1,24 @@
 /**
  * Customer Top App Header Component
- * Clean, modern, responsive glassy header with side drawer & language/theme controls
+ * Clean, modern, responsive app bar showing ShopSilo brand and User Greeting.
+ * All utilities (Cart, Language, Theme, Navigation, Profile) are cleanly shifted into the Menu Bar (SideDrawer).
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Menu, Sun, Moon, User, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { SideDrawer } from './SideDrawer';
 import { ShopSiloLogo } from '../common/ShopSiloLogo';
-import { getImageUrl } from '../../utils/imageUrl';
 import { sessionState } from '../../utils/sessionState';
 
 export const AppHeader = ({ title, subtitle, showBack = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
-  const { setLanguage, isHindi, t } = useLanguage();
-  const { cartCount, openCart } = useCart();
+  const { isHindi } = useLanguage();
+  const { cartCount } = useCart();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleBack = () => {
@@ -32,13 +30,16 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
     }
   };
 
+  const greetingName = user?.name || user?.full_name || '';
+
   return (
     <>
       <header className="app-header">
         <div className="header-left">
-          {showBack ? (
+          {showBack && (
             <button
               onClick={handleBack}
+              className="header-icon-btn"
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -50,77 +51,59 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                 color: 'var(--text-primary)',
               }}
               title={isHindi ? 'पीछे जाएं' : 'Go Back'}
+              aria-label={isHindi ? 'पीछे जाएं' : 'Go Back'}
             >
               <ArrowLeft size={20} />
             </button>
-          ) : (
-            <button
-              onClick={() => setDrawerOpen(true)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6px',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--text-primary)',
-              }}
-              title={isHindi ? 'साइड मेनू खोलें' : 'Open Menu'}
-            >
-              <Menu size={22} />
-            </button>
           )}
 
-          {!showBack && (
-            <ShopSiloLogo size={32} showText={false} variant="gradient" />
-          )}
+          <ShopSiloLogo size={32} showText={false} variant="gradient" to="/" />
 
-          <div>
+          <div className="header-title-container">
             <div className="header-title">
               {title || (isHindi ? 'शॉपसिलो' : 'ShopSilo')}
             </div>
-            {subtitle ? (
-              <div className="header-subtitle">{subtitle}</div>
-            ) : user ? (
-              <div className="header-subtitle">
-                {isHindi ? `नमस्ते, ${user.full_name || user.name}` : `Hello, ${user.full_name || user.name}`}
-              </div>
-            ) : (
-              <div className="header-subtitle">
-                {isHindi ? 'स्थानीय बाज़ार • काउंटर पिकअप' : 'Local Marketplace • Counter Pickup'}
-              </div>
-            )}
+            <div className="header-subtitle">
+              {subtitle ? (
+                subtitle
+              ) : greetingName ? (
+                isHindi ? `नमस्ते, ${greetingName}` : `Hello, ${greetingName}`
+              ) : (
+                isHindi ? 'नमस्ते, अतिथि ग्राहक' : 'Hello, Guest'
+              )}
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Shopping Cart Button with Live Badge */}
+        <div className="header-actions">
+          {/* Menu Button to Open Side Drawer (Menu Bar) */}
           <button
             type="button"
-            onClick={openCart}
+            onClick={() => setDrawerOpen(true)}
+            className="header-icon-btn"
             style={{
               position: 'relative',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
+              width: '38px',
+              height: '38px',
+              borderRadius: 'var(--radius-full, 50%)',
+              background: 'var(--bg-surface-subtle, #f8fafc)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
               color: 'var(--text-primary)',
             }}
-            title={isHindi ? 'शॉपिंग कार्ट खोलें' : 'Open Shopping Cart'}
+            title={isHindi ? 'मेनू बार खोलें' : 'Open Menu Bar'}
+            aria-label={isHindi ? 'मेनू बार खोलें' : 'Open Menu Bar'}
           >
-            <ShoppingBag size={20} color="var(--color-primary)" />
+            <Menu size={20} />
             {cartCount > 0 && (
               <span
                 style={{
                   position: 'absolute',
-                  top: '2px',
-                  right: '2px',
+                  top: '-2px',
+                  right: '-2px',
                   backgroundColor: '#ef4444',
                   color: '#ffffff',
                   fontSize: '0.62rem',
@@ -131,106 +114,17 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4)',
+                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.4)',
                 }}
               >
                 {cartCount > 9 ? '9+' : cartCount}
               </span>
             )}
           </button>
-
-          {/* Language Switcher Pill */}
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-full)',
-              padding: '2px',
-            }}
-          >
-            <button
-              onClick={() => setLanguage(isHindi ? 'en' : 'hi')}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--color-primary)',
-                fontWeight: 800,
-                fontSize: '0.74rem',
-                padding: '3px 8px',
-                cursor: 'pointer',
-              }}
-              title={isHindi ? 'Switch to English' : 'हिंदी भाषा चुनें'}
-            >
-              {isHindi ? 'EN' : 'हिंदी'}
-            </button>
-          </div>
-
-          {/* Quick Dark/Light Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-primary)',
-            }}
-            title={isDark ? t('profile.light_mode') : t('profile.dark_mode')}
-          >
-            {isDark ? <Sun size={19} color="#fbbf24" /> : <Moon size={19} />}
-          </button>
-
-          {/* User Profile / Login */}
-          {user ? (
-            <button
-              onClick={() => navigate('/profile')}
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                background: user.avatar_url ? 'transparent' : 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
-                color: '#ffffff',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '0.85rem',
-                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
-                overflow: 'hidden',
-                padding: 0,
-              }}
-              title={isHindi ? 'प्रोफ़ाइल' : 'Profile'}
-            >
-              {user.avatar_url ? (
-                <img loading="lazy" decoding="async" 
-                  src={getImageUrl(user.avatar_url)}
-                  alt={user?.name || user?.full_name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                (user?.name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'
-              )}
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/login')}
-              className="btn btn-primary btn-sm"
-              style={{ fontSize: '0.78rem', padding: '5px 12px', borderRadius: 'var(--radius-full)' }}
-            >
-              {isHindi ? 'लॉगिन' : 'Login'}
-            </button>
-          )}
         </div>
       </header>
 
-      {/* Side Navigation Drawer */}
+      {/* Side Navigation Drawer (Menu Bar) */}
       <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   );

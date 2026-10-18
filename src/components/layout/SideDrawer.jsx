@@ -1,14 +1,12 @@
 /**
  * Customer Side Navigation Drawer (Menu Bar)
- * Pixel-Perfect Match with Shopsilo Mobile OS (Screenshot_2026_0920_142009.jpg):
- * - User Profile Header (Photo, Name, Email, CUSTOMER green pill badge, Close 'X')
- * - Clean 3-Item Navigation:
- *   1. [ 🏠 ] Storefront Home >
- *   2. [ 🛍️ ] My In-Store Reservations >
- *   3. [ 📖 ] Mera Khata (Passbook) >
- * - APPEARANCE Segmented Selector (Light, Dark, System)
- * - Become a Shop Owner Card ("Open local digital storefront")
- * - Sign Out (Red action)
+ * Complete, modern, responsive navigation drawer with:
+ * - User Profile / Guest Card
+ * - Full Navigation Suite: Home, Cart (with live badge), Deals, Reservations, Saved Items, Khata, Profile
+ * - Language Selector (हिंदी / English)
+ * - Appearance Selector (Light, Dark, System)
+ * - Merchant OS Portal Link
+ * - Sign Out / Sign In Action
  */
 
 import React from 'react';
@@ -16,8 +14,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Home,
   ShoppingBag,
+  ShoppingCart,
+  Tag,
+  Heart,
   BookOpen,
-  Sparkles,
+  User,
   Store,
   LogOut,
   X,
@@ -25,20 +26,33 @@ import {
   Sun,
   Moon,
   Monitor,
-  User,
+  Languages,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
+import { useSaved } from '../../context/SavedContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { Badge } from '../ui';
 import { ShopSiloLogo } from '../common/ShopSiloLogo';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated, shop } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme, setThemeMode } = useTheme();
   const { isHindi, setLanguage, t } = useLanguage();
+  const { cartCount, openCart } = useCart();
+
+  let savedCount = 0;
+  try {
+    const saved = useSaved();
+    if (saved) {
+      savedCount = (saved.savedProducts?.length || 0) + (saved.savedShops?.length || 0);
+    }
+  } catch (e) {
+    savedCount = 0;
+  }
 
   if (!isOpen) return null;
 
@@ -47,19 +61,15 @@ export const SideDrawer = ({ isOpen, onClose }) => {
     navigate(path);
   };
 
+  const handleOpenCart = () => {
+    onClose();
+    openCart();
+  };
+
   const handleLogout = async () => {
     onClose();
     await logout();
     navigate('/login');
-  };
-
-  const handleBecomeMerchant = () => {
-    onClose();
-    if (shop) {
-      window.location.href = 'https://shop.shopsilo.in/merchant';
-    } else {
-      window.location.href = 'https://shop.shopsilo.in/register';
-    }
   };
 
   const currentThemeMode = theme || 'system';
@@ -75,24 +85,56 @@ export const SideDrawer = ({ isOpen, onClose }) => {
   const navItems = [
     {
       label: isHindi ? 'दुकानें खोजें (होम)' : 'Storefront Home',
-      path: '/',
+      onClick: () => handleNavigate('/'),
       icon: Home,
       color: '#4f46e5',
       bg: '#eef2ff',
     },
     {
+      label: isHindi ? 'मेरी शॉपिंग कार्ट' : 'My Shopping Cart',
+      onClick: handleOpenCart,
+      icon: ShoppingCart,
+      color: '#2563eb',
+      bg: '#eff6ff',
+      badge: cartCount > 0 ? (cartCount > 9 ? '9+' : cartCount) : null,
+      badgeColor: '#ef4444',
+    },
+    {
+      label: isHindi ? 'ऑफ़र्स और डिस्काउंट' : 'Deals & Discounts',
+      onClick: () => handleNavigate('/deals'),
+      icon: Tag,
+      color: '#f59e0b',
+      bg: '#fef3c7',
+    },
+    {
       label: isHindi ? 'मेरी काउंटर बुकिंग्स' : 'My Counter Reservations',
-      path: '/reservations',
+      onClick: () => handleNavigate('/reservations'),
       icon: ShoppingBag,
       color: '#059669',
       bg: '#ecfdf5',
     },
     {
+      label: isHindi ? 'पसंदीदा दुकानें एवं वस्तुएं' : 'Saved Items & Shops',
+      onClick: () => handleNavigate('/saved'),
+      icon: Heart,
+      color: '#ec4899',
+      bg: '#fdf2f8',
+      badge: savedCount > 0 ? savedCount : null,
+      badgeColor: '#ec4899',
+    },
+    {
       label: isHindi ? 'मेरा डिजिटल खाता (पासबुक)' : 'My Khata Ledger',
-      path: '/khata',
+      onClick: () => handleNavigate('/khata'),
       icon: BookOpen,
       color: '#dc2626',
       bg: '#fef2f2',
+    },
+    {
+      label: isHindi ? 'मेरी प्रोफ़ाइल एवं सेटिंग्स' : 'My Profile & Settings',
+      onClick: () => handleNavigate('/profile'),
+      icon: User,
+      color: '#6366f1',
+      bg: '#eef2ff',
     },
   ];
 
@@ -120,8 +162,8 @@ export const SideDrawer = ({ isOpen, onClose }) => {
           top: 0,
           left: 0,
           bottom: 0,
-          width: '82vw',
-          maxWidth: '340px',
+          width: '84vw',
+          maxWidth: '350px',
           backgroundColor: 'var(--bg-surface, #ffffff)',
           zIndex: 9999,
           display: 'flex',
@@ -153,7 +195,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               border: 'none',
               cursor: 'pointer',
               color: 'var(--text-secondary, #64748b)',
-              padding: '4px',
+              padding: '6px',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
@@ -166,126 +208,172 @@ export const SideDrawer = ({ isOpen, onClose }) => {
         </div>
 
         {/* =========================================================================
-            1. TOP PROFILE HEADER (Avatar, Name, Email, CUSTOMER badge)
+            1. TOP PROFILE HEADER (Avatar, Name, Email, CUSTOMER badge / Guest)
            ========================================================================= */}
         <div
           style={{
-            padding: '24px 18px 18px 18px',
+            padding: '18px',
             borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '12px',
+            backgroundColor: 'var(--bg-surface, #ffffff)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-            {/* Avatar */}
+          {isAuthenticated && user ? (
+            <div
+              onClick={() => handleNavigate('/profile')}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, cursor: 'pointer', flex: 1 }}
+            >
+              {/* Avatar */}
+              <div
+                style={{
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '50%',
+                  background: user?.avatar_url
+                    ? 'transparent'
+                    : 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '1.15rem',
+                  flexShrink: 0,
+                  border: '2px solid rgba(79, 70, 229, 0.3)',
+                  boxShadow: '0 4px 10px rgba(79, 70, 229, 0.2)',
+                  overflow: 'hidden',
+                }}
+              >
+                {user?.avatar_url ? (
+                  <img
+                    loading="lazy"
+                    decoding="async"
+                    src={getImageUrl(user.avatar_url)}
+                    alt={user.name || user.full_name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  (user?.name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'
+                )}
+              </div>
+
+              {/* Name, Email & CUSTOMER Pill */}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: '0.94rem',
+                    fontWeight: 800,
+                    color: 'var(--text-primary, #0f172a)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {user?.name || user?.full_name || (isHindi ? 'नमस्ते, उपयोगकर्ता' : 'Welcome User')}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.72rem',
+                    color: 'var(--text-secondary, #64748b)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    marginTop: '1px',
+                    marginBottom: '4px',
+                  }}
+                >
+                  {user?.email || user?.phone || 'customer@shopsilo.in'}
+                </div>
+                <div>
+                  <Badge variant="success" size="sm">
+                    {isHindi ? 'सत्यापित ग्राहक' : 'CUSTOMER'}
+                  </Badge>
+                </div>
+              </div>
+
+              <ChevronRight size={18} color="var(--text-secondary, #94a3b8)" style={{ flexShrink: 0 }} />
+            </div>
+          ) : (
             <div
               style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: user?.avatar_url
-                  ? 'transparent'
-                  : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '1.2rem',
-                flexShrink: 0,
-                border: '2px solid rgba(59, 130, 246, 0.3)',
-                boxShadow: '0 4px 10px rgba(59, 130, 246, 0.25)',
-                overflow: 'hidden',
+                justifyContent: 'space-between',
+                width: '100%',
+                gap: '10px',
               }}
             >
-              {user?.avatar_url ? (
-                <img loading="lazy" decoding="async" 
-                  src={getImageUrl(user.avatar_url)}
-                  alt={user.name || user.full_name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                (user?.name || user?.full_name)?.charAt(0)?.toUpperCase() || 'A'
-              )}
-            </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-secondary, #64748b)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <User size={22} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {isHindi ? 'नमस्ते, अतिथि' : 'Hello, Guest'}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    {isHindi ? 'ऑर्डर और खाते के लिए लॉगिन करें' : 'Sign in to access your orders'}
+                  </div>
+                </div>
+              </div>
 
-            {/* Name, Email & CUSTOMER Pill */}
-            <div style={{ minWidth: 0 }}>
-              <div
+              <button
+                type="button"
+                onClick={() => handleNavigate('/login')}
                 style={{
-                  fontSize: '0.96rem',
-                  fontWeight: 900,
-                  color: 'var(--text-primary, #0f172a)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.2px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  backgroundColor: 'var(--color-primary, #4f46e5)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-full, 9999px)',
+                  padding: '6px 14px',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(79, 70, 229, 0.3)',
                 }}
               >
-                {user?.name || user?.full_name || (isHindi ? 'अमरनाथ गुप्ता' : 'Amarnath Gupta')}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.74rem',
-                  color: 'var(--text-secondary, #64748b)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  marginTop: '1px',
-                  marginBottom: '6px',
-                }}
-              >
-                {user?.email || 'customer@shopsilo.in'}
-              </div>
-              <div>
-                <Badge variant="success" size="sm">CUSTOMER</Badge>
-              </div>
+                {isHindi ? 'लॉग इन' : 'Sign In'}
+              </button>
             </div>
-          </div>
-
-          {/* Close Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary, #64748b)',
-              padding: '4px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            aria-label="Close menu"
-          >
-            <X size={20} />
-          </button>
+          )}
         </div>
 
         {/* =========================================================================
-            2. NAVIGATION ITEMS LIST
+            2. NAVIGATION ITEMS LIST (Shifted from top app bar)
            ========================================================================= */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px' }}>
           {navItems.map((item, idx) => {
             const IconComp = item.icon;
             return (
               <div
                 key={idx}
-                onClick={() => handleNavigate(item.path)}
+                onClick={item.onClick}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '14px',
-                  padding: '12px 12px',
+                  padding: '11px 12px',
                   borderRadius: '12px',
                   cursor: 'pointer',
                   backgroundColor: 'transparent',
                   transition: 'background 0.15s ease',
-                  marginBottom: '6px',
+                  marginBottom: '4px',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f8fafc)')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -302,12 +390,12 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                     flexShrink: 0,
                   }}
                 >
-                  <IconComp size={19} color={item.color} />
+                  <IconComp size={18} color={item.color} />
                 </div>
 
                 <span
                   style={{
-                    fontSize: '0.9rem',
+                    fontSize: '0.88rem',
                     fontWeight: 700,
                     color: 'var(--text-primary, #0f172a)',
                     flex: 1,
@@ -319,45 +407,125 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                   {item.label}
                 </span>
 
-                <ChevronRight size={17} color="var(--text-secondary, #94a3b8)" style={{ flexShrink: 0 }} />
+                {item.badge && (
+                  <span
+                    style={{
+                      backgroundColor: item.badgeColor || 'var(--color-primary)',
+                      color: '#ffffff',
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      padding: '2px 7px',
+                      borderRadius: 'var(--radius-full, 9999px)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+
+                <ChevronRight size={16} color="var(--text-secondary, #94a3b8)" style={{ flexShrink: 0 }} />
               </div>
             );
           })}
         </div>
 
         {/* =========================================================================
-            3. FOOTER SECTION (APPEARANCE, BECOME A SHOP OWNER, SIGN OUT)
+            3. FOOTER SECTION: LANGUAGE, APPEARANCE, SHOPKEEPER LINK, LOGOUT
            ========================================================================= */}
         <div
           style={{
-            padding: '14px 16px 24px 16px',
+            padding: '14px 16px 20px 16px',
             borderTop: '1px solid var(--border-subtle, #f1f5f9)',
             backgroundColor: 'var(--bg-surface, #ffffff)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '14px',
+            gap: '12px',
           }}
         >
-          {/* APPEARANCE SEGMENTED SELECTOR */}
+          {/* LANGUAGE SELECTOR */}
           <div>
             <div
               style={{
-                fontSize: '0.68rem',
+                fontSize: '0.66rem',
                 fontWeight: 800,
                 letterSpacing: '0.8px',
                 color: 'var(--text-secondary, #64748b)',
                 padding: '0 4px',
-                marginBottom: '8px',
+                marginBottom: '6px',
                 textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              APPEARANCE
+              <Languages size={13} />
+              <span>{isHindi ? 'भाषा (LANGUAGE)' : 'LANGUAGE'}</span>
             </div>
 
             <div
               style={{
                 display: 'flex',
-                borderRadius: '14px',
+                borderRadius: '12px',
+                padding: '3px',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                gap: '4px',
+              }}
+            >
+              {[
+                { label: 'हिंदी', value: 'hi' },
+                { label: 'English', value: 'en' },
+              ].map((opt) => {
+                const isSelected = (isHindi && opt.value === 'hi') || (!isHindi && opt.value === 'en');
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setLanguage(opt.value)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '7px 0',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: isSelected ? 'var(--color-primary, #4f46e5)' : 'transparent',
+                      color: isSelected ? '#ffffff' : 'var(--text-secondary, #64748b)',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 2px 6px rgba(79, 70, 229, 0.3)' : 'none',
+                    }}
+                  >
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* APPEARANCE (THEME) SEGMENTED SELECTOR */}
+          <div>
+            <div
+              style={{
+                fontSize: '0.66rem',
+                fontWeight: 800,
+                letterSpacing: '0.8px',
+                color: 'var(--text-secondary, #64748b)',
+                padding: '0 4px',
+                marginBottom: '6px',
+                textTransform: 'uppercase',
+              }}
+            >
+              {isHindi ? 'थीम (APPEARANCE)' : 'APPEARANCE'}
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                borderRadius: '12px',
                 padding: '3px',
                 border: '1px solid var(--border-subtle, #e2e8f0)',
                 backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
@@ -381,20 +549,20 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px',
-                      padding: '8px 0',
-                      borderRadius: '11px',
+                      gap: '5px',
+                      padding: '7px 0',
+                      borderRadius: '10px',
                       border: 'none',
                       backgroundColor: isSelected ? 'var(--color-primary, #4f46e5)' : 'transparent',
                       color: isSelected ? '#ffffff' : 'var(--text-secondary, #64748b)',
-                      fontSize: '0.76rem',
+                      fontSize: '0.74rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                       boxShadow: isSelected ? '0 2px 6px rgba(79, 70, 229, 0.3)' : 'none',
                     }}
                   >
-                    <IconComp size={14} color={isSelected ? '#ffffff' : 'var(--text-secondary, #64748b)'} />
+                    <IconComp size={13} color={isSelected ? '#ffffff' : 'var(--text-secondary, #64748b)'} />
                     <span>{opt.label}</span>
                   </button>
                 );
@@ -411,9 +579,9 @@ export const SideDrawer = ({ isOpen, onClose }) => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              padding: '12px 14px',
-              borderRadius: '14px',
+              gap: '10px',
+              padding: '10px 12px',
+              borderRadius: '12px',
               backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
               border: '1px solid var(--border-subtle, #e2e8f0)',
               textDecoration: 'none',
@@ -422,9 +590,9 @@ export const SideDrawer = ({ isOpen, onClose }) => {
           >
             <div
               style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '10px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
                 backgroundColor: 'var(--color-primary-light, #eef2ff)',
                 color: 'var(--color-primary, #4f46e5)',
                 display: 'flex',
@@ -433,13 +601,13 @@ export const SideDrawer = ({ isOpen, onClose }) => {
                 flexShrink: 0,
               }}
             >
-              <Store size={18} />
+              <Store size={16} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
+              <div style={{ fontSize: '0.80rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                 {isHindi ? 'क्या आप दुकानदार हैं?' : 'Are you a Shop Keeper?'}
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', marginTop: '1px' }}>
+              <div style={{ fontSize: '0.70rem', color: 'var(--text-secondary, #64748b)', marginTop: '1px' }}>
                 {isHindi ? 'मर्चेंट ऐप खोलें' : 'Open Merchant OS App ↗'}
               </div>
             </div>
@@ -453,18 +621,18 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '6px 4px',
+                gap: '8px',
+                padding: '4px 4px',
                 background: 'transparent',
                 border: 'none',
                 color: '#ef4444',
                 cursor: 'pointer',
-                fontSize: '0.9rem',
+                fontSize: '0.86rem',
                 fontWeight: 800,
                 textAlign: 'left',
               }}
             >
-              <LogOut size={18} color="#ef4444" />
+              <LogOut size={16} color="#ef4444" />
               <span>{t('nav.logout')}</span>
             </button>
           ) : (
@@ -474,18 +642,18 @@ export const SideDrawer = ({ isOpen, onClose }) => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '6px 4px',
+                gap: '8px',
+                padding: '4px 4px',
                 background: 'transparent',
                 border: 'none',
                 color: '#4f46e5',
                 cursor: 'pointer',
-                fontSize: '0.9rem',
+                fontSize: '0.86rem',
                 fontWeight: 800,
                 textAlign: 'left',
               }}
             >
-              <User size={18} color="#4f46e5" />
+              <User size={16} color="#4f46e5" />
               <span>{isHindi ? 'लॉग इन करें' : 'Sign In'}</span>
             </button>
           )}
