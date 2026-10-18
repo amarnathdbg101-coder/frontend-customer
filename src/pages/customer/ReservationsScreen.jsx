@@ -340,7 +340,16 @@ export const ReservationsScreen = () => {
             const isDone = r.status === 'completed' || r.status === 'verified';
             const isCancelled = r.status === 'cancelled';
             const countdown = isActive ? getCountdownInfo(r.expires_at) : null;
-            const directionsUrl = getDirectionsUrl(r.shop?.latitude, r.shop?.longitude, r.shop?.name, r.shop?.address);
+
+            // Robust multi-field fallbacks for product and store
+            const productName = r.product?.name || r.product_name || r.name || (isHindi ? `काउंटर पिकअप #${displayId}` : `Counter Pickup #${displayId}`);
+            const productImage = r.product?.image || (Array.isArray(r.product?.images) && r.product.images[0]) || r.product_image || (Array.isArray(r.product_images) && r.product_images[0]);
+            const unitPrice = Number(r.product?.price ?? r.product_price ?? (r.total_amount && r.quantity ? r.total_amount / r.quantity : 0));
+            const totalAmount = Number(r.total_amount || (unitPrice * (r.quantity || 1)));
+            const storeName = r.shop?.name || r.shop_name || (isHindi ? 'स्थानीय दुकान' : 'Local Store');
+            const storeSlug = r.shop?.slug || r.shop_slug || '';
+            const targetProdId = r.product_id || r.product?.id;
+            const directionsUrl = getDirectionsUrl(r.shop?.latitude, r.shop?.longitude, storeName, r.shop?.address);
 
             return (
               <Card
@@ -360,9 +369,8 @@ export const ReservationsScreen = () => {
                     <div style={{ display: 'flex', gap: '10px', minWidth: 0, flex: 1, alignItems: 'center' }}>
                       <div
                         onClick={() => {
-                          const targetProdId = r.product_id || r.product?.id;
                           if (targetProdId) {
-                            navigate(`/shop/${r.shop?.slug || 'store'}/product/${targetProdId}`, {
+                            navigate(`/shop/${storeSlug || 'store'}/product/${targetProdId}`, {
                               state: { product: r.product, shop: r.shop },
                             });
                           }
@@ -378,13 +386,13 @@ export const ReservationsScreen = () => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
-                          cursor: (r.product_id || r.product?.id) ? 'pointer' : 'default',
+                          cursor: targetProdId ? 'pointer' : 'default',
                         }}
                       >
-                        {(r.product?.image || (Array.isArray(r.product?.images) && r.product.images[0])) ? (
+                        {productImage ? (
                           <img
-                            src={getImageUrl(r.product?.image || r.product.images[0])}
-                            alt={r.product?.name || 'Item'}
+                            src={getImageUrl(productImage)}
+                            alt={productName}
                             style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }}
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
@@ -396,9 +404,8 @@ export const ReservationsScreen = () => {
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div
                           onClick={() => {
-                            const targetProdId = r.product_id || r.product?.id;
                             if (targetProdId) {
-                              navigate(`/shop/${r.shop?.slug || 'store'}/product/${targetProdId}`, {
+                              navigate(`/shop/${storeSlug || 'store'}/product/${targetProdId}`, {
                                 state: { product: r.product, shop: r.shop },
                               });
                             }
@@ -408,16 +415,16 @@ export const ReservationsScreen = () => {
                             fontSize: '0.98rem',
                             color: 'var(--text-primary)',
                             lineHeight: 1.3,
-                            cursor: (r.product_id || r.product?.id) ? 'pointer' : 'default',
+                            cursor: targetProdId ? 'pointer' : 'default',
                           }}
-                          title={r.product?.name}
+                          title={productName}
                         >
-                          {r.product?.name || `Reservation #${displayId}`}
+                          {productName}
                         </div>
-                        {r.shop?.name && (
+                        {storeName && (
                           <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Store size={12} />
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.shop.name}</span>
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{storeName}</span>
                           </div>
                         )}
                       </div>
@@ -438,10 +445,10 @@ export const ReservationsScreen = () => {
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span>{t('cart.quantity')}: <strong>{r.quantity || 1}</strong></span>
-                      {r.product?.price && (
+                      {totalAmount > 0 && (
                         <>
                           <span>•</span>
-                          <span>{t('common.price', 'Price')}: <strong>₹{Number(r.product.price * (r.quantity || 1)).toFixed(0)}</strong></span>
+                          <span>{t('common.price', 'Price')}: <strong style={{ color: 'var(--color-primary)' }}>₹{totalAmount.toFixed(0)}</strong></span>
                         </>
                       )}
                       <span>•</span>
@@ -613,10 +620,70 @@ export const ReservationsScreen = () => {
               const fullCode = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').trim();
               const tokenCode = inspectToken.token_display || (fullCode.startsWith('#') ? fullCode : `#${fullCode}`);
               const cleanCode = tokenCode.replace('#', '');
-              const dirUrl = getDirectionsUrl(inspectToken.shop?.latitude, inspectToken.shop?.longitude, inspectToken.shop?.name, inspectToken.shop?.address);
+              const modalProdName = inspectToken.product?.name || inspectToken.product_name || inspectToken.name || (isHindi ? 'सामान' : 'Item');
+              const modalProdImg = inspectToken.product?.image || (Array.isArray(inspectToken.product?.images) && inspectToken.product.images[0]) || inspectToken.product_image || (Array.isArray(inspectToken.product_images) && inspectToken.product_images[0]);
+              const modalStoreName = inspectToken.shop?.name || inspectToken.shop_name || (isHindi ? 'दुकान' : 'Store');
+              const modalPrice = Number(inspectToken.total_amount || (inspectToken.product?.price || inspectToken.product_price || 0) * (inspectToken.quantity || 1));
+              const dirUrl = getDirectionsUrl(inspectToken.shop?.latitude, inspectToken.shop?.longitude, modalStoreName, inspectToken.shop?.address);
 
               return (
                 <>
+                  {/* Itemized Order Details Card in QR Modal */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                      border: '1px solid var(--border-subtle, #e2e8f0)',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      marginBottom: '14px',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '8px',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid var(--border-subtle, #e2e8f0)',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {modalProdImg ? (
+                        <img
+                          src={getImageUrl(modalProdImg)}
+                          alt={modalProdName}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <Package size={20} color="var(--text-muted)" />
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {modalProdName}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px' }}>
+                        <span>{isHindi ? 'मात्रा:' : 'Qty:'} <strong>{inspectToken.quantity || 1}</strong></span>
+                        {modalPrice > 0 && (
+                          <>
+                            <span>•</span>
+                            <strong style={{ color: 'var(--color-primary)' }}>₹{modalPrice.toFixed(0)}</strong>
+                          </>
+                        )}
+                        <span>•</span>
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modalStoreName}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {isHindi ? '6-अंकों का पिकअप कोड' : '6-DIGIT PICKUP CODE'}
                   </div>

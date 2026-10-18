@@ -1,7 +1,28 @@
 /**
  * Product Sharing Utility for ShopSilo Customer Web App
  * Supports Rich WhatsApp formatting and Web Share API with graceful fallback.
+ * Generates exact deep links to products (/shop/:slug/product/:productId or /product/:productId)
+ * and eliminates duplicate link injection in native share sheets.
  */
+
+export function getProductShareUrl({ product, shopSlug = '', origin = '' } = {}) {
+  if (!product) return '';
+  const p = product;
+  const baseUrl = origin || (typeof window !== 'undefined' ? window.location.origin : 'https://shopsilo.in');
+  const targetSlug = shopSlug || p.shop_slug || p.shop?.slug || '';
+  const productId = p.id || p.product_id || p._id || '';
+
+  if (targetSlug && productId) {
+    return `${baseUrl}/shop/${targetSlug}/product/${productId}`;
+  }
+  if (productId) {
+    return `${baseUrl}/product/${productId}`;
+  }
+  if (targetSlug) {
+    return `${baseUrl}/shop/${targetSlug}`;
+  }
+  return baseUrl;
+}
 
 export function formatProductShareText({ product, shopName = '', shopSlug = '', isHindi = false, origin = '' }) {
   if (!product) return '';
@@ -27,18 +48,21 @@ export function formatProductShareText({ product, shopName = '', shopSlug = '', 
     priceStr = isHindi ? '🔒 मोलभाव करें / रेट पूछें' : '🔒 Price on Request';
   }
 
-  const store = shopName || p.shop_name || '';
-  const storeLine = store ? (isHindi ? `🏪 दुकान: ${store}\n` : `🏪 Store: ${store}\n`) : '';
-  const baseUrl = origin || (typeof window !== 'undefined' ? window.location.origin : 'https://shopsilo.in');
-  const targetSlug = shopSlug || p.shop_slug || '';
-  const urlLine = targetSlug 
-    ? (isHindi ? `👉 ShopSilo पर देखें: ${baseUrl}/shop/${targetSlug}` : `👉 View on ShopSilo: ${baseUrl}/shop/${targetSlug}`)
-    : (isHindi ? `👉 ShopSilo: ${baseUrl}` : `👉 ShopSilo: ${baseUrl}`);
+  const store = shopName || p.shop_name || p.shop?.name || '';
+  const storeLine = store ? (isHindi ? `🏪 दुकान: ${store}
+` : `🏪 Store: ${store}
+`) : '';
+  const productUrl = getProductShareUrl({ product, shopSlug, origin });
+  const urlLine = isHindi 
+    ? `👉 ShopSilo पर देखें: ${productUrl}` 
+    : `👉 View on ShopSilo: ${productUrl}`;
 
   const titlePrefix = `🛒 *${p.name || 'Product'}*`;
   const priceLine = isHindi ? `💰 कीमत: ${priceStr}` : `💰 Price: ${priceStr}`;
 
-  return `${titlePrefix}\n${priceLine}\n${storeLine}${urlLine}`;
+  return `${titlePrefix}
+${priceLine}
+${storeLine}${urlLine}`;
 }
 
 export function getWhatsAppShareUrl(options) {
@@ -48,31 +72,31 @@ export function getWhatsAppShareUrl(options) {
 
 export async function shareProduct(options) {
   const text = formatProductShareText(options);
-  const baseUrl = options.origin || (typeof window !== 'undefined' ? window.location.origin : 'https://shopsilo.in');
-  const targetSlug = options.shopSlug || options.product?.shop_slug || '';
-  const url = targetSlug ? `${baseUrl}/shop/${targetSlug}` : baseUrl;
+  const productUrl = getProductShareUrl(options);
 
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
+      // NOTE: We only pass `text` (which already includes the rich product details and single clean link).
+      // If both `text` (containing the URL) and `url` are passed, mobile OS share sheets and WhatsApp
+      // append `url` to the end of `text`, resulting in the exact link appearing twice!
       await navigator.share({
         title: options.product?.name || 'ShopSilo Product',
         text: text,
-        url: url,
       });
-      return { success: true, method: 'native' };
+      return { success: true, method: 'native', url: productUrl };
     } catch (err) {
       if (err?.name === 'AbortError') {
-        return { success: false, method: 'cancelled' };
+        return { success: false, method: 'cancelled', url: productUrl };
       }
-      // Fallback to WhatsApp URL below
+      // Fallback to WhatsApp URL below if native share encounters an error
     }
   }
 
   if (typeof window !== 'undefined') {
     const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
-    return { success: true, method: 'whatsapp' };
+    return { success: true, method: 'whatsapp', url: productUrl };
   }
 
-  return { success: false, method: 'none' };
+  return { success: false, method: 'none', url: productUrl };
 }

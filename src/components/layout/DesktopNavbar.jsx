@@ -32,6 +32,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { Button, Badge } from '../ui';
+import { ShopSiloLogo } from '../common/ShopSiloLogo';
 
 export const DesktopNavbar = () => {
   const navigate = useNavigate();
@@ -47,33 +48,12 @@ export const DesktopNavbar = () => {
     <header className="desktop-navbar" role="banner">
       <div className="desktop-navbar-inner">
         {/* Brand Logo */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: '1.25rem',
-              boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
-            }}
-          >
-            S
-          </div>
-          <div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-              ShopSilo
-            </div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-              {isHindi ? 'हाइपरलोकल बाज़ार' : 'Hyperlocal Market'}
-            </div>
-          </div>
-        </Link>
+        <ShopSiloLogo
+          size={38}
+          subtitle={isHindi ? 'हायपरलोकल बाज़ार' : 'Hyperlocal Market'}
+          to="/"
+          variant="gradient"
+        />
 
         {/* Navigation Links */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>

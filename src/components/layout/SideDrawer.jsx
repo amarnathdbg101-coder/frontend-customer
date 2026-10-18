@@ -32,6 +32,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { getImageUrl } from '../../utils/imageUrl';
 import { Badge } from '../ui';
+import { ShopSiloLogo } from '../common/ShopSiloLogo';
 
 export const SideDrawer = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -132,8 +133,40 @@ export const SideDrawer = ({ isOpen, onClose }) => {
         role="dialog"
         aria-label="Customer Navigation Menu"
       >
+        {/* Brand Top Header */}
+        <div
+          style={{
+            padding: '16px 18px 12px 18px',
+            borderBottom: '1px solid var(--border-subtle, #f1f5f9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+          }}
+        >
+          <ShopSiloLogo size={28} subtitle={isHindi ? 'हायपरलोकल बाज़ार' : 'Hyperlocal Market'} />
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary, #64748b)',
+              padding: '4px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
         {/* =========================================================================
-            1. TOP PROFILE HEADER (Avatar, Name, Email, CUSTOMER badge, Close 'X')
+            1. TOP PROFILE HEADER (Avatar, Name, Email, CUSTOMER badge)
            ========================================================================= */}
         <div
           style={{

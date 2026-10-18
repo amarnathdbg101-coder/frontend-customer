@@ -78,6 +78,7 @@ export const ProductDetailScreen = () => {
   // Cart & Reserve state
   const [cartQty, setCartQty] = useState(1);
   const [addedToast, setAddedToast] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
   const [holdHours, setHoldHours] = useState(4);
   const [reserving, setReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(null);
@@ -235,14 +236,18 @@ export const ProductDetailScreen = () => {
     }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!p) return;
-    shareProduct({
+    const res = await shareProduct({
       product: p,
       shopName: storeName,
       shopSlug: storeSlug,
       isHindi,
     });
+    if (res?.success) {
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2000);
+    }
   };
 
   if (loading && !p) {
@@ -322,13 +327,13 @@ export const ProductDetailScreen = () => {
                 gap: '6px',
                 fontSize: '0.78rem',
                 fontWeight: 700,
-                color: 'var(--text-primary)',
+                color: copiedShare ? '#16a34a' : 'var(--text-primary)',
                 cursor: 'pointer',
               }}
               title={isHindi ? 'व्हाट्सएप पर शेयर करें' : 'Share on WhatsApp'}
             >
-              <Share2 size={14} color="#16a34a" />
-              <span>{isHindi ? 'शेयर करें' : 'Share'}</span>
+              {copiedShare ? <Check size={14} color="#16a34a" strokeWidth={2.5} /> : <Share2 size={14} color="#16a34a" />}
+              <span>{copiedShare ? (isHindi ? 'शेयर किया गया!' : 'Shared!') : (isHindi ? 'शेयर करें' : 'Share')}</span>
             </button>
 
             <button
@@ -1180,12 +1185,75 @@ export const ProductDetailScreen = () => {
                   letterSpacing: '4px',
                   padding: '12px',
                   borderRadius: '12px',
-                  margin: '0 0 16px 0',
+                  margin: '0 0 14px 0',
                   fontFamily: 'monospace',
                   border: '1.5px dashed var(--color-primary, #3b82f6)',
                 }}
               >
                 #{reservationSuccess.pickup_code || reservationSuccess.reservation_number || 'OK'}
+              </div>
+
+              {/* Product & Order Summary Card */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                  border: '1px solid var(--border-subtle, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  margin: '0 0 16px 0',
+                  textAlign: 'left',
+                }}
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '8px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid var(--border-subtle, #e2e8f0)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {(p?.images && p.images[0]) || p?.image ? (
+                    <img
+                      src={getImageUrl((p.images && p.images[0]) || p.image)}
+                      alt={p.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <Package size={20} color="var(--text-muted)" />
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: '0.88rem',
+                      color: 'var(--text-primary)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {p.name}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'flex', gap: '8px', marginTop: '2px' }}>
+                    <span>{isHindi ? 'मात्रा:' : 'Qty:'} <strong>{cartQty}</strong></span>
+                    <span>•</span>
+                    <span style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
+                      ₹{((p.price || 0) * cartQty).toFixed(0)}
+                    </span>
+                    <span>•</span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{storeName}</span>
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>

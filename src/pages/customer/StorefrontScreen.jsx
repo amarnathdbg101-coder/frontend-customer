@@ -915,6 +915,69 @@ export const StorefrontScreen = () => {
               #{reservationSuccess.pickup_code || reservationSuccess.reservation_number || 'OK'}
             </div>
 
+            {/* Product & Order Summary Card */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                margin: '0 0 16px 0',
+                textAlign: 'left',
+              }}
+            >
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '8px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--border-subtle, #e2e8f0)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {((reservationSuccess.product?.images && reservationSuccess.product.images[0]) || reservationSuccess.product?.image || reservationSuccess.product_image || (Array.isArray(reservationSuccess.product_images) && reservationSuccess.product_images[0])) ? (
+                  <img
+                    src={getImageUrl((reservationSuccess.product?.images && reservationSuccess.product.images[0]) || reservationSuccess.product?.image || reservationSuccess.product_image || reservationSuccess.product_images[0])}
+                    alt={reservationSuccess.product?.name || reservationSuccess.product_name || 'Item'}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <Package size={20} color="var(--text-muted)" />
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {reservationSuccess.product?.name || reservationSuccess.product_name || (isHindi ? 'पिकअप सामान' : 'Reserved Item')}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'flex', gap: '8px', marginTop: '2px' }}>
+                  <span>{isHindi ? 'मात्रा:' : 'Qty:'} <strong>{reservationSuccess.quantity || 1}</strong></span>
+                  <span>•</span>
+                  <span style={{ color: 'var(--color-primary)', fontWeight: 800 }}>
+                    ₹{Number(reservationSuccess.total_amount || (reservationSuccess.product?.price || reservationSuccess.product_price || 0) * (reservationSuccess.quantity || 1)).toFixed(0)}
+                  </span>
+                  <span>•</span>
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shop?.name}</span>
+                </div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
               <Button
                 variant="primary"

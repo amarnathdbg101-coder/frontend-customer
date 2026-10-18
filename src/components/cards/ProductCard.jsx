@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
-import { ShoppingCart, Heart, Package, Check } from 'lucide-react';
+import { ShoppingCart, Heart, Package, Check, Share2 } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
+import { shareProduct } from '../../utils/productShare';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 
@@ -138,6 +139,43 @@ const ProductCardInner = ({
               </span>
             </div>
           )}
+
+          {/* 1-Tap WhatsApp Share Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              shareProduct({
+                product: p,
+                shopName: p.shop_name,
+                shopSlug: p.shop_slug,
+                isHindi,
+              });
+            }}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '38px',
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+              zIndex: 2,
+            }}
+            aria-label="Share product"
+            title={isHindi ? 'शेयर करें' : 'Share'}
+          >
+            <Share2
+              size={12}
+              color="#16a34a"
+            />
+          </button>
 
           {/* Wishlist Heart */}
           <button

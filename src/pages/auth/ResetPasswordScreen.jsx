@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { authApi } from '../../api/auth.api';
 import { useLanguage } from '../../context/LanguageContext';
+import { ShopSiloLogo } from '../../components/common/ShopSiloLogo';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { AlertBanner, Button } from '../../components/ui';
 

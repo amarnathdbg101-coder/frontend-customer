@@ -3,6 +3,7 @@ import { Download, X, Share, PlusSquare, CheckCircle, Sparkles } from 'lucide-re
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { BaseModal, ModalHeader, ModalBody, ModalFooter, Button } from '../ui';
+import { ShopSiloLogo } from './ShopSiloLogo';
 
 const DISMISS_KEY = 'shopsilo_pwa_dismissed';
 const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -140,28 +141,7 @@ export default function PWAInstallBanner() {
 
         {/* Left: App Logo & Details */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-          <div
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 3px 8px rgba(79, 70, 229, 0.35)',
-              flexShrink: 0,
-            }}
-          >
-            <img
-              src="/favicon.svg"
-              alt="ShopSilo"
-              style={{ width: '24px', height: '24px', filter: 'brightness(0) invert(1)' }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
+          <ShopSiloLogo size={42} showText={false} variant="gradient" />
 
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
