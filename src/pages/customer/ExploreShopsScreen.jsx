@@ -5,18 +5,14 @@ import { useScreenState } from '../../hooks/useScreenState.js';
 /**
  * Customer Explore & Marketplace Screen
  * Clean, modern, responsive layout with location discovery, search, promo carousel, 
- * 44-category system, and responsive shop & product feeds.
+ * category system, and responsive shop & product feeds.
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
-  Zap,
   Store,
-  BookOpen,
-  Tag,
-  Folder,
   ChevronDown,
   MapPin,
   X,
@@ -42,7 +38,9 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
-import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
+import { CategoryBar } from '../../components/customer/CategoryBar';
+import { calculateDistanceKm } from '../../utils/distance';
+import { isProductInCategory, isShopInCategory } from '../../utils/categoryMatcher';
 
 const PAGE_LIMIT = 20;
 
@@ -118,10 +116,11 @@ export const ExploreShopsScreen = () => {
 
   // 1. Fetch Shops & Products (SWR 0ms Cache First)
   const loadMarketplaceData = useCallback(async () => {
-    // 1. Check Local Cache First for 0ms Instant Display (keyed by area)
+    const isCatActive = selectedCategory && selectedCategory !== 'All';
     const cacheCoordKey = coords?.lat ? `${CACHE_KEYS.SHOPS}_${coords.lat.toFixed(2)}_${coords.lng.toFixed(2)}` : CACHE_KEYS.SHOPS;
+    const cacheProdKey = isCatActive ? `${CACHE_KEYS.PRODUCTS}_${selectedCategory}` : CACHE_KEYS.PRODUCTS;
     const cachedShops = localCache.get(cacheCoordKey);
-    const cachedProds = localCache.get(CACHE_KEYS.PRODUCTS);
+    const cachedProds = localCache.get(cacheProdKey);
 
     let hasLocal = false;
     if (cachedShops && Array.isArray(cachedShops) && cachedShops.length > 0) {
@@ -143,10 +142,12 @@ export const ExploreShopsScreen = () => {
     setHasMore(true);
 
     try {
+      const categoryParam = isCatActive ? selectedCategory : undefined;
       const params = {
         lat: coords?.lat,
         lng: coords?.lng,
         radius_km: radiusKm === 999 ? undefined : radiusKm,
+        category: categoryParam,
       };
 
       const [shopsRes, prodsRes] = await Promise.allSettled([
@@ -156,10 +157,11 @@ export const ExploreShopsScreen = () => {
               lat: coords.lat,
               lng: coords.lng,
               radius_km: radiusKm === 999 ? 20 : radiusKm,
+              category: categoryParam,
               page: 1,
               limit: PAGE_LIMIT,
-            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT }))
-          : productApi.listProducts({ page: 1, limit: PAGE_LIMIT }),
+            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam }))
+          : productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam }),
       ]);
 
       let shopList = shopsRes.status === 'fulfilled' ? extractArray(shopsRes.value, 'shops') : [];
@@ -215,14 +217,14 @@ export const ExploreShopsScreen = () => {
       }
       if (normalizedProds.length > 0) {
         setProducts(normalizedProds);
-        localCache.set(CACHE_KEYS.PRODUCTS, normalizedProds, DEFAULT_TTL.PRODUCTS);
+        localCache.set(cacheProdKey, normalizedProds, DEFAULT_TTL.PRODUCTS);
       }
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
     } finally {
       setLoading(false);
     }
-  }, [coords?.lat, coords?.lng, radiusKm]);
+  }, [coords?.lat, coords?.lng, radiusKm, selectedCategory]);
 
   useEffect(() => {
     loadMarketplaceData();
@@ -236,6 +238,7 @@ export const ExploreShopsScreen = () => {
       unsubProds();
     };
   }, [loadMarketplaceData]);
+
   // 1b. Infinite Scroll Pagination: Fetch next page of products on scroll
   const loadMoreProducts = useCallback(async () => {
     if (loadingMore || !hasMore || loading) return;
@@ -247,11 +250,13 @@ export const ExploreShopsScreen = () => {
       let totalPages = 1;
       let totalCount = 0;
 
+      const categoryParam = (selectedCategory && selectedCategory !== 'All') ? selectedCategory : undefined;
       if (coords?.lat && coords?.lng) {
         const res = await productApi.findNearbyProducts({
           lat: coords.lat,
           lng: coords.lng,
           radius_km: radiusKm === 999 ? 20 : radiusKm,
+          category: categoryParam,
           page: nextPage,
           limit: PAGE_LIMIT,
         });
@@ -259,7 +264,7 @@ export const ExploreShopsScreen = () => {
         totalPages = res?.total_pages || res?.data?.total_pages || 1;
         totalCount = res?.total_count || res?.data?.total_count || 0;
       } else {
-        const res = await productApi.listProducts({ page: nextPage, limit: PAGE_LIMIT });
+        const res = await productApi.listProducts({ page: nextPage, limit: PAGE_LIMIT, category: categoryParam });
         rawProdList = extractArray(res, 'products');
         totalPages = res?.total_pages || res?.data?.total_pages || 1;
         totalCount = res?.total_count || res?.data?.total_count || 0;
@@ -306,7 +311,7 @@ export const ExploreShopsScreen = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, loading, page, coords?.lat, coords?.lng, radiusKm]);
+  }, [loadingMore, hasMore, loading, page, coords?.lat, coords?.lng, radiusKm, selectedCategory]);
 
   // Automatic Infinite Scroll Listener
   useEffect(() => {
@@ -327,7 +332,6 @@ export const ExploreShopsScreen = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [activeTab, hasMore, loadingMore, loading, loadMoreProducts]);
-
 
   // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
   const filteredProducts = useMemo(() => {
@@ -352,10 +356,7 @@ export const ExploreShopsScreen = () => {
       }
 
       if (selectedCategory && selectedCategory !== 'All') {
-        const catLower = selectedCategory.toLowerCase();
-        const pCat = (p.category_name || p.category_id || p.category_slug || p.category?.name || p.category?.slug || '').toLowerCase();
-        const matchesCat = pCat.includes(catLower) || catLower.includes(pCat) || (p.name || '').toLowerCase().includes(catLower);
-        if (!matchesCat) return false;
+        if (!isProductInCategory(p, selectedCategory)) return false;
       }
 
       return true;
@@ -382,10 +383,9 @@ export const ExploreShopsScreen = () => {
     });
   }, [products, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
 
-  // 3. Filter & Sort Shops (Location-Aware + Fast Proximity)
+  // 3. Filter & Sort Shops
   const filteredShops = useMemo(() => {
     const list = shops.filter((s) => {
-      // Proximity Distance Filter
       const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
       s._distKm = distKm;
 
@@ -407,10 +407,7 @@ export const ExploreShopsScreen = () => {
       }
 
       if (selectedCategory && selectedCategory !== 'All') {
-        const catLower = selectedCategory.toLowerCase();
-        const sCat = (s.category || '').toLowerCase();
-        const matchesCat = sCat.includes(catLower) || catLower.includes(sCat) || (s.name || '').toLowerCase().includes(catLower);
-        if (!matchesCat) return false;
+        if (!isShopInCategory(s, selectedCategory)) return false;
       }
 
       return true;
@@ -422,12 +419,13 @@ export const ExploreShopsScreen = () => {
       }
       return 0;
     });
-  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
+  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm, sortBy, showOpenOnly]);
 
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
       const res = await reservationApi.createReservation({
         product_id: product.id,
+        shop_id: product.shop_id || product.shopId || product.shop?.id || '',
         quantity,
         hold_hours,
         notes,
@@ -621,12 +619,12 @@ export const ExploreShopsScreen = () => {
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
           paddingBottom: '4px',
-          marginBottom: '12px',
+          marginBottom: '14px',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
         }}
       >
-        {/* Card 1: Smart Bargain */}
+        {/* Card 1: Direct Bargain */}
         <div
           style={{
             minWidth: '75%',
@@ -709,50 +707,11 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 4. COMPACT CATEGORY EXPLORER BAR */}
-      <div style={{ marginBottom: '14px' }}>
-        <div
-          onClick={() => setIsCategoryModalOpen(true)}
-          style={{
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '12px',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            padding: '8px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-            <Folder size={16} color="#d97706" style={{ flexShrink: 0 }} />
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {selectedCategory === 'All'
-                ? (isHindi ? 'सभी कैटेगरीज (44+ Choose Category)' : 'All Categories (44+ Choose Category)')
-                : selectedCategory}
-            </div>
-          </div>
-
-          <div
-            style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              color: 'var(--color-primary, #4f46e5)',
-              padding: '2px 8px',
-              borderRadius: '8px',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '3px',
-              flexShrink: 0,
-            }}
-          >
-            <span>44+</span>
-            <ChevronDown size={13} />
-          </div>
-        </div>
-      </div>
+      {/* 4. VISUAL CATEGORY RAIL & DEPARTMENTS */}
+      <CategoryBar
+        selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
+        onSelectCategory={(catId) => setSelectedCategory(catId || 'All')}
+      />
 
       {/* 5. TAB SELECTOR: PRODUCTS vs LOCAL SHOPS */}
       <div
@@ -839,7 +798,7 @@ export const ExploreShopsScreen = () => {
         </button>
       </div>
 
-      {/* 6.5 SMART SORTING CONTROL BAR */}
+      {/* 6. SMART SORTING CONTROL BAR */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 0 12px 0', gap: '8px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary, #64748b)' }}>
           {activeTab === 'products'
@@ -920,7 +879,7 @@ export const ExploreShopsScreen = () => {
                   product={p}
                   isSaved={isProductSaved(p.id)}
                   onToggleSave={toggleSaveProduct}
-                  onClick={() => setInspectedProduct(p)}
+                  onClick={() => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
                 />
               ))}
             </div>
@@ -1017,6 +976,7 @@ export const ExploreShopsScreen = () => {
         onClose={() => setIsSmartSearchOpen(false)}
         initialQuery={searchTerm}
       />
+
       {/* LOCATION PICKER MODAL */}
       {showLocationModal && (
         <div
@@ -1099,47 +1059,6 @@ export const ExploreShopsScreen = () => {
               <Navigation size={16} />
               <span>{isHindi ? '🎯 लाइव GPS लोकेशन इस्तेमाल करें' : '🎯 Use Live GPS Location'}</span>
             </button>
-
-            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {isHindi ? 'प्रमुख शहर / बाज़ार' : 'Popular Shopping Hubs'}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-              {[
-                { name: 'Noida (Sector 15)', lat: 28.5828, lng: 77.3110, icon: '🏢' },
-                { name: 'Darbhanga', lat: 26.1542, lng: 85.8918, icon: '🏪' },
-                { name: 'Delhi NCR', lat: 28.6139, lng: 77.2090, icon: '🏙️' },
-                { name: 'Patna', lat: 25.6126, lng: 85.1444, icon: '🏛️' },
-                { name: 'Bengaluru', lat: 12.9716, lng: 77.5946, icon: '🌴' },
-                { name: 'Mumbai', lat: 19.0760, lng: 72.8777, icon: '🌊' },
-              ].map((hub) => (
-                <button
-                  key={hub.name}
-                  type="button"
-                  onClick={() => {
-                    setManualLocation(hub.name, hub.lat, hub.lng);
-                    setShowLocationModal(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 12px',
-                    backgroundColor: locationName === hub.name ? 'rgba(79, 70, 229, 0.12)' : 'var(--bg-surface-subtle, #f9fafb)',
-                    border: locationName === hub.name ? '1.5px solid var(--color-primary, #4f46e5)' : '1px solid var(--border-subtle, #e5e7eb)',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    color: locationName === hub.name ? 'var(--color-primary, #4f46e5)' : 'var(--text-primary)',
-                    fontWeight: locationName === hub.name ? 800 : 600,
-                    fontSize: '0.82rem',
-                  }}
-                >
-                  <span>{hub.icon}</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hub.name}</span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       )}

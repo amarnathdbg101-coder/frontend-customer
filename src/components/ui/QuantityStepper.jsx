@@ -14,32 +14,32 @@ export const QuantityStepper = ({
 }) => {
   const sizeStyles = {
     sm: {
-      height: '30px',
-      buttonSize: '28px',
-      iconSize: 12,
-      fontSize: '0.85rem',
-      padding: '0 6px',
+      height: '32px',
+      buttonSize: '30px',
+      iconSize: 13,
+      fontSize: '0.88rem',
+      padding: '0 8px',
     },
     md: {
       height: '38px',
-      buttonSize: '34px',
-      iconSize: 14,
+      buttonSize: '36px',
+      iconSize: 15,
       fontSize: '0.95rem',
-      padding: '0 10px',
+      padding: '0 12px',
     },
     lg: {
       height: '46px',
-      buttonSize: '40px',
+      buttonSize: '42px',
       iconSize: 18,
       fontSize: '1.1rem',
-      padding: '0 14px',
+      padding: '0 16px',
     },
   }[size] || {
     height: '38px',
-    buttonSize: '34px',
-    iconSize: 14,
+    buttonSize: '36px',
+    iconSize: 15,
     fontSize: '0.95rem',
-    padding: '0 10px',
+    padding: '0 12px',
   };
 
   const isAtMin = quantity <= min;
@@ -50,16 +50,18 @@ export const QuantityStepper = ({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        border: '1.5px solid var(--border-subtle, #e2e8f0)',
-        borderRadius: '10px',
+        border: '1.5px solid #0f172a',
+        borderRadius: '8px',
         backgroundColor: 'var(--bg-surface, #ffffff)',
         height: sizeStyles.height,
         overflow: 'hidden',
         userSelect: 'none',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         ...style,
       }}
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Decrement Button */}
       <button
         type="button"
         disabled={disabled || (isAtMin && !showDeleteOnOne)}
@@ -74,40 +76,40 @@ export const QuantityStepper = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'transparent',
+          backgroundColor: (isAtMin && !showDeleteOnOne) ? '#f8fafc' : '#f1f5f9',
           border: 'none',
-          color: (isAtMin && showDeleteOnOne) ? 'var(--color-danger, #ef4444)' : 'var(--text-primary, #0f172a)',
+          borderRight: '1px solid #cbd5e1',
+          color: (isAtMin && showDeleteOnOne)
+            ? '#dc2626'
+            : (isAtMin && !showDeleteOnOne)
+              ? '#94a3b8'
+              : '#0f172a',
           cursor: disabled || (isAtMin && !showDeleteOnOne) ? 'not-allowed' : 'pointer',
-          opacity: disabled || (isAtMin && !showDeleteOnOne) ? 0.4 : 1,
-          transition: 'background-color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          if (!disabled) e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f1f5f9)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
+          transition: 'all 0.15s ease',
         }}
       >
         {isAtMin && showDeleteOnOne ? (
-          <Trash2 size={sizeStyles.iconSize} />
+          <Trash2 size={sizeStyles.iconSize} strokeWidth={2.5} />
         ) : (
-          <Minus size={sizeStyles.iconSize} />
+          <Minus size={sizeStyles.iconSize} strokeWidth={2.5} />
         )}
       </button>
 
+      {/* Quantity Count */}
       <span
         style={{
           padding: sizeStyles.padding,
-          fontWeight: 700,
+          fontWeight: 800,
           fontSize: sizeStyles.fontSize,
           color: 'var(--text-primary, #0f172a)',
-          minWidth: '28px',
+          minWidth: '32px',
           textAlign: 'center',
         }}
       >
         {quantity}
       </span>
 
+      {/* Increment Button (High-Contrast Solid Dark Button) */}
       <button
         type="button"
         disabled={disabled || isAtMax}
@@ -122,22 +124,18 @@ export const QuantityStepper = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'transparent',
+          backgroundColor: disabled || isAtMax ? '#f1f5f9' : '#0f172a',
           border: 'none',
-          color: 'var(--text-primary, #0f172a)',
+          borderLeft: '1px solid #cbd5e1',
+          color: disabled || isAtMax ? '#94a3b8' : '#ffffff',
           cursor: disabled || isAtMax ? 'not-allowed' : 'pointer',
-          opacity: disabled || isAtMax ? 0.4 : 1,
-          transition: 'background-color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          if (!disabled && !isAtMax) e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f1f5f9)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
+          transition: 'all 0.15s ease',
         }}
       >
-        <Plus size={sizeStyles.iconSize} />
+        <Plus size={sizeStyles.iconSize} strokeWidth={2.5} />
       </button>
     </div>
   );
 };
+
+export default QuantityStepper;

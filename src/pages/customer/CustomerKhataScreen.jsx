@@ -21,6 +21,7 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { useAuth } from '../../context/AuthContext';
 import { customerKhataApi } from '../../api/khata.api';
 import { BaseModal, ModalHeader, ModalBody, ModalFooter, Button, Badge, LoadingSpinner } from '../../components/ui';
+import { CreditLimitBar } from '../../components/khata/CreditLimitBar';
 import { getImageUrl } from '../../utils/imageUrl';
 import { RealQRCode } from '../../components/common/RealQRCode';
 import { useLanguage } from '../../context/LanguageContext';
@@ -323,7 +324,7 @@ export const CustomerKhataScreen = () => {
                     <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                       {isCredit
                         ? (isHindi ? 'उधार लिया (Credit Taken)' : 'Credit / Purchase')
-                        : (isHindi ? 'उधार चुकाया (Payment Paid)' : 'Payment / Settlement')}
+                        : (isHindi ? 'भुगतान जमा' : 'Payment / Settlement')}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                       {new Date(tx.created_at).toLocaleDateString('en-IN', {
@@ -445,7 +446,7 @@ export const CustomerKhataScreen = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <div style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {isHindi ? 'कुल बाकी उधार (Total Payable)' : 'Total Outstanding Balance'}
+                  {isHindi ? 'कुल बाकी उधार' : 'Total Outstanding Balance'}
                 </div>
                 <div style={{ fontSize: '2.2rem', fontWeight: 900, marginTop: '4px', letterSpacing: '-0.5px' }}>
                   ₹{Number(totalOutstanding).toLocaleString('en-IN')}
@@ -623,6 +624,12 @@ export const CustomerKhataScreen = () => {
                       </div>
                     </div>
 
+                    {/* Credit Limit Utilization Progress Bar */}
+                    <CreditLimitBar
+                      currentBalance={balance}
+                      creditLimit={acc.credit_limit || acc.creditLimit}
+                    />
+
                     {/* Promise Date Badge */}
                     {promiseDate && (
                       <div
@@ -715,24 +722,33 @@ export const CustomerKhataScreen = () => {
               }}
             >
               {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '14px', borderBottom: '1px solid var(--border-subtle)' }}>
-                <div>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                    {selectedKhata.shop_name || selectedKhata.shop?.name}
+              <div style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                      {selectedKhata.shop_name || selectedKhata.shop?.name}
+                    </div>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {isHindi ? 'डिजिटल पासबुक एवं खाता विवरण' : 'Live Passbook & Statement'}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    {isHindi ? 'डिजिटल पासबुक एवं खाता विवरण' : 'Live Passbook & Statement'}
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                      {isHindi ? 'शुद्ध बाकी' : 'NET BALANCE'}
+                    </div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-danger)' }}>
+                      ₹{Number(selectedKhata.current_balance || selectedKhata.balance || 0).toLocaleString('en-IN')}
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                    {isHindi ? 'शुद्ध बाकी' : 'NET BALANCE'}
-                  </div>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-danger)' }}>
-                    ₹{Number(selectedKhata.current_balance || selectedKhata.balance || 0).toLocaleString('en-IN')}
-                  </div>
-                </div>
+                {/* Credit Limit Progress Bar in Desktop Sidebar */}
+                <CreditLimitBar
+                  currentBalance={selectedKhata.current_balance || selectedKhata.balance}
+                  creditLimit={selectedKhata.credit_limit || selectedKhata.creditLimit}
+                  compact={true}
+                />
               </div>
 
               {/* Quick Actions in Desktop Sidebar */}
@@ -799,13 +815,23 @@ export const CustomerKhataScreen = () => {
         />
         <ModalBody padding="16px">
           {selectedKhata && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>NET BALANCE</div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--color-danger)' }}>
-                  ₹{Number(selectedKhata.current_balance || selectedKhata.balance || 0).toLocaleString('en-IN')}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                  {t('khata.transaction_history', 'Transaction Statement')}
+                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>NET BALANCE</div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--color-danger)' }}>
+                    ₹{Number(selectedKhata.current_balance || selectedKhata.balance || 0).toLocaleString('en-IN')}
+                  </div>
                 </div>
               </div>
+              <CreditLimitBar
+                currentBalance={selectedKhata.current_balance || selectedKhata.balance}
+                creditLimit={selectedKhata.credit_limit || selectedKhata.creditLimit}
+                compact={true}
+              />
             </div>
           )}
           <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -931,6 +957,77 @@ export const CustomerKhataScreen = () => {
           </div>
 
           <form onSubmit={handleUpiPaymentSubmit}>
+            {/* Quick Amount Chips */}
+            {selectedKhata && (
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 700 }}>
+                  {t('khata.upi_quick_amounts', 'Quick Amounts')}:
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {Number(selectedKhata.current_balance || selectedKhata.balance || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setUpiAmount(String(selectedKhata.current_balance || selectedKhata.balance))}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '16px',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        backgroundColor: upiAmount === String(selectedKhata.current_balance || selectedKhata.balance) ? 'var(--color-primary)' : 'rgba(99, 102, 241, 0.1)',
+                        color: upiAmount === String(selectedKhata.current_balance || selectedKhata.balance) ? '#ffffff' : 'var(--color-primary)',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {t('khata.upi_full_balance', 'Full Dues: ₹{{amount}}').replace('{{amount}}', Number(selectedKhata.current_balance || selectedKhata.balance).toLocaleString('en-IN'))}
+                    </button>
+                  )}
+
+                  {Number(selectedKhata.current_balance || selectedKhata.balance || 0) >= 200 && (
+                    <button
+                      type="button"
+                      onClick={() => setUpiAmount(String(Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2)))}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '16px',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        backgroundColor: upiAmount === String(Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2)) ? 'var(--color-primary)' : 'rgba(99, 102, 241, 0.1)',
+                        color: upiAmount === String(Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2)) ? '#ffffff' : 'var(--color-primary)',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {t('khata.upi_half_balance', 'Half: ₹{{amount}}').replace('{{amount}}', Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2).toLocaleString('en-IN'))}
+                    </button>
+                  )}
+
+                  {[500, 1000, 2000].map((amt) => {
+                    if (amt >= Number(selectedKhata.current_balance || selectedKhata.balance || 0)) return null;
+                    return (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setUpiAmount(String(amt))}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '16px',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          backgroundColor: upiAmount === String(amt) ? 'var(--color-primary)' : 'rgba(0, 0, 0, 0.05)',
+                          color: upiAmount === String(amt) ? '#ffffff' : 'var(--text-secondary)',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ₹{amt.toLocaleString('en-IN')}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label" style={{ fontSize: '0.78rem' }}>
                 {isHindi ? 'भुगतान राशि (₹)' : 'Payment Amount (₹)'}
@@ -957,6 +1054,9 @@ export const CustomerKhataScreen = () => {
                 value={upiUtr}
                 onChange={(e) => setUpiUtr(e.target.value)}
               />
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {t('khata.upi_utr_hint', 'Enter 12-digit transaction ID from GPay / PhonePe / Paytm')}
+              </div>
             </div>
 
             <div className="form-group">

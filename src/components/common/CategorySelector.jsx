@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Check, Layers, ChevronDown, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Check, Layers, ChevronDown } from 'lucide-react';
 import { apiClient } from '../../api/client';
 import { BaseModal, ModalHeader, ModalBody } from '../ui';
 
@@ -9,11 +9,7 @@ export function CategorySelector({ selectedCategoryId, onSelectCategory, placeho
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
       const res = await apiClient.get('/categories');
@@ -24,7 +20,11 @@ export function CategorySelector({ selectedCategoryId, onSelectCategory, placeho
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId || c.slug === selectedCategoryId);
   const filteredCategories = categories.filter((c) =>

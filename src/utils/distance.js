@@ -82,7 +82,15 @@ export const formatTravelTime = (km, isHindi = false) => {
   };
 };
 
-export const getDirectionsUrl = (lat, lng, storeName = '') => {
-  if (!lat || !lng) return 'https://maps.google.com';
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}${storeName ? `&destination_place_id=${encodeURIComponent(storeName)}` : ''}`;
+export const getDirectionsUrl = (lat, lng, storeName = '', address = '') => {
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+  if (lat != null && lng != null && !isNaN(numLat) && !isNaN(numLng) && numLat !== 0 && numLng !== 0) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}${storeName ? `&destination_place_id=${encodeURIComponent(storeName)}` : ''}`;
+  }
+  const cleanTarget = [storeName, address].filter(Boolean).join(', ').trim();
+  if (cleanTarget) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(cleanTarget)}`;
+  }
+  return 'https://maps.google.com';
 };

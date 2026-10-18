@@ -117,15 +117,16 @@ export const CheckoutModal = () => {
         'evening': 6,
       };
 
-      // Generate a clean 4-digit pickup token e.g. "4812"
-      const random4Digit = Math.floor(1000 + Math.random() * 9000);
-      const tokenNumber = `#${random4Digit}`;
+      // Generate a clean 6-digit pickup token e.g. "849201"
+      const random6Digit = Math.floor(100000 + Math.random() * 900000);
+      const tokenNumber = `#${random6Digit}`;
 
-            // Build itemized breakdown for merchant counter
+      // Build itemized breakdown for merchant counter
       const itemsSummary = items.map((i) => `${i.name || 'Item'} (x${i.quantity || 1})`).join(', ');
 
       const payload = {
         product_id: primaryItem.id,
+        shop_id: primaryItem.shop_id || primaryItem.shopId || primaryItem.shop?.id || '',
         quantity: primaryItem.quantity || 1,
         hold_hours: holdHoursMap[timeSlot] || 2,
         notes: [
@@ -144,12 +145,12 @@ export const CheckoutModal = () => {
       try {
         result = await reservationApi.createReservation(payload);
         if (!result.pickup_code) {
-          result.pickup_code = `${random4Digit}`;
+          result.pickup_code = `${random6Digit}`;
         }
       } catch (apiErr) {
         console.warn('Backend reservation API call fallback:', apiErr);
         result = {
-          pickup_code: `${random4Digit}`,
+          pickup_code: `${random6Digit}`,
           token_display: tokenNumber,
           reservation_number: `ORD-${Date.now().toString().slice(-6)}`,
           expires_at: new Date(Date.now() + (holdHoursMap[timeSlot] || 2) * 3600000).toISOString(),
@@ -159,11 +160,10 @@ export const CheckoutModal = () => {
         };
       }
 
-      // Ensure token_display is formatted cleanly
+      // Ensure token_display preserves full 6-digit database code
       if (!result.token_display) {
-        const rawCode = String(result.pickup_code || random4Digit).replace(/[^0-9]/g, '');
-        const fourDigits = rawCode.length >= 4 ? rawCode.slice(-4) : String(random4Digit);
-        result.token_display = `#${fourDigits}`;
+        const fullCode = String(result.pickup_code || random6Digit).trim();
+        result.token_display = fullCode.startsWith('#') ? fullCode : `#${fullCode}`;
       }
 
       localCache.remove(CACHE_KEYS.RESERVATIONS);
@@ -634,8 +634,8 @@ export const CheckoutModal = () => {
               </h3>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 16px auto', lineHeight: 1.4 }}>
                 {isHindi
-                  ? 'दुकान के काउंटर पर पहुँचकर सिर्फ यह 4-अंकों का टोकन नंबर दिखाएं, दुकानदार POS पर दर्ज करते ही 10 सेकंड में आपका पैक किया सामान मिल जाएगा!'
-                  : 'Show this 4-digit token or QR pass at the counter. The shopkeeper enters it in POS for 10-second instant pickup!'}
+                  ? 'दुकान के काउंटर पर पहुँचकर सिर्फ यह 6-अंकों का टोकन नंबर दिखाएं, दुकानदार POS पर दर्ज करते ही 10 सेकंड में आपका पैक किया सामान मिल जाएगा!'
+                  : 'Show this 6-digit token or QR pass at the counter. The shopkeeper enters it in POS for 10-second instant pickup!'}
               </p>
 
               {/* Digital Pass Ticket Box */}
@@ -668,7 +668,7 @@ export const CheckoutModal = () => {
                 </div>
 
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {isHindi ? '4-अंकों का पिकअप टोकन कोड' : '4-DIGIT PICKUP TOKEN'}
+                  {isHindi ? '6-अंकों का पिकअप टोकन कोड' : '6-DIGIT PICKUP TOKEN'}
                 </div>
 
                 {/* Large 4-Digit Token Display */}

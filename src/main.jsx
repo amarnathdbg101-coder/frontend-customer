@@ -20,6 +20,15 @@ if (sentryDsn) {
   })
 }
 
+// Register Service Worker for PWA capabilities
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('PWA SW registration failed:', err);
+    });
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />

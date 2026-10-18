@@ -490,6 +490,16 @@ export const ALL_CATEGORIES = [
   },
 ];
 
+export const CATEGORY_DEPARTMENTS = [
+  { id: 'all', nameEn: 'All Items', nameHi: 'सभी सामान', icon: '✨' },
+  { id: 'grocery', nameEn: 'Grocery & Staples', nameHi: 'राशन व अनाज', icon: '🛒' },
+  { id: 'dairy', nameEn: 'Dairy & Bakery', nameHi: 'दूध व बेकरी', icon: '🥛' },
+  { id: 'snacks', nameEn: 'Snacks & Drinks', nameHi: 'स्नैक्स व ड्रिंक्स', icon: '🍿' },
+  { id: 'personal-care', nameEn: 'Personal Care', nameHi: 'पर्सनल केयर', icon: '🧼' },
+  { id: 'home', nameEn: 'Home & Kitchen', nameHi: 'घरेलू सामान', icon: '🧹' },
+  { id: 'stationery', nameEn: 'Stationery', nameHi: 'स्टेशनरी', icon: '📚' },
+];
+
 export const getCategoryMeta = (catOrId) => {
   if (!catOrId) return null;
   const idOrName = typeof catOrId === 'string' ? catOrId : (catOrId.id || catOrId.slug || catOrId.name || '');

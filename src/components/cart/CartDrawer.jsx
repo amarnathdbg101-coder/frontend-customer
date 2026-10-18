@@ -314,6 +314,10 @@ export const CartDrawer = () => {
                   >
                     {/* Item Image */}
                     <div
+                      onClick={() => {
+                        closeCart();
+                        navigate(`/shop/${item.shop_slug || 'store'}/product/${item.id}`, { state: { product: item } });
+                      }}
                       style={{
                         width: '68px',
                         height: '68px',
@@ -325,7 +329,9 @@ export const CartDrawer = () => {
                         justifyContent: 'center',
                         flexShrink: 0,
                         border: '1px solid var(--border-subtle)',
+                        cursor: 'pointer',
                       }}
+                      title={item.name}
                     >
                       {item.image ? (
                         <img loading="lazy" decoding="async"
@@ -344,6 +350,10 @@ export const CartDrawer = () => {
                     {/* Details */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
+                        onClick={() => {
+                          closeCart();
+                          navigate(`/shop/${item.shop_slug || 'store'}/product/${item.id}`, { state: { product: item } });
+                        }}
                         style={{
                           fontWeight: 700,
                           fontSize: '0.9rem',
@@ -351,7 +361,9 @@ export const CartDrawer = () => {
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
+                          cursor: 'pointer',
                         }}
+                        title={item.name}
                       >
                         {item.name}
                       </div>

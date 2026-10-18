@@ -147,7 +147,7 @@ export interface Reservation {
   quantity: number;
   pickup_code: string;
   pickup_time?: string;
-  status: 'pending' | 'ready' | 'completed' | 'cancelled' | 'expired';
+  status: 'pending' | 'ready' | 'active' | 'completed' | 'cancelled' | 'expired';
   expires_at: string;
   completed_at?: string;
   notes?: string;

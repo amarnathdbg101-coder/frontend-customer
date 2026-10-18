@@ -26,7 +26,8 @@ import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection
 import { AppLayout } from '../../components/layout/AppLayout';
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
-import { calculateDistanceKm, formatTravelTime } from '../../utils/distance';
+import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
+import { isProductInCategory } from '../../utils/categoryMatcher';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState } from '../../components/ui';
 
 const PAGE_LIMIT = 20;
@@ -55,6 +56,7 @@ export const StorefrontScreen = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [quickFilter, setQuickFilter] = useState('ALL');
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [reservationSuccess, setReservationSuccess] = useState(null);
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
@@ -241,13 +243,63 @@ export const StorefrontScreen = () => {
     return Array.from(cats);
   }, [products]);
 
+  // 3b. Quick Price & Deal Filter Counts
+  const quickFilterCounts = useMemo(() => {
+    const list = Array.isArray(products) ? products : [];
+    let under99 = 0;
+    let under499 = 0;
+    let deals20 = 0;
+    let bargain = 0;
+
+    list.forEach((p) => {
+      const isPublic = p.is_price_public !== false && 
+                       p.isPricePublic !== false && 
+                       p.attributes?.is_price_public !== false && 
+                       p.attributes?.is_price_public !== 'false' && 
+                       Number(p.price || 0) > 0 &&
+                       !p.hide_price;
+      const price = Number(p.price || 0);
+      const mrp = Number(p.compare_price || p.mrp || 0);
+      const pct = isPublic && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+      const allowBargain = p.allow_bargain === true || p.attributes?.allow_bargain === true;
+
+      if (isPublic && price <= 99) under99++;
+      if (isPublic && price <= 499) under499++;
+      if (isPublic && pct >= 20) deals20++;
+      if (!isPublic || allowBargain) bargain++;
+    });
+
+    return { under99, under499, deals20, bargain };
+  }, [products]);
+
   // 4. In-Store Product Search, Filtering and Sorting
   const filteredProducts = useMemo(() => {
     const list = (Array.isArray(products) ? products : []).filter((p) => {
       // Category Filter
-      if (selectedCategory !== 'ALL') {
-        const cat = (p.category_name || p.category || '').toLowerCase();
-        if (cat !== selectedCategory.toLowerCase()) return false;
+      if (selectedCategory !== 'ALL' && selectedCategory !== 'All') {
+        if (!isProductInCategory(p, selectedCategory)) return false;
+      }
+
+      // Quick Filter (Price & Deals)
+      const isPublic = p.is_price_public !== false && 
+                       p.isPricePublic !== false && 
+                       p.attributes?.is_price_public !== false && 
+                       p.attributes?.is_price_public !== 'false' && 
+                       Number(p.price || 0) > 0 &&
+                       !p.hide_price;
+      const price = Number(p.price || 0);
+      const mrp = Number(p.compare_price || p.mrp || 0);
+      const pct = isPublic && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+      const allowBargain = p.allow_bargain === true || p.attributes?.allow_bargain === true;
+
+      if (quickFilter === 'UNDER_99') {
+        if (!isPublic || price > 99) return false;
+      } else if (quickFilter === 'UNDER_499') {
+        if (!isPublic || price > 499) return false;
+      } else if (quickFilter === 'DEALS_20') {
+        if (!isPublic || pct < 20) return false;
+      } else if (quickFilter === 'BARGAIN') {
+        if (isPublic && !allowBargain) return false;
       }
 
       // Search Filter
@@ -275,7 +327,7 @@ export const StorefrontScreen = () => {
       }
       return 0;
     });
-  }, [products, searchTerm, selectedCategory, sortBy]);
+  }, [products, searchTerm, selectedCategory, quickFilter, sortBy]);
 
   // Reservation handler
   const handleReserveFromModal = async ({ product, quantity, hold_hours, notes }) => {
@@ -288,6 +340,7 @@ export const StorefrontScreen = () => {
     try {
       const res = await reservationApi.createReservation({
         product_id: product.id,
+        shop_id: shop?.id || product.shop_id || product.shopId || product.shop?.id || '',
         quantity,
         hold_hours,
         notes,
@@ -382,7 +435,7 @@ export const StorefrontScreen = () => {
                     : (isHindi ? '● बंद है' : '● Closed')}
                 </span>
                 {shop.city && <span>• {shop.city}</span>}
-                {travelInfo && <span>• {travelInfo}</span>}
+                {travelInfo?.full && <span>• {travelInfo.full}</span>}
               </div>
             </div>
           </div>
@@ -441,6 +494,183 @@ export const StorefrontScreen = () => {
         </select>
       </div>
 
+      {/* 2b. Quick Price & Deal Filter Pills */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '6px',
+          overflowX: 'auto',
+          paddingBottom: '6px',
+          marginBottom: '6px',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setQuickFilter('ALL')}
+          style={{
+            padding: '5px 10px',
+            borderRadius: '16px',
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            whiteSpace: 'nowrap',
+            border: quickFilter === 'ALL'
+              ? '1.5px solid var(--color-primary, #2563eb)'
+              : '1px solid var(--border-subtle, #e2e8f0)',
+            backgroundColor: quickFilter === 'ALL'
+              ? 'var(--color-primary, #2563eb)'
+              : 'var(--bg-card, #ffffff)',
+            color: quickFilter === 'ALL' ? '#ffffff' : 'var(--text-secondary, #64748b)',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {t('products.quick_filter_all', 'All')}
+        </button>
+
+        {quickFilterCounts.under99 > 0 && (
+          <button
+            type="button"
+            onClick={() => setQuickFilter(quickFilter === 'UNDER_99' ? 'ALL' : 'UNDER_99')}
+            style={{
+              padding: '5px 10px',
+              borderRadius: '16px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              border: quickFilter === 'UNDER_99'
+                ? '1.5px solid #10b981'
+                : '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: quickFilter === 'UNDER_99'
+                ? '#10b981'
+                : 'var(--bg-card, #ffffff)',
+              color: quickFilter === 'UNDER_99' ? '#ffffff' : '#047857',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🏷️ {t('products.quick_filter_under_99', 'Under ₹99')} ({quickFilterCounts.under99})
+          </button>
+        )}
+
+        {quickFilterCounts.under499 > 0 && (
+          <button
+            type="button"
+            onClick={() => setQuickFilter(quickFilter === 'UNDER_499' ? 'ALL' : 'UNDER_499')}
+            style={{
+              padding: '5px 10px',
+              borderRadius: '16px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              border: quickFilter === 'UNDER_499'
+                ? '1.5px solid #0284c7'
+                : '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: quickFilter === 'UNDER_499'
+                ? '#0284c7'
+                : 'var(--bg-card, #ffffff)',
+              color: quickFilter === 'UNDER_499' ? '#ffffff' : '#0369a1',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🏷️ {t('products.quick_filter_under_499', 'Under ₹499')} ({quickFilterCounts.under499})
+          </button>
+        )}
+
+        {quickFilterCounts.deals20 > 0 && (
+          <button
+            type="button"
+            onClick={() => setQuickFilter(quickFilter === 'DEALS_20' ? 'ALL' : 'DEALS_20')}
+            style={{
+              padding: '5px 10px',
+              borderRadius: '16px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              border: quickFilter === 'DEALS_20'
+                ? '1.5px solid #ef4444'
+                : '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: quickFilter === 'DEALS_20'
+                ? '#ef4444'
+                : 'var(--bg-card, #ffffff)',
+              color: quickFilter === 'DEALS_20' ? '#ffffff' : '#dc2626',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🔥 {t('products.quick_filter_deals_20', 'Deals (>20% Off)')} ({quickFilterCounts.deals20})
+          </button>
+        )}
+
+        {quickFilterCounts.bargain > 0 && (
+          <button
+            type="button"
+            onClick={() => setQuickFilter(quickFilter === 'BARGAIN' ? 'ALL' : 'BARGAIN')}
+            style={{
+              padding: '5px 10px',
+              borderRadius: '16px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              border: quickFilter === 'BARGAIN'
+                ? '1.5px solid #8b5cf6'
+                : '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: quickFilter === 'BARGAIN'
+                ? '#8b5cf6'
+                : 'var(--bg-card, #ffffff)',
+              color: quickFilter === 'BARGAIN' ? '#ffffff' : '#7c3aed',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            🔒 {t('products.quick_filter_bargain', 'Price on Request')} ({quickFilterCounts.bargain})
+          </button>
+        )}
+      </div>
+
+      {/* 2c. Active Filters Status Summary with 1-Tap Reset */}
+      {(quickFilter !== 'ALL' || selectedCategory !== 'ALL' || searchTerm.trim() !== '') && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '5px 10px',
+            marginBottom: '8px',
+            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+            border: '1px dashed var(--border-subtle, #cbd5e1)',
+            borderRadius: '8px',
+            fontSize: '0.72rem',
+            color: 'var(--text-secondary, #64748b)',
+          }}
+        >
+          <span>
+            {t('products.showing_items_count', 'Showing {{count}} products').replace('{{count}}', filteredProducts.length)}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setQuickFilter('ALL');
+              setSelectedCategory('ALL');
+              setSearchTerm('');
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--color-primary, #2563eb)',
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            ✕ {t('products.reset_filters', 'Reset all')}
+          </button>
+        </div>
+      )}
+
       {/* 3. Dynamic Category Filter Chips */}
       {availableCategories.length > 0 && (
         <div
@@ -478,10 +708,7 @@ export const StorefrontScreen = () => {
           </button>
 
           {availableCategories.map((cat) => {
-            const count = products.filter((p) => {
-              const c = p.category_name || p.category || '';
-              return c.toLowerCase() === cat.toLowerCase();
-            }).length;
+            const count = products.filter((p) => isProductInCategory(p, cat)).length;
 
             const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
 
@@ -520,11 +747,36 @@ export const StorefrontScreen = () => {
           <LoadingSpinner fullScreen={false} message={isHindi ? 'दुकान का कैटलॉग लोड हो रहा है...' : 'Loading store catalog...'} />
         </div>
       ) : filteredProducts.length === 0 ? (
-        <EmptyState
-          icon={Package}
-          title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
-          description={isHindi ? 'कृपया सर्च या कैटेगोरी बदलकर देखें' : 'Try searching another name or picking a different category'}
-        />
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <EmptyState
+            icon={Package}
+            title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
+            description={isHindi ? 'कृपया सर्च या कैटेगोरी बदलकर देखें' : 'Try searching another name or picking a different category'}
+          />
+          {(quickFilter !== 'ALL' || selectedCategory !== 'ALL' || searchTerm.trim() !== '') && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuickFilter('ALL');
+                setSelectedCategory('ALL');
+                setSearchTerm('');
+              }}
+              style={{
+                marginTop: '12px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--color-primary, #2563eb)',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+              }}
+            >
+              ✕ {t('products.reset_filters', 'Reset all')}
+            </button>
+          )}
+        </div>
       ) : (
         <>
           <div className="customer-product-grid">
@@ -540,7 +792,9 @@ export const StorefrontScreen = () => {
                   shop_latitude: p.shop_latitude || shop?.latitude,
                   shop_longitude: p.shop_longitude || shop?.longitude,
                 };
-                setInspectedProduct(enriched);
+                navigate(`/shop/${shop?.slug || p.shop_slug || 'store'}/product/${p.id}`, {
+                  state: { product: enriched, shop },
+                });
               };
 
               return (
@@ -550,6 +804,8 @@ export const StorefrontScreen = () => {
                   isSaved={isProductSaved(p.id)}
                   onToggleSave={toggleSaveProduct}
                   onClick={handleOpenModal}
+                  shopName={shop?.name}
+                  shopSlug={shop?.slug}
                 />
               );
             })}
@@ -627,40 +883,92 @@ export const StorefrontScreen = () => {
         />
       )}
 
-      {/* 8. Reservation Success Modal */}
+      {/* 8. Reservation Success Modal (6-Digit Counter PIN & Instant Directions) */}
       {reservationSuccess && (
-        <BaseModal isOpen={Boolean(reservationSuccess)} onClose={() => setReservationSuccess(null)} maxWidth="420px">
+        <BaseModal isOpen={Boolean(reservationSuccess)} onClose={() => setReservationSuccess(null)} maxWidth="440px">
           <ModalBody padding="24px" style={{ textAlign: 'center' }}>
-            <CheckCircle size={48} color="var(--color-success)" style={{ margin: '0 auto 8px auto' }} />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
+            <CheckCircle size={52} color="var(--color-success, #10b981)" style={{ margin: '0 auto 10px auto' }} />
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
               {t('checkout.reservation_success_title')}
             </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
-              {t('checkout.reservation_success_desc')}
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: '0 0 14px 0', lineHeight: 1.45 }}>
+              {t('checkout.pickup_instructions_counter', 'Show your 6-digit PIN at the counter to collect your item instantly.')}
             </p>
 
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+              {isHindi ? 'काउंटर पिकअप कोड' : 'COUNTER PICKUP PIN'}
+            </div>
             <div
               style={{
-                backgroundColor: 'var(--color-primary-light)',
-                color: 'var(--color-primary)',
-                fontSize: '1.8rem',
+                backgroundColor: 'var(--color-primary-light, rgba(20, 110, 180, 0.1))',
+                color: 'var(--color-primary, #1e40af)',
+                fontSize: '2.2rem',
                 fontWeight: 900,
                 letterSpacing: '4px',
                 padding: '12px',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: 'var(--radius-md, 12px)',
                 margin: '0 0 16px 0',
+                fontFamily: 'monospace',
+                border: '1.5px dashed var(--color-primary, #3b82f6)',
               }}
             >
-              {reservationSuccess.pickup_code || reservationSuccess.reservation_number || 'OK'}
+              #{reservationSuccess.pickup_code || reservationSuccess.reservation_number || 'OK'}
             </div>
 
-            <Button
-              variant="secondary"
-              fullWidth={true}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+              <Button
+                variant="primary"
+                fullWidth={true}
+                onClick={() => {
+                  setReservationSuccess(null);
+                  navigate('/reservations');
+                }}
+              >
+                {t('checkout.view_my_pickups', 'View in My Pickups')}
+              </Button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button
+                  variant="secondary"
+                  fullWidth={true}
+                  onClick={() => {
+                    const dirUrl = getDirectionsUrl(shop?.latitude, shop?.longitude, shop?.name, shop?.address);
+                    window.open(dirUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                >
+                  📍 {t('checkout.get_directions', 'Directions')}
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  fullWidth={true}
+                  onClick={() => {
+                    const code = reservationSuccess.pickup_code || reservationSuccess.reservation_number || '';
+                    const dirUrl = getDirectionsUrl(shop?.latitude, shop?.longitude, shop?.name, shop?.address);
+                    const shareText = `*ShopSilo Counter Pickup:*%0A🏪 Store: ${shop?.name || ''}%0A🔢 Pickup PIN: *#${code}*%0A📍 Store Directions: ${dirUrl}`;
+                    window.open(`https://wa.me/?text=${shareText}`, '_blank');
+                  }}
+                >
+                  💬 {t('checkout.share_pickup', 'Share PIN')}
+                </Button>
+              </div>
+            </div>
+
+            <button
+              type="button"
               onClick={() => setReservationSuccess(null)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                padding: '6px',
+                textDecoration: 'underline',
+              }}
             >
-              {t('common.confirm')}
-            </Button>
+              {t('common.close', 'Continue Shopping')}
+            </button>
           </ModalBody>
         </BaseModal>
       )}

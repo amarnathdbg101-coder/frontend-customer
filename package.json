@@ -9,6 +9,9 @@
     "postbuild": "node -e \"import('node:fs').then(fs => { fs.copyFileSync('dist/index.html', 'dist/200.html'); fs.copyFileSync('dist/index.html', 'dist/404.html'); })\"",
     "lint": "oxlint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,13 +24,18 @@
     "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "jsdom": "^26.0.0",
     "oxlint": "^1.79.0",
     "rollup-plugin-visualizer": "^5.14.0",
     "typescript": "^5.8.2",
     "vite": "^8.2.2",
-    "vite-plugin-compression2": "^2.5.3"
+    "vite-plugin-compression2": "^2.5.3",
+    "vitest": "^3.0.7"
   }
 }

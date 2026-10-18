@@ -1,9 +1,9 @@
 import React, { memo } from 'react';
-import { ShoppingCart, Heart, Package } from 'lucide-react';
+import { ShoppingCart, Heart, Package, Check } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import { useLanguage } from '../../context/LanguageContext';
-import { Badge, Button } from '../ui';
+import { useCart } from '../../context/CartContext';
 
 const ProductCardInner = ({
   product,
@@ -12,7 +12,10 @@ const ProductCardInner = ({
   onClick,
 }) => {
   const { isHindi } = useLanguage();
+  const { getItemQuantity } = useCart();
   const p = product;
+  const qtyInCart = p?.id ? getItemQuantity(p.id) : 0;
+
   const stock = Number(
     p.available_quantity ??
     p.stock_quantity ??
@@ -39,29 +42,29 @@ const ProductCardInner = ({
       onClick={onClick}
       style={{
         backgroundColor: 'var(--bg-surface, #ffffff)',
-        borderRadius: '14px',
-        border: '1px solid var(--border-subtle, #e2e8f0)',
+        borderRadius: '12px',
+        border: qtyInCart > 0 ? '1.5px solid #0f172a' : '1px solid var(--border-subtle, #e2e8f0)',
         overflow: 'hidden',
-        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        transition: 'all 0.15s ease-in-out',
         position: 'relative',
         height: '100%',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 6px 14px rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.06)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.04)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)';
       }}
     >
       <div>
-        {/* Square Product Image Box (1:1 Ratio) */}
+        {/* Clean Square Product Image Box (1:1 Ratio) */}
         <div
           style={{
             position: 'relative',
@@ -84,7 +87,7 @@ const ProductCardInner = ({
                 width: '100%',
                 height: '100%',
                 objectFit: 'contain',
-                padding: '6px',
+                padding: '8px',
                 transition: 'transform 0.2s ease',
               }}
               onError={(e) => {
@@ -92,19 +95,51 @@ const ProductCardInner = ({
               }}
             />
           ) : (
-            <Package size={36} color="var(--text-muted, #94a3b8)" style={{ opacity: 0.4 }} />
+            <Package size={32} color="#94a3b8" style={{ opacity: 0.35 }} />
           )}
 
-          {/* Discount Badge on Top-Left */}
+          {/* Minimal Discount Badge */}
           {hasDiscount && discountPct > 0 && (
-            <div style={{ position: 'absolute', top: '6px', left: '6px', zIndex: 2 }}>
-              <Badge variant="danger" size="sm">
+            <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
+              <span
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  fontSize: '0.62rem',
+                  fontWeight: 800,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  letterSpacing: '0.3px',
+                }}
+              >
                 {discountPct}% OFF
-              </Badge>
+              </span>
             </div>
           )}
 
-          {/* Wishlist / Save Button on Top-Right */}
+          {/* Quantity Badge if in Cart */}
+          {qtyInCart > 0 && (
+            <div style={{ position: 'absolute', bottom: '8px', left: '8px', zIndex: 2 }}>
+              <span
+                style={{
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  padding: '2px 7px',
+                  borderRadius: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                }}
+              >
+                <Check size={10} strokeWidth={3} />
+                <span>{qtyInCart}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Wishlist Heart */}
           <button
             type="button"
             onClick={(e) => {
@@ -113,8 +148,8 @@ const ProductCardInner = ({
             }}
             style={{
               position: 'absolute',
-              top: '6px',
-              right: '6px',
+              top: '8px',
+              right: '8px',
               width: '26px',
               height: '26px',
               borderRadius: '50%',
@@ -124,7 +159,7 @@ const ProductCardInner = ({
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
               zIndex: 2,
             }}
             aria-label="Save item"
@@ -137,18 +172,20 @@ const ProductCardInner = ({
           </button>
         </div>
 
-        {/* Product Name Truncated to EXACTLY 1 LINE */}
+        {/* Clean Product Name */}
         <div style={{ padding: '8px 10px 4px 10px' }}>
           <h4
             style={{
               margin: 0,
-              fontSize: '0.82rem',
-              fontWeight: 800,
+              fontSize: '0.84rem',
+              fontWeight: 700,
               color: 'var(--text-primary, #0f172a)',
-              lineHeight: 1.2,
-              whiteSpace: 'nowrap',
+              lineHeight: 1.25,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              minHeight: '2.5em',
             }}
             title={p.name}
           >
@@ -157,28 +194,28 @@ const ProductCardInner = ({
         </div>
       </div>
 
-      {/* Price & Add to Cart Row */}
+      {/* Price & Action Row */}
       <div
         style={{
-          padding: '0 10px 10px 10px',
+          padding: '4px 10px 10px 10px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '4px',
+          gap: '6px',
         }}
       >
         {isPricePublic ? (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
-            <span style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
               {formatCurrency(price)}
             </span>
             {hasDiscount && (
               <span
                 style={{
-                  fontSize: '0.68rem',
-                  color: 'var(--text-muted, #94a3b8)',
+                  fontSize: '0.7rem',
+                  color: '#94a3b8',
                   textDecoration: 'line-through',
-                  fontWeight: 600,
+                  fontWeight: 500,
                 }}
               >
                 {formatCurrency(mrp)}
@@ -186,12 +223,12 @@ const ProductCardInner = ({
             )}
           </div>
         ) : (
-          <Badge variant="bargain" size="sm">
-            {isHindi ? '🔒 मोलभाव करें' : '🔒 Ask Price'}
-          </Badge>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d97706' }}>
+            {isHindi ? 'रेट पूछें' : 'Ask Price'}
+          </span>
         )}
 
-        {/* Add to Cart / Ask Price Button */}
+        {/* Clean Add to Cart Button */}
         <button
           type="button"
           onClick={onClick}
@@ -200,28 +237,36 @@ const ProductCardInner = ({
             alignItems: 'center',
             gap: '4px',
             backgroundColor: !isPricePublic
-              ? '#25d366'
-              : inStock
-                ? 'var(--color-primary, #4f46e5)'
-                : 'rgba(148, 163, 184, 0.15)',
-            color: '#ffffff',
+              ? '#16a34a'
+              : qtyInCart > 0
+                ? '#0f172a'
+                : inStock
+                  ? '#0f172a'
+                  : '#f1f5f9',
+            color: !isPricePublic || qtyInCart > 0 || inStock ? '#ffffff' : '#94a3b8',
             border: 'none',
-            padding: '4px 8px',
+            padding: '5px 10px',
             borderRadius: '6px',
-            fontSize: '0.72rem',
-            fontWeight: 800,
-            cursor: 'pointer',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            cursor: inStock ? 'pointer' : 'default',
             flexShrink: 0,
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+            transition: 'all 0.15s ease',
           }}
         >
           {isPricePublic ? (
             <>
-              <ShoppingCart size={12} strokeWidth={2.5} />
-              <span>{inStock ? (isHindi ? 'जोड़ें' : 'Add') : (isHindi ? 'खत्म' : 'Out')}</span>
+              {qtyInCart > 0 ? <Check size={12} strokeWidth={3} /> : <ShoppingCart size={12} strokeWidth={2} />}
+              <span>
+                {qtyInCart > 0
+                  ? `${qtyInCart}`
+                  : inStock
+                    ? (isHindi ? 'जोड़ें' : 'Add')
+                    : (isHindi ? 'खत्म' : 'Out')}
+              </span>
             </>
           ) : (
-            <span>{isHindi ? 'रेट पूछें' : 'Ask Price'}</span>
+            <span>{isHindi ? 'पूछें' : 'Ask'}</span>
           )}
         </button>
       </div>

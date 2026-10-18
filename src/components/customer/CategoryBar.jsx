@@ -1,12 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  Layers,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
   X,
   Check,
-  Sparkles,
 } from 'lucide-react';
 import { ALL_CATEGORIES, CATEGORY_DEPARTMENTS, getCategoryMeta } from '../../constants/categoryData';
 import { CategoryExplorerModal } from './CategoryExplorerModal';

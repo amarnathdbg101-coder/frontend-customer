@@ -85,3 +85,39 @@ export const extractFirstImage = (images) => {
   }
   return '';
 };
+
+/**
+ * Robust All Images Extractor
+ * Handles arrays, JSON strings, comma-separated strings, or single string safely.
+ * Returns array of clean image URL strings.
+ */
+export const extractAllImages = (images) => {
+  if (!images) return [];
+  if (Array.isArray(images)) {
+    return images
+      .filter((img) => typeof img === 'string' && img.trim() !== '')
+      .map((img) => img.trim());
+  }
+  if (typeof images === 'string') {
+    const trimmed = images.trim();
+    if (!trimmed || trimmed === '[]' || trimmed === '""') return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .filter((img) => typeof img === 'string' && img.trim() !== '')
+            .map((img) => img.trim());
+        }
+      } catch (e) {}
+    }
+    if (trimmed.includes(',')) {
+      return trimmed
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    return [trimmed];
+  }
+  return [];
+};

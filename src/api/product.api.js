@@ -1,82 +1,100 @@
 /**
  * Product & Catalog API Service
  * 
- * Hinglish Hint:
- * Dukan ke samano (Products) ko browse aur interact karne ke liye:
- * - Products ki list lena
- * - GPS nearby in-stock products dhundna (/products/nearby)
- * - Bhav-Taav Offer place karna (/products/:id/make-offer)
- * - Out-of-Stock alert subscribe karna (/products/:id/notify-me)
- * - Categories list lana
+ * Resilient Product Catalog & GPS Search API Client
  */
 
 import client from './client';
 
 export const productApi = {
+  // Public: Single product details by ID
+  getById: async (id) => {
+    const res = await client.get(`/products/${id}`);
+    return res.data?.data || res.data || res;
+  },
+
+  getProductById: async (id) => {
+    return productApi.getById(id);
+  },
+
+  // Public: Single product details by slug
+  getBySlug: async (slug) => {
+    const res = await client.get(`/products/slug/${slug}`);
+    return res.data?.data || res.data || res;
+  },
+
+  getProductBySlug: async (slug) => {
+    return productApi.getBySlug(slug);
+  },
+
   // Public: Shop ke products list karna
   listByShopSlug: async (slug, params = {}) => {
     const res = await client.get(`/shops/${slug}/products`, { params });
-    return res.data;
+    return res.data || res;
   },
 
   // Public: Global products search
   listProducts: async (params = {}) => {
     const res = await client.get('/products', { params });
-    return res.data;
+    return res.data || res;
   },
+
+  getProducts: async (params = {}) => {
+    return productApi.listProducts(params);
+  },
+
   listPublicProducts: async (params = {}) => {
     const res = await client.get('/products', { params });
-    return res.data;
+    return res.data || res;
   },
 
   // Public: GPS nearby in-stock products across open local shops
-  // params: { lat, lng, radius_km, q, category, open_now, page, limit }
   findNearbyProducts: async (params = {}) => {
     const res = await client.get('/products/nearby', { params });
-    return res.data;
+    return res.data || res;
   },
 
   // Public/Customer: Bhav-Taav Negotiation (Make Offer)
-  // offerData: { offered_price, quantity, customer_phone, customer_name }
   makeOffer: async (productId, offerData) => {
     const res = await client.post(`/products/${productId}/make-offer`, offerData);
-    return res.data;
+    return res.data || res;
   },
 
   // Public/Customer: Out-of-Stock Item Notify Me
-  // alertData: { customer_phone, customer_name }
   subscribeStockAlert: async (productId, alertData) => {
     const res = await client.post(`/products/${productId}/notify-me`, alertData);
-    return res.data;
+    return res.data || res;
   },
 
   // Barcode / SKU Scan se product turant dhundna
   scanProduct: async (barcode) => {
     const res = await client.get(`/products/scan/${barcode}`);
-    return res.data;
+    return res.data || res;
   },
 
   // Merchant: Naya product catalog me add karna
   createProduct: async (productData) => {
     const res = await client.post('/products', productData);
-    return res.data;
+    return res.data || res;
   },
 
   // Merchant: Product edit karna
   updateProduct: async (id, updateData) => {
     const res = await client.put(`/products/${id}`, updateData);
-    return res.data;
+    return res.data || res;
   },
 
   // Merchant: Product delete karna
   deleteProduct: async (id) => {
     const res = await client.delete(`/products/${id}`);
-    return res.data;
+    return res.data || res;
   },
 
   // Public: Categories list
   getCategories: async () => {
     const res = await client.get('/categories');
-    return res.data;
+    return res.data || res;
   },
 };
+
+export default productApi;

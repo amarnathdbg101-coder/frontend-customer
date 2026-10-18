@@ -66,7 +66,10 @@ export const SavedScreen = () => {
                 product={p}
                 isSaved={isProductSaved(p.id)}
                 onToggleSave={toggleSaveProduct}
-                onClick={() => setInspectedProduct(p)}
+                onClick={() => {
+                  const targetSlug = p.shop_slug || 'store';
+                  navigate('/shop/' + targetSlug + '/product/' + p.id, { state: { product: p } });
+                }}
               />
             ))}
           </div>
@@ -207,6 +210,7 @@ export const SavedScreen = () => {
             try {
               const res = await reservationApi.createReservation({
                 product_id: product.id,
+                shop_id: product.shop_id || product.shopId || product.shop?.id || '',
                 quantity,
                 hold_hours,
                 notes,
