@@ -9,6 +9,7 @@ vi.mock('../api/auth.api', () => ({
     login: vi.fn(),
     googleLogin: vi.fn(),
     register: vi.fn(),
+    getProfile: vi.fn().mockResolvedValue({ success: true, data: {} }),
   },
 }));
 

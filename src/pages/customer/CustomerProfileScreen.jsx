@@ -113,21 +113,32 @@ export const CustomerProfileScreen = () => {
       }, 1200);
     } catch (err) {
       console.error('Profile update error:', err);
-      const errMsg = err?.response?.data?.message || err?.message || '';
-      if (errMsg.toLowerCase().includes('phone') || errMsg.toLowerCase().includes('conflict')) {
-        setUpdateError(
-          isHindi
-            ? 'यह मोबाइल नंबर पहले से ही किसी अन्य खाते से जुड़ा हुआ है।'
-            : 'This mobile number is already linked to another account.'
-        );
-      } else {
-        setUpdateError(
-          isHindi
-            ? 'प्रोफ़ाइल अपडेट करने में विफल: ' + (errMsg || 'त्रुटि')
-            : 'Failed to update profile: ' + (errMsg || 'Server Error')
-        );
-      }
-    } finally {
+        const errMsg = err?.response?.data?.message || err?.message || '';
+        const msgLower = errMsg.toLowerCase();
+        if (msgLower.includes('phone') || msgLower.includes('conflict') || msgLower.includes('already')) {
+          setUpdateError(
+            isHindi
+              ? 'यह मोबाइल नंबर पहले से ही किसी अन्य खाते से जुड़ा हुआ है। कृपया कोई दूसरा नंबर दर्ज करें या उस खाते से लॉगिन करें।'
+              : 'This mobile number is already linked to another account. Please use a different number or sign in with that account.'
+          );
+        } else if (msgLower.includes('user not found') || msgLower.includes('unauthorized') || msgLower.includes('session expired')) {
+          setUpdateError(
+            isHindi
+              ? 'आपका सत्र समाप्त हो गया है। कृपया दोबारा लॉग इन करें।'
+              : 'Your session has expired. Please sign in again.'
+          );
+          setTimeout(() => {
+            logout();
+            navigate('/login');
+          }, 1500);
+        } else {
+          setUpdateError(
+            isHindi
+              ? 'प्रोफ़ाइल अपडेट करने में विफल: ' + (errMsg || 'त्रुटि')
+              : 'Failed to update profile: ' + (errMsg || 'Server Error')
+          );
+        }
+      } finally {
       setIsSaving(false);
     }
   };

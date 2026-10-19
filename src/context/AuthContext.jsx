@@ -85,6 +85,16 @@ export const AuthProvider = ({ children }) => {
     if (activeToken && activeUser) {
       if (activeUser.role === 'shop' || activeUser.role === 'merchant' || activeUser.role === 'admin') {
         fetchShopDetails();
+      } else {
+        // Silently verify customer session validity with backend
+        if (typeof authApi?.getProfile === 'function') {
+          authApi.getProfile().catch((err) => {
+            const msg = (err?.message || '').toLowerCase();
+            if (msg.includes('user not found') || msg.includes('unauthorized') || msg.includes('session expired')) {
+              logout();
+            }
+          });
+        }
       }
     }
 
