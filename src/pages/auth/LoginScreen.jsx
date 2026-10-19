@@ -8,7 +8,7 @@
  * - Merchant boundary guard
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Store, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -60,7 +60,7 @@ export const LoginScreen = () => {
     }
   };
 
-  const handleGoogleSuccess = async (idToken) => {
+  const handleGoogleSuccess = useCallback(async (idToken) => {
     setError('');
     try {
       const res = await loginWithGoogle(idToken);
@@ -74,7 +74,7 @@ export const LoginScreen = () => {
     } catch (err) {
       setError(err.message || t('common.error'));
     }
-  };
+  }, [loginWithGoogle, location, navigate, t]);
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();

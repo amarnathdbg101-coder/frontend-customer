@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isProductInCategory, isShopInCategory } from './categoryMatcher';
+import { isProductInCategory, isShopInCategory, getCanonicalCategoryKey } from './categoryMatcher';
 
 describe('categoryMatcher Utility', () => {
   const sampleProduct = {
@@ -32,6 +32,43 @@ describe('categoryMatcher Utility', () => {
     attributes: {},
   };
 
+  const flutterGroceryProduct = {
+    id: 'prod-flutter-1',
+    name: 'Aashirvaad Shudh Chakki Atta 10kg',
+    category_name: 'Grocery & Staples',
+    attributes: {
+      category_name: 'Grocery & Staples',
+      brand: 'Aashirvaad',
+    },
+  };
+
+  const flutterDairyProduct = {
+    id: 'prod-flutter-2',
+    name: 'Mother Dairy Classic Curd 400g',
+    category_name: 'Dairy, Bakery & Frozen',
+    attributes: {
+      category_name: 'Dairy, Bakery & Frozen',
+    },
+  };
+
+  const flutterSnacksProduct = {
+    id: 'prod-flutter-3',
+    name: 'Haldiram Aloo Bhujia 200g',
+    category_name: 'Snacks & Munchies',
+    attributes: {
+      category_name: 'Snacks & Munchies',
+    },
+  };
+
+  const flutterMedicineProduct = {
+    id: 'prod-flutter-4',
+    name: 'Crocin Advance 500mg Tablet',
+    category_name: 'Medicine & Healthcare',
+    attributes: {
+      category_name: 'Medicine & Healthcare',
+    },
+  };
+
   it('returns true when category is All or undefined', () => {
     expect(isProductInCategory(sampleProduct, 'All')).toBe(true);
     expect(isProductInCategory(sampleProduct, 'ALL')).toBe(true);
@@ -60,6 +97,45 @@ describe('categoryMatcher Utility', () => {
     expect(isProductInCategory(sampleGeneralProduct, 'kirana-grocery')).toBe(true);
   });
 
+  it('resolves cross-platform category synonyms in 0ms (Flutter <-> Customer <-> Backend)', () => {
+    // 1. Flutter "Grocery & Staples" matches customer "Kirana & Grocery" and "kirana-grocery"
+    expect(isProductInCategory(flutterGroceryProduct, 'Kirana & Grocery')).toBe(true);
+    expect(isProductInCategory(flutterGroceryProduct, 'kirana-grocery')).toBe(true);
+    expect(isProductInCategory(flutterGroceryProduct, 'grocery')).toBe(true);
+    expect(isProductInCategory(flutterGroceryProduct, 'Grocery & Staples')).toBe(true);
+
+    // 2. Flutter "Dairy, Bakery & Frozen" matches customer "Dairy & Breakfast" and "dairy-breakfast"
+    expect(isProductInCategory(flutterDairyProduct, 'Dairy & Breakfast')).toBe(true);
+    expect(isProductInCategory(flutterDairyProduct, 'dairy-breakfast')).toBe(true);
+    expect(isProductInCategory(flutterDairyProduct, 'dairy')).toBe(true);
+
+    // 3. Flutter "Snacks & Munchies" matches customer "Snacks & Beverages" and "snacks-beverages"
+    expect(isProductInCategory(flutterSnacksProduct, 'Snacks & Beverages')).toBe(true);
+    expect(isProductInCategory(flutterSnacksProduct, 'snacks-beverages')).toBe(true);
+    expect(isProductInCategory(flutterSnacksProduct, 'snacks')).toBe(true);
+
+    // 4. Flutter "Medicine & Healthcare" matches customer "Pharmacy & Healthcare"
+    expect(isProductInCategory(flutterMedicineProduct, 'Pharmacy & Healthcare')).toBe(true);
+    expect(isProductInCategory(flutterMedicineProduct, 'pharmacy-healthcare')).toBe(true);
+
+    // Negative check: wrong categories don't match
+    expect(isProductInCategory(flutterGroceryProduct, 'Electronics & Appliances')).toBe(false);
+    expect(isProductInCategory(flutterSnacksProduct, 'Household & Cleaning')).toBe(false);
+  });
+
+  it('getCanonicalCategoryKey normalizes various category terms to canonical master keys', () => {
+    expect(getCanonicalCategoryKey('Grocery & Staples')).toBe('kirana-grocery');
+    expect(getCanonicalCategoryKey('Kirana & Grocery')).toBe('kirana-grocery');
+    expect(getCanonicalCategoryKey('kirana-grocery')).toBe('kirana-grocery');
+    expect(getCanonicalCategoryKey('dal-pulses')).toBe('kirana-grocery');
+    expect(getCanonicalCategoryKey('Dairy, Bakery & Frozen')).toBe('dairy-breakfast');
+    expect(getCanonicalCategoryKey('Dairy & Breakfast')).toBe('dairy-breakfast');
+    expect(getCanonicalCategoryKey('Snacks & Munchies')).toBe('snacks-beverages');
+    expect(getCanonicalCategoryKey('Snacks & Beverages')).toBe('snacks-beverages');
+    expect(getCanonicalCategoryKey('Medicine & Healthcare')).toBe('pharmacy-healthcare');
+    expect(getCanonicalCategoryKey('Pharmacy & Healthcare')).toBe('pharmacy-healthcare');
+  });
+
   it('matches shops correctly by shop category', () => {
     const shop = {
       name: 'Sharma Kirana Store',
@@ -69,6 +145,7 @@ describe('categoryMatcher Utility', () => {
 
     expect(isShopInCategory(shop, 'All')).toBe(true);
     expect(isShopInCategory(shop, 'Kirana & Grocery')).toBe(true);
+    expect(isShopInCategory(shop, 'Grocery & Staples')).toBe(true);
     expect(isShopInCategory(shop, 'kirana-grocery')).toBe(true);
     expect(isShopInCategory(shop, 'Clothing & Apparel')).toBe(false);
   });
