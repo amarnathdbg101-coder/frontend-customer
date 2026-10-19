@@ -61,6 +61,8 @@ export const StorefrontScreen = () => {
   const [reservationSuccess, setReservationSuccess] = useState(null);
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
   const [sortBy, setSortBy] = useState('relevant');
+  const [serverSearchResults, setServerSearchResults] = useState(null);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
 
   // Infinite Scroll & Pagination States
   const [page, setPage] = useState(1);
@@ -68,10 +70,21 @@ export const StorefrontScreen = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalProductCount, setTotalProductCount] = useState(0);
 
-  // 1. Initial Load: Shop Metadata & First 20 Products
+  const debouncedSearch = useDebounce(searchTerm, 250);
+
+  // 1. Initial Load & Dynamic Database Search/Filter for Storefront
   const loadShopAndProducts = useCallback(async () => {
+    const cleanSearch = debouncedSearch.trim() || undefined;
+    const isCatActive = selectedCategory !== 'ALL' && selectedCategory !== 'All';
+    const categoryParam = isCatActive ? selectedCategory : undefined;
+    const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
+    const minPrice = (quickFilter === 'UNDER_99' || quickFilter === 'UNDER_499') ? 0 : undefined;
+    const maxPrice = quickFilter === 'UNDER_99' ? 99 : quickFilter === 'UNDER_499' ? 499 : undefined;
+
+    const hasActiveFilters = cleanSearch || isCatActive || quickFilter !== 'ALL' || sortParam;
+
     const cachedShop = localCache.get(CACHE_KEYS.STOREFRONT(slug));
-    const cachedProds = localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug));
+    const cachedProds = !hasActiveFilters ? localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug)) : null;
 
     let hasLocalData = false;
     if (cachedShop) {
@@ -95,7 +108,16 @@ export const StorefrontScreen = () => {
     try {
       const [shopData, prodData] = await Promise.all([
         shopApi.getShopBySlug(slug),
-        productApi.listByShopSlug(slug, { page: 1, limit: PAGE_LIMIT }),
+        productApi.listByShopSlug(slug, {
+          page: 1,
+          limit: PAGE_LIMIT,
+          search: cleanSearch,
+          q: cleanSearch,
+          category: categoryParam,
+          sort_by: sortParam,
+          min_price: minPrice,
+          max_price: maxPrice,
+        }),
       ]);
 
       if (shopData) {
@@ -130,8 +152,8 @@ export const StorefrontScreen = () => {
         };
       });
 
-      if (normalizedProds.length > 0 || !hasLocalData) {
-        setProducts(normalizedProds);
+      setProducts(normalizedProds);
+      if (!hasActiveFilters) {
         localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), normalizedProds, DEFAULT_TTL.PRODUCTS);
       }
     } catch (err) {
@@ -139,7 +161,7 @@ export const StorefrontScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, selectedCategory, quickFilter, sortBy, debouncedSearch]);
 
   useEffect(() => {
     if (slug) {
@@ -155,17 +177,29 @@ export const StorefrontScreen = () => {
     }
   }, [slug, loadShopAndProducts]);
 
-  // 2. Infinite Scroll: Fetch Next Page of Products for this Shop
+  // 2. Infinite Scroll: Fetch Next Page of Filtered Products for this Shop from Database
   const loadMoreProducts = useCallback(async () => {
     if (loadingMore || !hasMore || loading) return;
     setLoadingMore(true);
     const nextPage = page + 1;
 
+    const cleanSearch = debouncedSearch.trim() || undefined;
+    const isCatActive = selectedCategory !== 'ALL' && selectedCategory !== 'All';
+    const categoryParam = isCatActive ? selectedCategory : undefined;
+    const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
+    const minPrice = (quickFilter === 'UNDER_99' || quickFilter === 'UNDER_499') ? 0 : undefined;
+    const maxPrice = quickFilter === 'UNDER_99' ? 99 : quickFilter === 'UNDER_499' ? 499 : undefined;
+
     try {
       const res = await productApi.listByShopSlug(slug, {
         page: nextPage,
         limit: PAGE_LIMIT,
-        q: searchTerm.trim() || undefined,
+        search: cleanSearch,
+        q: cleanSearch,
+        category: categoryParam,
+        sort_by: sortParam,
+        min_price: minPrice,
+        max_price: maxPrice,
       });
 
       const rawProdList = extractArray(res, 'products');
@@ -201,9 +235,7 @@ export const StorefrontScreen = () => {
         setProducts((prev) => {
           const existingIds = new Set(prev.map((item) => item.id));
           const newItems = normalizedProds.filter((item) => !existingIds.has(item.id));
-          const updated = [...prev, ...newItems];
-          localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), updated, DEFAULT_TTL.PRODUCTS);
-          return updated;
+          return [...prev, ...newItems];
         });
         setPage(nextPage);
       }
@@ -213,7 +245,7 @@ export const StorefrontScreen = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, loading, page, slug, searchTerm]);
+  }, [loadingMore, hasMore, loading, page, slug, selectedCategory, quickFilter, sortBy, debouncedSearch]);
 
   // Window scroll listener for automatic infinite scroll
   useEffect(() => {
@@ -233,12 +265,24 @@ export const StorefrontScreen = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [hasMore, loadingMore, loading, loadMoreProducts]);
 
-  // 3. Category Filter Chips (Dynamic extraction from products)
+  // 3. Category Filter Chips (Dynamic clean extraction from products)
   const availableCategories = useMemo(() => {
     const cats = new Set();
     products.forEach((p) => {
-      const c = p.category_name || p.category || (p.category_id ? 'General' : null);
-      if (c && typeof c === 'string') cats.add(c.trim());
+      let c = p.category_name || p.attributes?.category_name || p.attributes?.category || p.category?.name;
+      if (!c && typeof p.category === 'string') {
+        c = p.category;
+      }
+      if (c && typeof c === 'string') {
+        const trimmed = c.trim();
+        // Skip raw 36-char hexadecimal UUID strings
+        if (trimmed.length === 36 && trimmed.split('-').length === 5) {
+          return;
+        }
+        if (trimmed.length > 0) {
+          cats.add(trimmed);
+        }
+      }
     });
     return Array.from(cats);
   }, [products]);
@@ -272,9 +316,73 @@ export const StorefrontScreen = () => {
     return { under99, under499, deals20, bargain };
   }, [products]);
 
+  // 3a. Hybrid Debounced Server Database Search & Filter (bypasses 20-item local limit & queries PostgreSQL)
+  useEffect(() => {
+    const cleanSearch = searchTerm.trim();
+    const isCatActive = selectedCategory !== 'ALL' && selectedCategory !== 'All';
+    const isFilterActive = quickFilter !== 'ALL';
+    const isSortActive = sortBy !== 'relevant';
+
+    if (!cleanSearch && !isCatActive && !isFilterActive && !isSortActive) {
+      setServerSearchResults(null);
+      setIsSearchingServer(false);
+      return;
+    }
+
+    setIsSearchingServer(true);
+    const timer = setTimeout(async () => {
+      try {
+        const queryParams = {
+          search: cleanSearch || undefined,
+          q: cleanSearch || undefined,
+          category: isCatActive ? selectedCategory : undefined,
+          sort_by: isSortActive ? sortBy : undefined,
+          min_price: (quickFilter === 'UNDER_99' || quickFilter === 'UNDER_499') ? 0 : undefined,
+          max_price: quickFilter === 'UNDER_99' ? 99 : quickFilter === 'UNDER_499' ? 499 : undefined,
+          page: 1,
+          limit: 50,
+        };
+
+        const res = await productApi.listByShopSlug(slug, queryParams);
+        const rawList = extractArray(res, 'products');
+        const normalized = rawList.map((p) => {
+          const qty = Number(
+            p.available_quantity ??
+            p.stock_quantity ??
+            p.inventory?.available_quantity ??
+            p.inventory?.quantity ??
+            p.stock ??
+            0
+          );
+          return {
+            ...p,
+            id: p.id || p.product_id,
+            stock: qty,
+            stock_quantity: qty,
+            available_quantity: qty,
+            isOutOfStock: qty <= 0,
+            isLowStock: qty > 0 && qty <= (p.low_stock_threshold || 10),
+          };
+        });
+        setServerSearchResults(normalized);
+      } catch (err) {
+        console.warn('Server database search & filter error:', err);
+      } finally {
+        setIsSearchingServer(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectedCategory, quickFilter, sortBy, slug]);
+
   // 4. In-Store Product Search, Filtering and Sorting
   const filteredProducts = useMemo(() => {
-    const list = (Array.isArray(products) ? products : []).filter((p) => {
+    const hasActiveFilter = searchTerm.trim() || selectedCategory !== 'ALL' || quickFilter !== 'ALL' || sortBy !== 'relevant';
+    const baseSource = (hasActiveFilter && Array.isArray(serverSearchResults))
+      ? serverSearchResults
+      : (Array.isArray(products) ? products : []);
+
+    const list = baseSource.filter((p) => {
       // Category Filter
       if (selectedCategory !== 'ALL' && selectedCategory !== 'All') {
         if (!isProductInCategory(p, selectedCategory)) return false;
@@ -745,6 +853,10 @@ export const StorefrontScreen = () => {
       {loading && products.length === 0 ? (
         <div style={{ padding: '40px 0', textAlign: 'center' }}>
           <LoadingSpinner fullScreen={false} message={isHindi ? 'दुकान का कैटलॉग लोड हो रहा है...' : 'Loading store catalog...'} />
+        </div>
+      ) : (isSearchingServer && filteredProducts.length === 0) ? (
+        <div style={{ padding: '40px 0', textAlign: 'center' }}>
+          <LoadingSpinner fullScreen={false} message={isHindi ? 'दुकान के पूरे कैटलॉग में खोज जारी है...' : 'Searching full store catalog...'} />
         </div>
       ) : filteredProducts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '20px 0' }}>

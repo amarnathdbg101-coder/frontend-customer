@@ -18,6 +18,14 @@ export const GoogleLoginButton = ({
   const [gisLoaded, setGisLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+  }, [onSuccess, onError]);
+
   useEffect(() => {
     // Pre-warm backend API to avoid cold starts while user prepares to login
     const apiBase = (import.meta.env.VITE_API_BASE_URL || 'https://api.shopsilo.in').replace(/\/+$/, '');
@@ -36,14 +44,16 @@ export const GoogleLoginButton = ({
             if (response.credential) {
               try {
                 setLoading(true);
-                await onSuccess(response.credential);
+                if (onSuccessRef.current) {
+                  await onSuccessRef.current(response.credential);
+                }
               } catch (err) {
-                if (onError) onError(err);
+                if (onErrorRef.current) onErrorRef.current(err);
               } finally {
                 setLoading(false);
               }
             } else {
-              if (onError) onError(new Error('Google did not return credentials.'));
+              if (onErrorRef.current) onErrorRef.current(new Error('Google did not return credentials.'));
             }
           },
           auto_select: false,
@@ -79,7 +89,7 @@ export const GoogleLoginButton = ({
       }, 300);
       return () => clearInterval(interval);
     }
-  }, [text, onSuccess, onError]);
+  }, [text]);
 
   const handleManualClick = () => {
     if (disabled || loading) return;
@@ -188,3 +198,4 @@ export const GoogleLoginButton = ({
     </div>
   );
 };
+export default GoogleLoginButton;

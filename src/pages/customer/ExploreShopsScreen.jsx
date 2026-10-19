@@ -18,6 +18,7 @@ import {
   X,
   Package,
   Navigation,
+  Loader2,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -91,6 +92,11 @@ export const ExploreShopsScreen = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalProductCount, setTotalProductCount] = useState(0);
 
+  // Dual-Tier Hybrid Database Search States
+  const [serverSearchResults, setServerSearchResults] = useState(null);
+  const [serverShopResults, setServerShopResults] = useState(null);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
+
   // Automatic scroll position restoration
   useScreenState('explore', {
     restoreScroll: true,
@@ -143,11 +149,17 @@ export const ExploreShopsScreen = () => {
 
     try {
       const categoryParam = isCatActive ? selectedCategory : undefined;
+      const cleanSearch = searchTerm.trim() || undefined;
+      const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
+
       const params = {
         lat: coords?.lat,
         lng: coords?.lng,
         radius_km: radiusKm === 999 ? undefined : radiusKm,
         category: categoryParam,
+        search: cleanSearch,
+        q: cleanSearch,
+        sort_by: sortParam,
       };
 
       const [shopsRes, prodsRes] = await Promise.allSettled([
@@ -158,10 +170,13 @@ export const ExploreShopsScreen = () => {
               lng: coords.lng,
               radius_km: radiusKm === 999 ? 20 : radiusKm,
               category: categoryParam,
+              search: cleanSearch,
+              q: cleanSearch,
+              sort_by: sortParam,
               page: 1,
               limit: PAGE_LIMIT,
-            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam }))
-          : productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam }),
+            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam, search: cleanSearch, q: cleanSearch, sort_by: sortParam }))
+          : productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam, search: cleanSearch, q: cleanSearch, sort_by: sortParam }),
       ]);
 
       let shopList = shopsRes.status === 'fulfilled' ? extractArray(shopsRes.value, 'shops') : [];
@@ -239,6 +254,96 @@ export const ExploreShopsScreen = () => {
     };
   }, [loadMarketplaceData]);
 
+  // 1a. Dual-Tier Hybrid Database Search (bypasses 20-item local limit & queries PostgreSQL database)
+  useEffect(() => {
+    const clean = searchTerm.trim();
+    if (!clean) {
+      setServerSearchResults(null);
+      setServerShopResults(null);
+      setIsSearchingServer(false);
+      return;
+    }
+
+    setIsSearchingServer(true);
+    const timer = setTimeout(async () => {
+      try {
+        const isCatActive = selectedCategory && selectedCategory !== 'All';
+        const categoryParam = isCatActive ? selectedCategory : undefined;
+        const searchParams = {
+          search: clean,
+          q: clean,
+          category: categoryParam,
+          lat: coords?.lat,
+          lng: coords?.lng,
+          radius_km: radiusKm === 999 ? undefined : radiusKm,
+          page: 1,
+          limit: 50,
+        };
+
+        const [prodRes, shopRes] = await Promise.allSettled([
+          (coords?.lat && coords?.lng)
+            ? productApi.findNearbyProducts({
+                ...searchParams,
+                radius_km: radiusKm === 999 ? 20 : radiusKm,
+              }).catch(() => productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 }))
+            : productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 }),
+          shopApi.listPublicShops(searchParams).catch(() => shopApi.listPublicShops({ search: clean, q: clean, page: 1, limit: 30 })),
+        ]);
+
+        let rawProds = prodRes.status === 'fulfilled' ? extractArray(prodRes.value, 'products') : [];
+        if (rawProds.length === 0 && (coords?.lat && coords?.lng)) {
+          try {
+            const fallbackProds = await productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 });
+            rawProds = extractArray(fallbackProds, 'products');
+          } catch (e) {
+            console.warn('Fallback products search error:', e);
+          }
+        }
+
+        let rawShops = shopRes.status === 'fulfilled' ? extractArray(shopRes.value, 'shops') : [];
+        if (rawShops.length === 0 && (coords?.lat && coords?.lng)) {
+          try {
+            const fallbackShops = await shopApi.listPublicShops({ search: clean, q: clean, page: 1, limit: 30 });
+            rawShops = extractArray(fallbackShops, 'shops');
+          } catch (e) {
+            console.warn('Fallback shops search error:', e);
+          }
+        }
+
+        const normalizedProds = rawProds.map((p) => {
+          const qty = Number(
+            p.available_quantity ??
+            p.stock_quantity ??
+            p.inventory?.available_quantity ??
+            p.inventory?.quantity ??
+            p.stock ??
+            0
+          );
+          return {
+            ...p,
+            id: p.id || p.product_id,
+            stock_quantity: qty,
+            available_quantity: qty,
+          };
+        });
+
+        const normalizedShops = rawShops.map((s) => ({
+          ...s,
+          id: s.id || s.shop_id,
+        }));
+
+        setServerSearchResults(normalizedProds);
+        setServerShopResults(normalizedShops);
+      } catch (err) {
+        console.warn('Server database search error, keeping instant local results:', err);
+      } finally {
+        setIsSearchingServer(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectedCategory, coords?.lat, coords?.lng, radiusKm]);
+
   // 1b. Infinite Scroll Pagination: Fetch next page of products on scroll
   const loadMoreProducts = useCallback(async () => {
     if (loadingMore || !hasMore || loading) return;
@@ -251,12 +356,18 @@ export const ExploreShopsScreen = () => {
       let totalCount = 0;
 
       const categoryParam = (selectedCategory && selectedCategory !== 'All') ? selectedCategory : undefined;
+      const cleanSearch = searchTerm.trim() || undefined;
+      const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
+
       if (coords?.lat && coords?.lng) {
         const res = await productApi.findNearbyProducts({
           lat: coords.lat,
           lng: coords.lng,
           radius_km: radiusKm === 999 ? 20 : radiusKm,
           category: categoryParam,
+          search: cleanSearch,
+          q: cleanSearch,
+          sort_by: sortParam,
           page: nextPage,
           limit: PAGE_LIMIT,
         });
@@ -264,7 +375,14 @@ export const ExploreShopsScreen = () => {
         totalPages = res?.total_pages || res?.data?.total_pages || 1;
         totalCount = res?.total_count || res?.data?.total_count || 0;
       } else {
-        const res = await productApi.listProducts({ page: nextPage, limit: PAGE_LIMIT, category: categoryParam });
+        const res = await productApi.listProducts({
+          page: nextPage,
+          limit: PAGE_LIMIT,
+          category: categoryParam,
+          search: cleanSearch,
+          q: cleanSearch,
+          sort_by: sortParam,
+        });
         rawProdList = extractArray(res, 'products');
         totalPages = res?.total_pages || res?.data?.total_pages || 1;
         totalCount = res?.total_count || res?.data?.total_count || 0;
@@ -335,14 +453,23 @@ export const ExploreShopsScreen = () => {
 
   // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
   const filteredProducts = useMemo(() => {
-    const list = products.filter((p) => {
+    let baseSource;
+    if (debouncedSearch.trim() && Array.isArray(serverSearchResults)) {
+      const seenIds = new Set(serverSearchResults.map((p) => p.id));
+      const localMatches = products.filter((p) => !seenIds.has(p.id));
+      baseSource = [...serverSearchResults, ...localMatches];
+    } else {
+      baseSource = Array.isArray(products) ? products : [];
+    }
+
+    const list = baseSource.filter((p) => {
       // Proximity Distance Filter (Pre-filters out-of-range products)
       const lat = p.shop_latitude || p.latitude;
       const lng = p.shop_longitude || p.longitude;
       const distKm = calculateDistanceKm(coords?.lat, coords?.lng, lat, lng);
       p._distKm = distKm;
 
-      if (distKm != null && radiusKm > 0 && distKm > radiusKm) {
+      if (distKm != null && radiusKm > 0 && distKm > radiusKm && !debouncedSearch.trim()) {
         return false;
       }
 
@@ -381,15 +508,24 @@ export const ExploreShopsScreen = () => {
       }
       return 0;
     });
-  }, [products, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
+  }, [products, serverSearchResults, debouncedSearch, selectedCategory, coords, radiusKm, sortBy]);
 
   // 3. Filter & Sort Shops
   const filteredShops = useMemo(() => {
-    const list = shops.filter((s) => {
+    let baseSource;
+    if (debouncedSearch.trim() && Array.isArray(serverShopResults)) {
+      const seenIds = new Set(serverShopResults.map((s) => s.id));
+      const localMatches = shops.filter((s) => !seenIds.has(s.id));
+      baseSource = [...serverShopResults, ...localMatches];
+    } else {
+      baseSource = Array.isArray(shops) ? shops : [];
+    }
+
+    const list = baseSource.filter((s) => {
       const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
       s._distKm = distKm;
 
-      if (distKm != null && radiusKm > 0 && distKm > radiusKm) {
+      if (distKm != null && radiusKm > 0 && distKm > radiusKm && !debouncedSearch.trim()) {
         return false;
       }
 
@@ -419,7 +555,7 @@ export const ExploreShopsScreen = () => {
       }
       return 0;
     });
-  }, [shops, debouncedSearch, selectedCategory, coords, radiusKm, sortBy, showOpenOnly]);
+  }, [shops, serverShopResults, debouncedSearch, selectedCategory, coords, radiusKm, sortBy, showOpenOnly]);
 
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
@@ -558,7 +694,11 @@ export const ExploreShopsScreen = () => {
             gap: '8px',
           }}
         >
-          <Search size={16} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          {isSearchingServer ? (
+            <Loader2 size={16} className="animate-spin" color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          ) : (
+            <Search size={16} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          )}
           <input
             type="search"
             placeholder={isHindi ? 'दुकानें, सामान या ब्रांड खोजें...' : 'Search local shops, products, brands...'}
@@ -577,7 +717,11 @@ export const ExploreShopsScreen = () => {
           {searchTerm && (
             <button
               type="button"
-              onClick={() => setSearchTerm('')}
+              onClick={() => {
+                setSearchTerm('');
+                setServerSearchResults(null);
+                setServerShopResults(null);
+              }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)' }}
             >
               <X size={15} />
@@ -843,7 +987,11 @@ export const ExploreShopsScreen = () => {
         {loading ? (
           activeTab === 'shops' ? <SkeletonShopGrid count={4} /> : <SkeletonProductGrid count={6} />
         ) : activeTab === 'shops' ? (
-          filteredShops.length === 0 ? (
+          (isSearchingServer && filteredShops.length === 0) ? (
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में दुकानें खोजी जा रही हैं...' : 'Searching database for shops...'} />
+            </div>
+          ) : filteredShops.length === 0 ? (
             <EmptyState
               icon={Store}
               title={isHindi ? 'कोई दुकान नहीं मिली' : 'No Shops Found'}
@@ -864,6 +1012,10 @@ export const ExploreShopsScreen = () => {
               ))}
             </div>
           )
+        ) : (isSearchingServer && filteredProducts.length === 0) ? (
+          <div style={{ padding: '40px 0', textAlign: 'center' }}>
+            <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में सामान खोजा जा रहा है...' : 'Searching database for products...'} />
+          </div>
         ) : filteredProducts.length === 0 ? (
           <EmptyState
             icon={Package}
@@ -899,7 +1051,7 @@ export const ExploreShopsScreen = () => {
                 }}
               >
                 <LoadingSpinner size="sm" />
-                <span>{isHindi ? 'Aur products load ho rahe hain...' : 'Loading more products...'}</span>
+                <span>{isHindi ? 'और सामान लोड हो रहा है...' : 'Loading more products...'}</span>
               </div>
             )}
 
@@ -917,7 +1069,7 @@ export const ExploreShopsScreen = () => {
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   }}
                 >
-                  {isHindi ? 'Aur Products Dekhein ⬇' : 'Load More Products ⬇'}
+                  {isHindi ? 'और सामान देखें ⬇' : 'Load More Products ⬇'}
                 </Button>
               </div>
             )}
@@ -934,7 +1086,7 @@ export const ExploreShopsScreen = () => {
                   letterSpacing: '0.02em',
                 }}
               >
-                {isHindi ? '✓ Sabhi nazdeeki products dekh liye gaye hain' : "✓ All available products nearby loaded"}
+                {isHindi ? '✓ सभी नजदीकी उपलब्ध सामान देख लिए गए हैं' : "✓ All available products nearby loaded"}
               </div>
             )}
           </>

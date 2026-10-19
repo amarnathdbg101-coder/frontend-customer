@@ -1,8 +1,7 @@
-// ShopSilo Customer PWA Service Worker
-const CACHE_NAME = 'shopsilo-pwa-v1';
+// ShopSilo Customer PWA Service Worker (v2)
+const CACHE_NAME = 'shopsilo-pwa-v2';
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.svg',
 ];
@@ -20,6 +19,7 @@ self.addEventListener('activate', (event) => {
       Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Purging outdated cache:', key);
             return caches.delete(key);
           }
         })
@@ -30,20 +30,31 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only intercept GET requests
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Skip API, Google OAuth, and backend URLs
+  // Always bypass SW for backend API calls, Auth routes, and WebSocket endpoints
   if (
     url.origin !== self.location.origin ||
     url.pathname.startsWith('/api') ||
-    url.pathname.startsWith('/auth')
+    url.pathname.startsWith('/auth') ||
+    url.pathname.startsWith('/user') ||
+    url.pathname.startsWith('/customer') ||
+    url.pathname.startsWith('/shops') ||
+    url.pathname.startsWith('/products')
   ) {
     return;
   }
 
-  // Network-first strategy with cache fallback
+  // HTML Page Navigation: Always perform Network-First without caching old HTML
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // JS Chunks and Static Assets: Network-first strategy
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

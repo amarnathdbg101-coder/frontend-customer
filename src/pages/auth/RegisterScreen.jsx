@@ -7,7 +7,7 @@
  * - Google Sign-In
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { UserPlus, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -66,7 +66,7 @@ export const RegisterScreen = () => {
     }
   };
 
-  const handleGoogleSuccess = async (idToken) => {
+  const handleGoogleSuccess = useCallback(async (idToken) => {
     setError('');
     try {
       await loginWithGoogle(idToken);
@@ -75,7 +75,7 @@ export const RegisterScreen = () => {
     } catch (err) {
       setError(err.message || t('common.error'));
     }
-  };
+  }, [loginWithGoogle, location, navigate, t]);
 
   return (
     <AppLayout title={t('app_name')} subtitle={t('auth.register_title')} hideNav={true} showBack={true}>

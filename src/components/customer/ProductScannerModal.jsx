@@ -159,8 +159,20 @@ export const ProductScannerModal = ({ isOpen, onClose, onSelectProduct }) => {
       setErrorMsg('');
       setScanResult(null);
 
-      const res = await productApi.scanProduct(code);
-      const product = res.data?.product || res.product || res.data || res;
+      let product = null;
+      try {
+        const res = await productApi.scanProduct(code);
+        product = res.data?.product || res.product || res.data || res;
+      } catch (scanErr) {
+        // Fallback: search products by code across database
+        const listRes = await productApi.listProducts({ search: code, limit: 1 });
+        const list = Array.isArray(listRes?.data?.products) ? listRes.data.products : (Array.isArray(listRes?.products) ? listRes.products : (Array.isArray(listRes) ? listRes : []));
+        if (list && list.length > 0) {
+          product = list[0];
+        } else {
+          throw scanErr;
+        }
+      }
 
       if (!product || !product.id) {
         throw new Error(isHindi ? `बारकोड ${code} से कोई उत्पाद नहीं मिला` : `No product matched barcode ${code}`);

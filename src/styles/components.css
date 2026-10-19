@@ -3,6 +3,36 @@
    Inspired by: Blinkit, Zepto, Shopify, Square POS, Khatabook
    ========================================================================== */
 
+/* Buttery Smooth Hardware Acceleration & GPU Composition */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.card,
+.btn,
+.nav-item,
+.chip,
+.category-pill,
+.product-card {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.product-card:active,
+.category-pill:active,
+.chip:active {
+  transform: scale(0.97) translateZ(0);
+  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
