@@ -49,8 +49,16 @@ client.interceptors.response.use(
     const fallbackMessage = error.message || 'Something went wrong. Please try again. / तकनीकी समस्या आई, पुनः प्रयास करें।';
     const requestUrl = error.config?.url || '';
 
-    // Handle 401 Unauthorized gracefully
-    if (status === 401 && !requestUrl.includes('/auth/login') && !requestUrl.includes('/auth/register')) {
+    // Handle 401 Unauthorized or Session Expiry gracefully
+    const msgLower = typeof backendMessage === 'string' ? backendMessage.toLowerCase() : '';
+    const isSessionExpired =
+      status === 401 ||
+      (status === 404 && msgLower.includes('user not found')) ||
+      msgLower.includes('user not found') ||
+      msgLower.includes('session expired') ||
+      msgLower.includes('reservations_user_id_fkey');
+
+    if (isSessionExpired && !requestUrl.includes('/auth/login') && !requestUrl.includes('/auth/register')) {
       const hadToken = !!getActiveToken();
       if (hadToken) {
         // Clear expired local tokens

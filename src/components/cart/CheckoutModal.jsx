@@ -169,7 +169,15 @@ export const CheckoutModal = () => {
       clearCart();
       setStep(2);
     } catch (err) {
-      setError(err.message || t('common.error'));
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('user not found') || msg.includes('unauthorized') || msg.includes('session expired') || msg.includes('reservations_user_id_fkey')) {
+        setError(isHindi ? 'सत्र समाप्त हो गया है। कृपया दोबारा लॉग इन करें।' : 'Your session has expired. Please sign in again.');
+        logout();
+      } else if (msg.includes('stock') || msg.includes('insufficient')) {
+        setError(isHindi ? 'उत्पाद स्टॉक में उपलब्ध नहीं है।' : 'Item is currently out of stock.');
+      } else {
+        setError(err.message || t('common.error'));
+      }
     } finally {
       setSubmitting(false);
     }

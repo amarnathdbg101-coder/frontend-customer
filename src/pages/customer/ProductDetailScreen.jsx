@@ -229,9 +229,18 @@ export const ProductDetailScreen = () => {
       });
       cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED);
       setReservationSuccess(res);
-    } catch (err) {
-      alert(err.message || (isHindi ? 'पिकअप बुक करने में त्रुटि' : 'Failed to reserve'));
-    } finally {
+          } catch (err) {
+        const msg = (err?.message || '').toLowerCase();
+        if (msg.includes('user not found') || msg.includes('unauthorized') || msg.includes('session expired') || msg.includes('reservations_user_id_fkey')) {
+          alert(isHindi ? 'सत्र समाप्त हो गया है। कृपया पिकअप बुक करने के लिए दोबारा लॉग इन करें।' : 'Your session has expired. Please sign in again to reserve items.');
+          logout();
+          navigate('/login');
+        } else if (msg.includes('stock') || msg.includes('insufficient')) {
+          alert(isHindi ? 'यह उत्पाद वर्तमान में स्टॉक में उपलब्ध नहीं है।' : 'This product currently does not have sufficient available stock.');
+        } else {
+          alert(err.message || (isHindi ? 'पिकअप बुक करने में त्रुटि' : 'Failed to reserve'));
+        }
+      } finally {
       setReserving(false);
     }
   };
