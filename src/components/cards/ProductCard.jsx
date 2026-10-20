@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { ShoppingCart, Heart, Package, Check, Share2 } from 'lucide-react';
+import { ShoppingCart, Heart, Package, Check, Share2, Plus, Minus } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import { shareProduct } from '../../utils/productShare';
@@ -13,7 +13,7 @@ const ProductCardInner = ({
   onClick,
 }) => {
   const { isHindi } = useLanguage();
-  const { getItemQuantity } = useCart();
+  const { getItemQuantity, addItem, updateQuantity } = useCart();
   const p = product;
   const qtyInCart = p?.id ? getItemQuantity(p.id) : 0;
 
@@ -26,6 +26,7 @@ const ProductCardInner = ({
     0
   );
   const inStock = stock > 0;
+  const isLowStock = inStock && stock <= 5;
   const mrp = Number(p.compare_price || p.mrp || 0);
   const price = Number(p.price || 0);
   const isPricePublic = p.is_price_public !== false && 
@@ -118,24 +119,20 @@ const ProductCardInner = ({
             </div>
           )}
 
-          {/* Quantity Badge if in Cart */}
-          {qtyInCart > 0 && (
+          {/* Low Stock Urgent Badge */}
+          {isLowStock && (
             <div style={{ position: 'absolute', bottom: '8px', left: '8px', zIndex: 2 }}>
               <span
                 style={{
-                  backgroundColor: '#0f172a',
+                  backgroundColor: '#d97706',
                   color: '#ffffff',
-                  fontSize: '0.65rem',
+                  fontSize: '0.6rem',
                   fontWeight: 800,
-                  padding: '2px 7px',
-                  borderRadius: '10px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '3px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
                 }}
               >
-                <Check size={10} strokeWidth={3} />
-                <span>{qtyInCart}</span>
+                ⚡ {isHindi ? `केवल ${stock} बाकी` : `Only ${stock} left`}
               </span>
             </div>
           )}
@@ -266,47 +263,110 @@ const ProductCardInner = ({
           </span>
         )}
 
-        {/* Clean Add to Cart Button */}
-        <button
-          type="button"
-          onClick={onClick}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            backgroundColor: !isPricePublic
-              ? '#16a34a'
-              : qtyInCart > 0
-                ? '#0f172a'
+        {/* Tactile Interactive Stepper or Add Button */}
+        {qtyInCart > 0 ? (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              backgroundColor: '#0f172a',
+              color: '#ffffff',
+              borderRadius: '6px',
+              padding: '3px 6px',
+              gap: '6px',
+              flexShrink: 0,
+            }}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                updateQuantity(p.id, qtyInCart - 1);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ffffff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+              }}
+              aria-label="Decrease quantity"
+            >
+              <Minus size={12} strokeWidth={3} />
+            </button>
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, minWidth: '12px', textAlign: 'center' }}>
+              {qtyInCart}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                addItem(p, 1);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#ffffff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+              }}
+              aria-label="Increase quantity"
+            >
+              <Plus size={12} strokeWidth={3} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              if (inStock && isPricePublic && p.id) {
+                e.stopPropagation();
+                addItem(p, 1);
+              } else {
+                onClick?.();
+              }
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              backgroundColor: !isPricePublic
+                ? '#16a34a'
                 : inStock
                   ? '#0f172a'
                   : '#f1f5f9',
-            color: !isPricePublic || qtyInCart > 0 || inStock ? '#ffffff' : '#94a3b8',
-            border: 'none',
-            padding: '5px 10px',
-            borderRadius: '6px',
-            fontSize: '0.74rem',
-            fontWeight: 700,
-            cursor: inStock ? 'pointer' : 'default',
-            flexShrink: 0,
-            transition: 'all 0.15s ease',
-          }}
-        >
-          {isPricePublic ? (
-            <>
-              {qtyInCart > 0 ? <Check size={12} strokeWidth={3} /> : <ShoppingCart size={12} strokeWidth={2} />}
-              <span>
-                {qtyInCart > 0
-                  ? `${qtyInCart}`
-                  : inStock
-                    ? (isHindi ? 'जोड़ें' : 'Add')
+              color: !isPricePublic || inStock ? '#ffffff' : '#94a3b8',
+              border: 'none',
+              padding: '5px 10px',
+              borderRadius: '6px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: inStock ? 'pointer' : 'default',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isPricePublic ? (
+              <>
+                <ShoppingCart size={12} strokeWidth={2} />
+                <span>
+                  {inStock
+                    ? (isHindi ? 'जोड़ें' : 'ADD')
                     : (isHindi ? 'खत्म' : 'Out')}
-              </span>
-            </>
-          ) : (
-            <span>{isHindi ? 'पूछें' : 'Ask'}</span>
-          )}
-        </button>
+                </span>
+              </>
+            ) : (
+              <span>{isHindi ? 'पूछें' : 'Ask'}</span>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
