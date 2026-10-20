@@ -28,9 +28,27 @@ import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { isProductInCategory } from '../../utils/categoryMatcher';
+import { getImageUrl } from '../../utils/imageUrl';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState } from '../../components/ui';
 
 const PAGE_LIMIT = 20;
+
+// Custom debounce hook for fast reactivity
+function useDebounce(value, delay = 250) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 // Safe helper to extract an array from varied API response shapes
 const extractArray = (res, key) => {
@@ -120,9 +138,13 @@ export const StorefrontScreen = () => {
         }),
       ]);
 
-      if (shopData) {
-        setShop(shopData);
-        localCache.set(CACHE_KEYS.STOREFRONT(slug), shopData, DEFAULT_TTL.STOREFRONT);
+      const realShop = (shopData && shopData.data && (shopData.data.name || shopData.data.id))
+        ? shopData.data
+        : (shopData && (shopData.name || shopData.id) ? shopData : null);
+
+      if (realShop) {
+        setShop(realShop);
+        localCache.set(CACHE_KEYS.STOREFRONT(slug), realShop, DEFAULT_TTL.STOREFRONT);
       }
 
       const rawProdList = extractArray(prodData, 'products');
