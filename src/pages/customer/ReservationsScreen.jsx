@@ -21,6 +21,7 @@ import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useSWR } from '../../hooks/useSWR.js';
+import { useRealtimeCustomer } from '../../hooks/useRealtimeCustomer.js';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { RealQRCode } from '../../components/common/RealQRCode';
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache.js';
@@ -195,6 +196,14 @@ export const ReservationsScreen = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  // Live Real-Time Customer Pickup & Order Updates via WebSocket
+  useRealtimeCustomer({
+    enabled: isAuthenticated,
+    onReservationUpdate: () => {
+      revalidate?.(true);
+    },
+  });
 
   // Enterprise SWR + Event-Driven Cache Invalidation
   const {

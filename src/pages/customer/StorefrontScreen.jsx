@@ -29,6 +29,7 @@ import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { isProductInCategory } from '../../utils/categoryMatcher';
 import { getImageUrl } from '../../utils/imageUrl';
+import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState } from '../../components/ui';
 
 const PAGE_LIMIT = 20;
@@ -89,6 +90,38 @@ export const StorefrontScreen = () => {
   const [totalProductCount, setTotalProductCount] = useState(0);
 
   const debouncedSearch = useDebounce(searchTerm, 250);
+
+  // Live Storefront Real-Time Synchronization Engine
+  useRealtimeStorefront(slug, {
+    onProductMutated: (payload) => {
+      const prodId = payload.id || payload.product_id;
+      if (!prodId) return;
+      setProducts((prev) => {
+        const idx = prev.findIndex((p) => (p.id || p.product_id) === prodId);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = { ...next[idx], ...payload };
+          return next;
+        }
+        return [payload, ...prev];
+      });
+    },
+    onStockChanged: (payload) => {
+      const prodId = payload.product_id || payload.id;
+      const newStock = Number(payload.stock ?? 0);
+      if (!prodId) return;
+      setProducts((prev) =>
+        prev.map((p) =>
+          (p.id || p.product_id) === prodId
+            ? { ...p, stock_quantity: newStock, available_quantity: newStock }
+            : p
+        )
+      );
+    },
+    onShopStatusChanged: (payload) => {
+      setShop((prev) => (prev ? { ...prev, ...payload } : prev));
+    },
+  });
 
   // 1. Initial Load & Dynamic Database Search/Filter for Storefront
   const loadShopAndProducts = useCallback(async () => {
