@@ -53,6 +53,7 @@ import { getDirectionsUrl, calculateDistanceKm, formatTravelTime } from '../../u
 import { shareProduct } from '../../utils/productShare';
 import { parseProductDetails } from '../../utils/productDetailsHelper';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
+import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { BaseModal, ModalBody, Button, Badge, LoadingSpinner } from '../../components/ui';
 
 export const ProductDetailScreen = () => {
@@ -82,6 +83,36 @@ export const ProductDetailScreen = () => {
   const [holdHours, setHoldHours] = useState(4);
   const [reserving, setReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(null);
+
+  // Live Real-Time Product & Store Sync
+  const activeSlug = slug || product?.shop_slug || product?.shop?.slug;
+  useRealtimeStorefront(activeSlug, {
+    onProductMutated: (payload) => {
+      const updatedId = payload.id || payload.product_id;
+      if (updatedId && (updatedId === productId || updatedId === product?.id)) {
+        setProduct((prev) => (prev ? { ...prev, ...payload } : prev));
+      }
+    },
+    onStockChanged: (payload) => {
+      const updatedId = payload.product_id || payload.id;
+      if (updatedId && (updatedId === productId || updatedId === product?.id)) {
+        const newStock = Number(payload.stock ?? 0);
+        setProduct((prev) =>
+          prev
+            ? {
+                ...prev,
+                stock_quantity: newStock,
+                available_quantity: newStock,
+                stock: newStock,
+              }
+            : prev
+        );
+      }
+    },
+    onShopStatusChanged: (payload) => {
+      setShop((prev) => (prev ? { ...prev, ...payload } : prev));
+    },
+  });
 
   // Always fetch fresh product & shop details from API (SWR pattern)
   useEffect(() => {
