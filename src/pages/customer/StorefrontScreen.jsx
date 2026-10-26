@@ -44,6 +44,8 @@ import { getImageUrl } from '../../utils/imageUrl';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState, OverflowMenu } from '../../components/ui';
 import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
+import { DidYouMeanBanner } from '../../components/customer/DidYouMeanBanner';
+import { ZeroDeadEndSearchState } from '../../components/customer/ZeroDeadEndSearchState';
 import {
   getStoredRecentSearches,
   persistRecentSearch,
@@ -653,7 +655,24 @@ export const StorefrontScreen = () => {
       }
       return 0;
     });
-  }, [products, searchTerm, selectedCategory, quickFilter, sortBy]);
+  }, [products, serverSearchResults, searchTerm, selectedCategory, quickFilter, sortBy]);
+
+  // Calculate typo/spell correction suggestion
+  const spellCorrection = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (q.length < 3) return null;
+
+    const hasDirectMatch = filteredProducts.some((p) => (p.name || '').toLowerCase().includes(q));
+    if (hasDirectMatch) return null;
+
+    if (searchSuggestions.length > 0 && searchSuggestions[0].toLowerCase() !== q) {
+      return searchSuggestions[0];
+    }
+    if (filteredProducts.length > 0 && filteredProducts[0].name.toLowerCase() !== q) {
+      return filteredProducts[0].name;
+    }
+    return null;
+  }, [searchTerm, filteredProducts, searchSuggestions]);
 
   // Reservation handler
   const handleReserveFromModal = async ({ product, quantity, hold_hours, notes }) => {
@@ -1605,38 +1624,67 @@ export const StorefrontScreen = () => {
           <LoadingSpinner fullScreen={false} message={isHindi ? 'दुकान के पूरे कैटलॉग में खोज जारी है...' : 'Searching full store catalog...'} />
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <EmptyState
-            icon={Package}
-            title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
-            description={isHindi ? 'कृपया सर्च या कैटेगोरी बदलकर देखें' : 'Try searching another name or picking a different category'}
+        searchTerm.trim() ? (
+          <ZeroDeadEndSearchState
+            query={searchTerm}
+            onSelectPopular={(term) => {
+              setSearchTerm(term);
+              setBrowseMode('grid');
+              setRecentSearches(persistRecentSearch(term));
+            }}
+            onResetFilters={() => {
+              setQuickFilter('ALL');
+              setSelectedCategory('ALL');
+              setSearchTerm('');
+            }}
+            isHindi={isHindi}
           />
-          {(quickFilter !== 'ALL' || selectedCategory !== 'ALL' || searchTerm.trim() !== '') && (
-            <button
-              type="button"
-              onClick={() => {
-                setQuickFilter('ALL');
-                setSelectedCategory('ALL');
-                setSearchTerm('');
-              }}
-              style={{
-                marginTop: '12px',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--color-primary, #2563eb)',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-              }}
-            >
-              ✕ {t('products.reset_filters', 'Reset all')}
-            </button>
-          )}
-        </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <EmptyState
+              icon={Package}
+              title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
+              description={isHindi ? 'कृपया सर्च या कैटेगोरी बदलकर देखें' : 'Try searching another name or picking a different category'}
+            />
+            {(quickFilter !== 'ALL' || selectedCategory !== 'ALL') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickFilter('ALL');
+                  setSelectedCategory('ALL');
+                  setSearchTerm('');
+                }}
+                style={{
+                  marginTop: '12px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--color-primary, #2563eb)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕ {t('products.reset_filters', 'Reset all')}
+              </button>
+            )}
+          </div>
+        )
       ) : (
         <>
+          {/* Did You Mean Spell Correction Banner */}
+          <DidYouMeanBanner
+            originalQuery={searchTerm}
+            suggestedQuery={spellCorrection}
+            onApplySuggestion={(term) => {
+              setSearchTerm(term);
+              setBrowseMode('grid');
+              setRecentSearches(persistRecentSearch(term));
+            }}
+            isHindi={isHindi}
+          />
+
           {/* Curated Themed Aisles / Shelves (Inspired by Blinkit & Zepto) */}
           {browseMode === 'aisles' && searchTerm.trim() === '' && selectedCategory === 'ALL' && quickFilter === 'ALL' && (
             <CuratedStoreAisles
@@ -1736,6 +1784,7 @@ export const StorefrontScreen = () => {
                 <ProductCard
                   key={p.id}
                   product={p}
+                  highlightQuery={searchTerm}
                   isSaved={isProductSaved(p.id)}
                   onToggleSave={toggleSaveProduct}
                   onClick={handleOpenModal}

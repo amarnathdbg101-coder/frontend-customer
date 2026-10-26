@@ -49,6 +49,8 @@ import { SearchSuggestionsDropdown } from '../../components/customer/SearchSugge
 import { CategoryBar } from '../../components/customer/CategoryBar';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
 import { CuratedShelfDetailView } from '../../components/customer/CuratedShelfDetailView';
+import { DidYouMeanBanner } from '../../components/customer/DidYouMeanBanner';
+import { ZeroDeadEndSearchState } from '../../components/customer/ZeroDeadEndSearchState';
 import { calculateDistanceKm } from '../../utils/distance';
 import { isProductInCategory, isShopInCategory } from '../../utils/categoryMatcher';
 import {
@@ -666,6 +668,26 @@ export const ExploreShopsScreen = () => {
     });
   }, [shops, serverShopResults, debouncedSearch, selectedCategory, coords, radiusKm, sortBy, showOpenOnly]);
 
+  // Calculate typo/spell correction suggestion
+  const spellCorrection = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (q.length < 3) return null;
+
+    // If direct substring matches exist, no need for correction banner
+    const hasDirectMatch = filteredProducts.some((p) => (p.name || '').toLowerCase().includes(q));
+    if (hasDirectMatch) return null;
+
+    // Check top suggestion
+    if (searchSuggestions.length > 0 && searchSuggestions[0].toLowerCase() !== q) {
+      return searchSuggestions[0];
+    }
+    // Check top returned product from fuzzy search
+    if (filteredProducts.length > 0 && filteredProducts[0].name.toLowerCase() !== q) {
+      return filteredProducts[0].name;
+    }
+    return null;
+  }, [searchTerm, filteredProducts, searchSuggestions]);
+
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
       const res = await reservationApi.createReservation({
@@ -1258,13 +1280,39 @@ export const ExploreShopsScreen = () => {
             <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में सामान खोजा जा रहा है...' : 'Searching database for products...'} />
           </div>
         ) : filteredProducts.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
-            description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
-          />
+          searchTerm.trim() ? (
+            <ZeroDeadEndSearchState
+              query={searchTerm}
+              onSelectPopular={(term) => {
+                setSearchTerm(term);
+                setRecentSearches(persistRecentSearch(term));
+              }}
+              onResetFilters={() => {
+                setSearchTerm('');
+                setSelectedCategory('All');
+              }}
+              isHindi={isHindi}
+            />
+          ) : (
+            <EmptyState
+              icon={Package}
+              title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
+              description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
+            />
+          )
         ) : (
           <>
+            {/* 1. DID YOU MEAN SPELL CORRECTION BANNER */}
+            <DidYouMeanBanner
+              originalQuery={searchTerm}
+              suggestedQuery={spellCorrection}
+              onApplySuggestion={(term) => {
+                setSearchTerm(term);
+                setRecentSearches(persistRecentSearch(term));
+              }}
+              isHindi={isHindi}
+            />
+
             {activeShelf ? (
               <CuratedShelfDetailView
                 shelf={activeShelf}
@@ -1334,6 +1382,7 @@ export const ExploreShopsScreen = () => {
                 <ProductCard
                   key={p.id}
                   product={p}
+                  highlightQuery={searchTerm}
                   isSaved={isProductSaved(p.id)}
                   onToggleSave={toggleSaveProduct}
                   onClick={() => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}

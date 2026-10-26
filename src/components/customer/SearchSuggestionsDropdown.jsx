@@ -10,7 +10,7 @@
  * - Zero lag & dark mode compatible
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Clock, X, Loader2, ArrowUpLeft } from 'lucide-react';
 import { highlightMatch } from '../../utils/searchHelpers';
 
@@ -29,8 +29,14 @@ export const SearchSuggestionsDropdown = ({
   style = {},
 }) => {
   const containerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
-  // Click-outside listener
+  // Reset active index when suggestions change or dropdown closes
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [suggestions, isOpen]);
+
+  // Click-outside and keyboard navigation listener
   useEffect(() => {
     if (!isOpen) return;
 
@@ -43,6 +49,23 @@ export const SearchSuggestionsDropdown = ({
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         onClose?.();
+        return;
+      }
+
+      if (suggestions.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0 && activeIndex < suggestions.length) {
+          e.preventDefault();
+          onSelectSuggestion?.(suggestions[activeIndex]);
+          onClose?.();
+        }
       }
     };
 
@@ -55,7 +78,7 @@ export const SearchSuggestionsDropdown = ({
       document.removeEventListener('touchstart', handleOutsideClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, suggestions, activeIndex, onSelectSuggestion]);
 
   const hasSuggestions = suggestions.length > 0;
   const hasRecent = !query.trim() && recentSearches.length > 0;
@@ -116,45 +139,52 @@ export const SearchSuggestionsDropdown = ({
             {isHindi ? 'सुझाव' : 'Suggestions'}
           </div>
 
-          {suggestions.map((item, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                onSelectSuggestion?.(item);
-                onClose?.();
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-                padding: '10px 16px',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '0.85rem',
-                color: 'var(--text-primary, #0f172a)',
-                transition: 'background-color 0.15s ease',
-                gap: '10px',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f8fafc)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                <Search size={15} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
-                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {highlightMatch(item, query)}
-                </span>
-              </div>
-              <ArrowUpLeft size={14} color="var(--text-muted, #94a3b8)" style={{ flexShrink: 0 }} />
-            </button>
-          ))}
+          {suggestions.map((item, idx) => {
+            const isActive = idx === activeIndex;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  onSelectSuggestion?.(item);
+                  onClose?.();
+                }}
+                onMouseEnter={() => setActiveIndex(idx)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '10px 16px',
+                  border: 'none',
+                  backgroundColor: isActive ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontSize: '0.85rem',
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? 'var(--color-primary, #4f46e5)' : 'var(--text-primary, #0f172a)',
+                  transition: 'background-color 0.12s ease',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                  <Search
+                    size={15}
+                    color="var(--color-primary, #4f46e5)"
+                    style={{ flexShrink: 0 }}
+                  />
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {highlightMatch(item, query)}
+                  </span>
+                </div>
+                <ArrowUpLeft
+                  size={14}
+                  color={isActive ? 'var(--color-primary, #4f46e5)' : 'var(--text-muted, #94a3b8)'}
+                  style={{ flexShrink: 0 }}
+                />
+              </button>
+            );
+          })}
         </div>
       )}
 

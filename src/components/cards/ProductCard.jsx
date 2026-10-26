@@ -5,12 +5,14 @@ import { formatCurrency } from '../../utils/format';
 import { shareProduct } from '../../utils/productShare';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
+import { highlightMatch } from '../../utils/searchHelpers';
 
 const ProductCardInner = ({
   product,
   isSaved = false,
   onToggleSave,
   onClick,
+  highlightQuery = '',
 }) => {
   const { isHindi } = useLanguage();
   const { getItemQuantity, addItem, updateQuantity } = useCart();
@@ -224,7 +226,7 @@ const ProductCardInner = ({
             }}
             title={p.name}
           >
-            {p.name}
+            {highlightQuery ? highlightMatch(p.name, highlightQuery) : p.name}
           </h4>
         </div>
       </div>
