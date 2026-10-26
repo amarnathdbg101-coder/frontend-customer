@@ -43,6 +43,13 @@ import { isProductInCategory } from '../../utils/categoryMatcher';
 import { getImageUrl } from '../../utils/imageUrl';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState, OverflowMenu } from '../../components/ui';
+import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
+import {
+  getStoredRecentSearches,
+  persistRecentSearch,
+  removeRecentSearch,
+  clearAllRecentSearches,
+} from '../../utils/searchHelpers';
 
 const PAGE_LIMIT = 20;
 
@@ -112,6 +119,42 @@ export const StorefrontScreen = () => {
   const [browseMode, setBrowseMode] = useState('aisles'); // 'aisles' | 'grid'
   const [activeShelf, setActiveShelf] = useState(null); // When user clicks "View All" on any shelf
   const [isListening, setIsListening] = useState(false);
+
+  // Autocomplete Suggestions & Recent Searches States (Storefront Scoped)
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
+
+  // Fast in-store autocomplete suggestions (scoped to this store's catalog)
+  useEffect(() => {
+    const clean = searchTerm.trim();
+    if (clean.length < 2) {
+      setSearchSuggestions([]);
+      setIsLoadingSuggestions(false);
+      return;
+    }
+
+    let active = true;
+    setIsLoadingSuggestions(true);
+    const timer = setTimeout(async () => {
+      try {
+        const list = await productApi.getSearchSuggestions(clean, shop?.id || '', 6);
+        if (active) {
+          setSearchSuggestions(Array.isArray(list) ? list : []);
+        }
+      } catch (e) {
+        if (active) setSearchSuggestions([]);
+      } finally {
+        if (active) setIsLoadingSuggestions(false);
+      }
+    }, 150);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchTerm, shop?.id]);
 
   // 1-Tap Voice Search for Storefront
   const handleVoiceSearch = useCallback(() => {
@@ -486,6 +529,8 @@ export const StorefrontScreen = () => {
     }
 
     setIsSearchingServer(true);
+    let active = true;
+
     const timer = setTimeout(async () => {
       try {
         const queryParams = {
@@ -500,6 +545,8 @@ export const StorefrontScreen = () => {
         };
 
         const res = await productApi.listByShopSlug(slug, queryParams);
+        if (!active) return;
+
         const rawList = extractArray(res, 'products');
         const normalized = rawList.map((p) => {
           const qty = Number(
@@ -521,20 +568,30 @@ export const StorefrontScreen = () => {
           };
         });
         setServerSearchResults(normalized);
+        if (cleanSearch) {
+          setRecentSearches(persistRecentSearch(cleanSearch));
+        }
       } catch (err) {
         console.warn('Server database search & filter error:', err);
       } finally {
-        setIsSearchingServer(false);
+        if (active) setIsSearchingServer(false);
       }
-    }, 250);
+    }, 200);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [searchTerm, selectedCategory, quickFilter, sortBy, slug]);
 
   // 4. In-Store Product Search, Filtering and Sorting
   const filteredProducts = useMemo(() => {
-    const hasActiveFilter = searchTerm.trim() || selectedCategory !== 'ALL' || quickFilter !== 'ALL' || sortBy !== 'relevant';
-    const baseSource = (hasActiveFilter && Array.isArray(serverSearchResults))
+    const cleanSearch = searchTerm.trim();
+    const isSearching = Boolean(cleanSearch);
+    const hasServerResults = Array.isArray(serverSearchResults);
+    const hasActiveFilter = isSearching || selectedCategory !== 'ALL' || quickFilter !== 'ALL' || sortBy !== 'relevant';
+
+    const baseSource = (hasActiveFilter && hasServerResults)
       ? serverSearchResults
       : (Array.isArray(products) ? products : []);
 
@@ -566,13 +623,16 @@ export const StorefrontScreen = () => {
         if (isPublic && !allowBargain) return false;
       }
 
-      // Search Filter
-      if (!searchTerm.trim()) return true;
-      const q = searchTerm.trim().toLowerCase();
-      const matchName = (p.name || '').toLowerCase().includes(q);
-      const matchBrand = (p.attributes?.brand || p.brand || '').toLowerCase().includes(q);
-      const matchCat = (p.category_name || p.category || '').toLowerCase().includes(q);
-      return matchName || matchBrand || matchCat;
+      // Search Filter: Only do substring check if server results are not loaded yet
+      if (isSearching && !hasServerResults) {
+        const q = cleanSearch.toLowerCase();
+        const matchName = (p.name || '').toLowerCase().includes(q);
+        const matchBrand = (p.attributes?.brand || p.brand || '').toLowerCase().includes(q);
+        const matchCat = (p.category_name || p.category || '').toLowerCase().includes(q);
+        return matchName || matchBrand || matchCat;
+      }
+
+      return true;
     });
 
     return list.sort((a, b) => {
@@ -1121,15 +1181,50 @@ export const StorefrontScreen = () => {
         <>
           {/* 2. In-Store Search & Sorting Bar */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, position: 'relative' }}>
           <SearchInput
             placeholder={isHindi ? `${shop?.name || 'दुकान'} में सामान खोजें...` : `Search inside ${shop?.name || 'store'}...`}
             value={searchTerm}
+            onFocus={() => setIsSuggestionsOpen(true)}
             onChange={(e) => {
               setSearchTerm(e.target.value);
+              setIsSuggestionsOpen(true);
               if (e.target.value.trim() !== '') setBrowseMode('grid');
             }}
-            onClear={() => setSearchTerm('')}
+            onSubmit={() => {
+              setIsSuggestionsOpen(false);
+              if (searchTerm.trim()) {
+                setRecentSearches(persistRecentSearch(searchTerm.trim()));
+              }
+            }}
+            onClear={() => {
+              setSearchTerm('');
+              setSearchSuggestions([]);
+            }}
+          />
+
+          {/* In-Store Autocomplete Suggestions Dropdown */}
+          <SearchSuggestionsDropdown
+            isOpen={isSuggestionsOpen}
+            onClose={() => setIsSuggestionsOpen(false)}
+            query={searchTerm}
+            suggestions={searchSuggestions}
+            isLoading={isLoadingSuggestions}
+            onSelectSuggestion={(term) => {
+              setSearchTerm(term);
+              setIsSuggestionsOpen(false);
+              setBrowseMode('grid');
+              setRecentSearches(persistRecentSearch(term));
+            }}
+            recentSearches={recentSearches}
+            onSelectRecent={(term) => {
+              setSearchTerm(term);
+              setIsSuggestionsOpen(false);
+              setBrowseMode('grid');
+            }}
+            onRemoveRecent={(term) => setRecentSearches(removeRecentSearch(term))}
+            onClearAllRecent={() => setRecentSearches(clearAllRecentSearches())}
+            isHindi={isHindi}
           />
         </div>
 
