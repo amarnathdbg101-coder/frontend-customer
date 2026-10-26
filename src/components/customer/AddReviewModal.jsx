@@ -46,17 +46,17 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
         title={isHindi ? 'दुकान की समीक्षा लिखें' : 'Write Shop Review'}
         subtitle={shopName}
         icon={Star}
-        iconColor="#f59e0b"
+        iconColor="#0f172a"
         onClose={onClose}
       />
       <ModalBody padding="20px">
         {success ? (
           <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-            <CheckCircle2 size={44} color="#10b981" style={{ margin: '0 auto 0.5rem auto' }} />
-            <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>
+            <CheckCircle2 size={44} color="#16a34a" style={{ margin: '0 auto 0.5rem auto' }} />
+            <h4 style={{ margin: '0 0 0.25rem 0', color: 'var(--text-primary, #0f172a)', fontSize: '1.1rem', fontWeight: 800 }}>
               {isHindi ? 'समीक्षा दर्ज हो गई!' : 'Review Submitted!'}
             </h4>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary, #475569)' }}>
               {isHindi ? 'आपकी प्रतिक्रिया के लिए धन्यवाद।' : 'Thank you for your valuable feedback.'}
             </p>
           </div>
@@ -70,7 +70,7 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
                   onChange={setRating}
                   size={26}
                 />
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f59e0b' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>
                   {rating}/5
                 </span>
               </div>
@@ -87,20 +87,31 @@ export const AddReviewModal = ({ isOpen, onClose, shopSlug, shopName, onReviewAd
 
             {error && <AlertBanner type="error" message={error} />}
 
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              loading={loading}
-              fullWidth={true}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '10px',
+                backgroundColor: '#0f172a',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: 800,
+                fontSize: '0.88rem',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
+              }}
             >
               {loading
                 ? (isHindi ? 'सबमिट हो रहा है...' : 'Submitting...')
                 : (isHindi ? 'समीक्षा सबमिट करें' : 'Submit Review')}
-            </Button>
+            </button>
           </form>
         )}
       </ModalBody>
     </BaseModal>
   );
 };
+
 export default AddReviewModal;

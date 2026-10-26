@@ -32,24 +32,58 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
     : '4.8';
 
   return (
-    <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle, #334155)', paddingTop: '1.5rem' }}>
+    <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle, #e2e8f0)', paddingTop: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Customer Reviews</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '2px 8px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
-            <Star size={13} fill="#eab308" />
+          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>Customer Reviews</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', backgroundColor: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 800, border: '1px solid #fcd34d' }}>
+            <Star size={13} fill="#f59e0b" color="#f59e0b" />
             <span>{avgRating}</span>
           </div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>({reviews.length} reviews)</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 600 }}>({reviews.length} reviews)</span>
         </div>
 
-        <Button variant="primary" size="sm" icon={Plus} onClick={() => setShowAddModal(true)}>Rate Shop</Button>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '8px',
+            backgroundColor: '#0f172a',
+            color: '#ffffff',
+            border: 'none',
+            fontSize: '0.78rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <Plus size={14} />
+          <span>Rate Shop</span>
+        </button>
       </div>
 
       {reviews.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '1.5rem', background: 'var(--bg-surface-subtle, #0f172a)', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
-          <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No reviews yet. Be the first to review! / अभी तक कोई समीक्षा नहीं है। पहली समीक्षा आप दर्ज करें!</p>
-          <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>Write First Review</Button>
+        <div style={{ textAlign: 'center', padding: '1.5rem', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', borderRadius: '12px', border: '1px solid var(--border-subtle, #e2e8f0)' }}>
+          <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary, #475569)', fontSize: '0.86rem', fontWeight: 500 }}>No reviews yet. Be the first to review! / अभी तक कोई समीक्षा नहीं है। पहली समीक्षा आप दर्ज करें!</p>
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backgroundColor: '#0f172a',
+              color: '#ffffff',
+              border: 'none',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            Write First Review
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -59,16 +93,16 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
               style={{
                 padding: '1rem',
                 borderRadius: '12px',
-                background: 'var(--bg-surface-subtle, #0f172a)',
-                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--color-primary, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '0.75rem', fontWeight: 800 }}>
                     {rev.user_name ? rev.user_name[0].toUpperCase() : 'C'}
                   </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                     {rev.user_name || 'Verified Customer'}
                   </span>
                 </div>
@@ -77,7 +111,7 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
               </div>
 
               {rev.comment && (
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary, #475569)', lineHeight: '1.45', fontWeight: 500 }}>
                   "{rev.comment}"
                 </p>
               )}
@@ -96,3 +130,5 @@ export const ShopReviewsSection = ({ shopSlug, shopName }) => {
     </div>
   );
 };
+
+export default ShopReviewsSection;
