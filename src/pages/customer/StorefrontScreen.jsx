@@ -110,11 +110,24 @@ export const StorefrontScreen = () => {
       setLoadingOffers(true);
       const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const currentDay = days[new Date().getDay()];
-      const res = await dealsApi.getShopOffers(slug, currentDay);
-      const list = extractArray(res, 'offers');
-      setOffers(list);
+      // 1. Try day-specific offers for today first
+      let res = await dealsApi.getShopOffers(slug, currentDay);
+      let list = extractArray(res, 'offers');
+
+      // 2. If no offers specifically scheduled for today, fetch all active offers for this store
+      if (!list || list.length === 0) {
+        res = await dealsApi.getShopOffers(slug);
+        list = extractArray(res, 'offers');
+      }
+      setOffers(Array.isArray(list) ? list : []);
     } catch (err) {
       console.warn('[StorefrontScreen] Failed to fetch offers:', err);
+      // Resilient fallback without day filter
+      try {
+        const res = await dealsApi.getShopOffers(slug);
+        const list = extractArray(res, 'offers');
+        setOffers(Array.isArray(list) ? list : []);
+      } catch (_) {}
     } finally {
       setLoadingOffers(false);
     }
@@ -564,6 +577,7 @@ export const StorefrontScreen = () => {
   const distKm = shop?.latitude && shop?.longitude
     ? calculateDistanceKm(coords?.lat, coords?.lng, shop.latitude, shop.longitude)
     : null;
+  const travelInfo = distKm !== null ? formatTravelTime(distKm, isHindi) : null;
   const storefrontMenuItems = useMemo(() => {
     if (!shop) return [];
     return [
@@ -893,6 +907,22 @@ export const StorefrontScreen = () => {
                           }}
                         >
                           {offer.banner_tag}
+                        </span>
+                      )}
+
+                      {offer.applicable_days && offer.applicable_days !== 'all' && (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            color: '#7c3aed',
+                            backgroundColor: '#f5f3ff',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #ddd6fe',
+                          }}
+                        >
+                          📅 {offer.applicable_days}
                         </span>
                       )}
                     </div>

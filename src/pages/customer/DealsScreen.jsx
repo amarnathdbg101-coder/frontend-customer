@@ -16,52 +16,6 @@ import { getImageUrl } from '../../utils/imageUrl';
 
 const CATEGORIES = ['All', 'Electronics', 'Kirana & Grocery', 'Pharmacy', 'Fashion', 'Home & Kitchen'];
 
-// Fallback festival coupons and neighborhood deals if store deals are sparse
-const DEFAULT_FESTIVAL_DEALS = [
-  {
-    id: 'deal-festive-20',
-    title: 'Festival Special: Flat 20% OFF',
-    titleHi: 'त्योहार विशेष: सीधे 20% की बचत',
-    description: 'Save 20% on your entire counter pickup order at participating local stores.',
-    descriptionHi: 'स्थानीय दुकानों पर काउंटर पिकअप ऑर्डर पर सीधे 20% की छूट पाएं।',
-    discount_text: 'FLAT 20% OFF',
-    code: 'FESTIVE20',
-    shop_name: 'Gupta Kirana & General Store',
-    shop_category: 'Kirana & Grocery',
-    shop_slug: 'gupta-kirana',
-    shop_latitude: 28.6139,
-    shop_longitude: 77.2090,
-  },
-  {
-    id: 'deal-bogo-free',
-    title: 'Super Saver: Buy 1 Get 1 Free',
-    titleHi: 'सुपर सेवर: एक खरीदें, एक मुफ्त पाएं',
-    description: 'Buy 1 Get 1 Free on select daily groceries and household essentials.',
-    descriptionHi: 'दैनिक किराना और घरेलू सामानों पर एक खरीदें, एक मुफ्त ऑफर।',
-    discount_text: 'BUY 1 GET 1',
-    code: 'BOGO50',
-    shop_name: 'Sharma Supermarket',
-    shop_category: 'Kirana & Grocery',
-    shop_slug: 'sharma-supermarket',
-    shop_latitude: 28.6145,
-    shop_longitude: 77.2105,
-  },
-  {
-    id: 'deal-flat-50',
-    title: 'Weekend Saver: Flat ₹50 OFF',
-    titleHi: 'सप्ताहांत बचत: सीधे ₹50 की छूट',
-    description: 'Instant ₹50 discount on orders above ₹250. Valid for instant counter pickup.',
-    descriptionHi: '₹250 से अधिक के ऑर्डर पर सीधे ₹50 की छूट। इंस्टेंट काउंटर पिकअप पर मान्य।',
-    discount_text: 'FLAT ₹50 OFF',
-    code: 'SAVE50',
-    shop_name: 'Verma Provisions & Dairy',
-    shop_category: 'Dairy & Provisions',
-    shop_slug: 'verma-provisions',
-    shop_latitude: 28.6120,
-    shop_longitude: 77.2080,
-  },
-];
-
 export const DealsScreen = () => {
   const navigate = useNavigate();
   const { coords } = useLocation();
@@ -106,17 +60,25 @@ export const DealsScreen = () => {
         params.category = selectedCategory;
       }
       const data = await dealsApi.listDeals(params);
-      const list = Array.isArray(data) ? data : (Array.isArray(data?.offers) ? data.offers : []);
+      let list = [];
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (Array.isArray(data?.data)) {
+        list = data.data;
+      } else if (Array.isArray(data?.offers)) {
+        list = data.offers;
+      }
+
+      setDeals(list);
       if (list.length > 0) {
-        setDeals(list);
         localCache.set(cacheKey, list, DEFAULT_TTL.DEALS);
       } else {
-        setDeals(DEFAULT_FESTIVAL_DEALS);
+        localCache.remove(cacheKey);
       }
     } catch (err) {
-      console.warn('Deals API fallback:', err);
-      if (deals.length === 0) {
-        setDeals(DEFAULT_FESTIVAL_DEALS);
+      console.warn('Deals API error:', err);
+      if (!cached || cached.length === 0) {
+        setDeals([]);
       }
     } finally {
       setLoading(false);
