@@ -100,12 +100,12 @@ export const DealsScreen = () => {
   const getBadgeStyle = (text = '') => {
     const lower = text.toLowerCase();
     if (lower.includes('bogo') || lower.includes('buy 1 get 1') || lower.includes('buy x')) {
-      return { background: 'linear-gradient(135deg, #ec4899, #f43f5e)', color: '#fff' };
+      return { backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fca5a5' };
     }
     if (lower.includes('%') || lower.includes('flat') || lower.includes('off')) {
-      return { background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff' };
+      return { backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' };
     }
-    return { background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#fff' };
+    return { backgroundColor: '#f1f5f9', color: '#0f172a', border: '1px solid #cbd5e1' };
   };
 
   return (
@@ -130,7 +130,7 @@ export const DealsScreen = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 8px 20px rgba(6, 95, 70, 0.3)',
+            boxShadow: '0 8px 20px rgba(6, 95, 70, 0.2)',
             animation: 'fadeIn 0.2s ease',
           }}
         >
@@ -150,7 +150,7 @@ export const DealsScreen = () => {
               color: '#064e3b',
               border: 'none',
               borderRadius: '8px',
-              padding: '4px 10px',
+              padding: '6px 12px',
               fontSize: '0.78rem',
               fontWeight: 800,
               cursor: 'pointer',
@@ -183,14 +183,14 @@ export const DealsScreen = () => {
             style={{
               padding: '6px 14px',
               borderRadius: '20px',
-              border: selectedCategory === cat ? 'none' : '1px solid var(--border-subtle)',
+              border: selectedCategory === cat ? 'none' : '1px solid var(--border-subtle, #e2e8f0)',
               fontSize: '0.8rem',
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              background: selectedCategory === cat ? 'var(--color-primary)' : 'var(--bg-surface)',
-              color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)',
-              boxShadow: selectedCategory === cat ? '0 2px 8px rgba(79, 70, 229, 0.3)' : 'none',
+              backgroundColor: selectedCategory === cat ? '#0f172a' : 'var(--bg-surface, #ffffff)',
+              color: selectedCategory === cat ? '#ffffff' : 'var(--text-secondary, #475569)',
+              boxShadow: selectedCategory === cat ? '0 2px 6px rgba(15, 23, 42, 0.15)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
@@ -234,17 +234,17 @@ export const DealsScreen = () => {
                 className="card"
                 style={{
                   margin: 0,
-                  padding: '18px',
-                  borderRadius: 'var(--radius-lg)',
+                  padding: '16px',
+                  borderRadius: '14px',
                   position: 'relative',
                   overflow: 'hidden',
-                  border: isClaimed ? '2px solid #10b981' : '1.5px solid var(--border-subtle)',
-                  boxShadow: isClaimed ? '0 6px 20px rgba(16, 185, 129, 0.15)' : 'var(--shadow-sm)',
+                  border: isClaimed ? '2px solid #16a34a' : '1px solid var(--border-subtle, #e2e8f0)',
+                  boxShadow: isClaimed ? '0 4px 16px rgba(22, 163, 74, 0.12)' : 'var(--shadow-xs)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   transition: 'all 0.15s ease',
-                  backgroundColor: 'var(--bg-surface)',
+                  backgroundColor: 'var(--bg-surface, #ffffff)',
                 }}
               >
                 <div>
@@ -253,26 +253,25 @@ export const DealsScreen = () => {
                     <span
                       style={{
                         ...getBadgeStyle(deal.discount_text),
-                        fontSize: '0.78rem',
-                        fontWeight: 900,
-                        padding: '4px 12px',
-                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.76rem',
+                        fontWeight: 800,
+                        padding: '4px 10px',
+                        borderRadius: '6px',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '5px',
-                        letterSpacing: '0.5px',
                       }}
                     >
-                      <Sparkles size={14} /> {deal.discount_text || (isHindi ? 'विशेष ऑफर' : 'Special Deal')}
+                      <Sparkles size={13} /> {deal.discount_text || (isHindi ? 'विशेष ऑफर' : 'Special Deal')}
                     </span>
 
                     {travel && (
                       <span
                         style={{
-                          fontSize: '0.74rem',
-                          color: travel.mode === 'walk' ? '#047857' : '#1d4ed8',
-                          backgroundColor: travel.mode === 'walk' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                          border: travel.mode === 'walk' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(59, 130, 246, 0.25)',
+                          fontSize: '0.72rem',
+                          color: travel.mode === 'walk' ? '#15803d' : '#1d4ed8',
+                          backgroundColor: travel.mode === 'walk' ? '#dcfce7' : '#eff6ff',
+                          border: travel.mode === 'walk' ? '1px solid #86efac' : '1px solid #bfdbfe',
                           padding: '3px 8px',
                           borderRadius: '8px',
                           display: 'inline-flex',
@@ -288,10 +287,10 @@ export const DealsScreen = () => {
                   </div>
 
                   {/* Offer Title & Description */}
-                  <div style={{ fontWeight: 800, fontSize: '1.08rem', color: 'var(--text-primary)', marginBottom: '6px', lineHeight: 1.3 }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.02rem', color: 'var(--text-primary, #0f172a)', marginBottom: '6px', lineHeight: 1.3 }}>
                     {isHindi && deal.titleHi ? deal.titleHi : deal.title}
                   </div>
-                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #475569)', marginBottom: '16px', lineHeight: 1.45 }}>
                     {isHindi && deal.descriptionHi ? deal.descriptionHi : deal.description}
                   </p>
                 </div>
@@ -306,26 +305,26 @@ export const DealsScreen = () => {
                         justifyContent: 'space-between',
                         padding: '8px 12px',
                         borderRadius: '10px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        color: '#065f46',
+                        backgroundColor: '#dcfce7',
+                        border: '1px solid #86efac',
+                        color: '#15803d',
                       }}
                     >
                       <span style={{ fontSize: '0.8rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle size={15} color="#10b981" />
+                        <CheckCircle size={15} color="#16a34a" />
                         {isHindi ? 'कूपन क्लेम हो गया!' : 'Coupon Claimed!'}
                       </span>
                       <button
                         type="button"
                         onClick={removeCoupon}
                         style={{
-                          background: 'none',
+                          background: 'transparent',
                           border: 'none',
-                          color: '#b91c1c',
+                          color: '#dc2626',
                           fontSize: '0.74rem',
-                          fontWeight: 700,
+                          fontWeight: 800,
                           cursor: 'pointer',
-                          padding: '2px 6px',
+                          textDecoration: 'underline',
                         }}
                       >
                         {isHindi ? 'हटाएं' : 'Remove'}
@@ -335,110 +334,92 @@ export const DealsScreen = () => {
                     <button
                       type="button"
                       onClick={() => handleClaimCoupon(deal)}
-                      className="btn btn-primary btn-block"
                       style={{
-                        padding: '10px 14px',
-                        fontSize: '0.86rem',
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        border: 'none',
                         fontWeight: 800,
+                        fontSize: '0.84rem',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '6px',
-                        borderRadius: '10px',
-                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+                        boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
+                        transition: 'background 0.15s ease',
                       }}
                     >
                       <Tag size={15} />
-                      <span>{isHindi ? '🎟️ कूपन क्लेम करें' : '🎟️ Claim Coupon'}</span>
+                      <span>{isHindi ? 'कूपन क्लेम करें (1-Tap Claim)' : 'Claim Coupon Code'}</span>
                     </button>
                   )}
                 </div>
 
-                {/* Participating Shop Info & Actions */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingTop: '12px',
-                    borderTop: '1px solid var(--border-subtle)',
-                    gap: '10px',
-                    flexWrap: 'wrap',
-                  }}
-                >
+                {/* Shop Footer Line */}
+                {deal.shop_name && (
                   <div
-                    onClick={() => deal.shop_slug && navigate(`/shop/${deal.shop_slug}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', minWidth: 0, flex: 1 }}
+                    style={{
+                      paddingTop: '10px',
+                      borderTop: '1px solid var(--border-subtle, #e2e8f0)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '0.78rem',
+                      color: 'var(--text-secondary, #475569)',
+                    }}
                   >
-                    <div
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        backgroundColor: 'var(--color-primary-light)',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        border: '1px solid var(--border-subtle)',
-                      }}
-                    >
-                      {deal.shop_logo_url ? (
-                        <img loading="lazy" decoding="async"
-                          src={getImageUrl(deal.shop_logo_url)}
-                          alt={deal.shop_name}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <Store size={18} color="var(--color-primary)" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+                      <Store size={14} color="#0f172a" />
+                      <span>{deal.shop_name}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {deal.shop_latitude && deal.shop_longitude && (
+                        <a
+                          href={getDirectionsUrl(deal.shop_latitude, deal.shop_longitude, deal.shop_name)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: '#2563eb',
+                            textDecoration: 'none',
+                            fontWeight: 800,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                          }}
+                        >
+                          <Navigation size={12} />
+                          <span>{isHindi ? 'रास्ता' : 'Maps'}</span>
+                        </a>
+                      )}
+
+                      {deal.shop_slug && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/shop/${deal.shop_slug}`)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#0f172a',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontSize: '0.78rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                          }}
+                        >
+                          <span>{isHindi ? 'दुकान' : 'Store'}</span>
+                          <ArrowRight size={12} />
+                        </button>
                       )}
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {deal.shop_name}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        {deal.shop_category || (isHindi ? 'स्थानीय दुकान' : 'Local Store')}
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {deal.shop_latitude && deal.shop_longitude && (
-                      <a
-                        href={getDirectionsUrl(deal.shop_latitude, deal.shop_longitude, deal.shop_name)}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          background: 'rgba(59, 130, 246, 0.1)',
-                          color: '#3b82f6',
-                          border: 'none',
-                          padding: '6px 10px',
-                          borderRadius: 'var(--radius-sm)',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        <Navigation size={12} /> {isHindi ? 'रास्ता' : 'Directions'}
-                      </a>
-                    )}
-                    {deal.shop_slug && (
-                      <button
-                        onClick={() => navigate(`/shop/${deal.shop_slug}`)}
-                        className="btn btn-outline btn-sm"
-                        style={{ padding: '6px 12px', fontSize: '0.76rem', fontWeight: 700 }}
-                      >
-                        {isHindi ? 'दुकान देखें' : 'Visit Shop'}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}
@@ -447,4 +428,5 @@ export const DealsScreen = () => {
     </AppLayout>
   );
 };
+
 export default DealsScreen;
