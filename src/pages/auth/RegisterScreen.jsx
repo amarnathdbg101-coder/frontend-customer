@@ -254,9 +254,24 @@ export const RegisterScreen = () => {
 
           <button
             type="submit"
-            className="btn btn-primary btn-block btn-lg"
             disabled={loading}
-            style={{ marginTop: '8px' }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '12px',
+              backgroundColor: '#0f172a',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 800,
+              fontSize: '0.92rem',
+              marginTop: '12px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
           >
             {loading ? t('auth.account_creating') : (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
