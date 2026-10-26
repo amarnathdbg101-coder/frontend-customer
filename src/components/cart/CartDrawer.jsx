@@ -537,21 +537,26 @@ export const CartDrawer = () => {
               <button
                 type="button"
                 onClick={openCheckout}
-                className="btn btn-primary btn-block"
                 style={{
+                  width: '100%',
                   padding: '12px',
-                  borderRadius: 'var(--radius-md)',
+                  borderRadius: '12px',
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
                   fontWeight: 800,
                   fontSize: '0.92rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)',
+                  transition: 'background 0.15s ease',
                 }}
               >
-                <span>{t('cart.proceed_checkout')} (₹{finalTotal || subtotal})</span>
-                <ArrowRight size={18} />
+                <span>{t('cart.checkout_btn')}</span>
+                <ArrowRight size={16} />
               </button>
 
               <button
