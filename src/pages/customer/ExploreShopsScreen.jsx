@@ -44,6 +44,7 @@ import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
 import { CategoryBar } from '../../components/customer/CategoryBar';
+import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
 import { calculateDistanceKm } from '../../utils/distance';
 import { isProductInCategory, isShopInCategory } from '../../utils/categoryMatcher';
 
@@ -1102,6 +1103,58 @@ export const ExploreShopsScreen = () => {
           />
         ) : (
           <>
+            {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
+              <CuratedStoreAisles
+                products={products}
+                onSelectCategory={(cat) => setSelectedCategory(cat)}
+                onSelectQuickFilter={() => {}}
+                onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                isProductSaved={isProductSaved}
+                onToggleSave={toggleSaveProduct}
+                isHindi={isHindi}
+              />
+            )}
+
+            {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  margin: '18px 0 12px 0',
+                  paddingBottom: '8px',
+                  borderBottom: '1.5px solid var(--border-subtle, #e2e8f0)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Package size={18} color="var(--color-primary, #4f46e5)" />
+                  <h3
+                    style={{
+                      fontSize: '0.98rem',
+                      fontWeight: 800,
+                      margin: 0,
+                      color: 'var(--text-primary, #0f172a)',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {isHindi ? 'सभी उपलब्ध सामान' : 'All Nearby Products'}
+                  </h3>
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+                    color: 'var(--text-secondary, #64748b)',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                  }}
+                >
+                  {filteredProducts.length} {isHindi ? 'सामान' : 'items'}
+                </span>
+              </div>
+            )}
+
             <div className="customer-product-grid">
               {filteredProducts.map((p) => (
                 <ProductCard
