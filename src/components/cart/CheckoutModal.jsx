@@ -593,17 +593,22 @@ export const CheckoutModal = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="btn btn-primary btn-block btn-lg"
                 style={{
+                  width: '100%',
                   padding: '14px',
-                  borderRadius: 'var(--radius-md)',
+                  borderRadius: '12px',
+                  backgroundColor: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
                   fontWeight: 800,
                   fontSize: '0.95rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 15px rgba(79, 70, 229, 0.4)',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)',
+                  transition: 'background 0.15s ease',
                 }}
               >
                 <CheckCircle size={18} />
