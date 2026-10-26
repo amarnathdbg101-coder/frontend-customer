@@ -44,8 +44,8 @@ const PickupStepper = ({ status, isHindi }) => {
           gap: '6px',
           padding: '6px 10px',
           borderRadius: '8px',
-          background: 'rgba(239, 68, 68, 0.08)',
-          color: 'var(--color-danger, #ef4444)',
+          backgroundColor: '#fee2e2',
+          color: '#dc2626',
           fontSize: '0.74rem',
           fontWeight: 700,
           margin: '8px 0',
@@ -63,11 +63,11 @@ const PickupStepper = ({ status, isHindi }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'var(--surface-subtle, rgba(0,0,0,0.03))',
+        backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
         borderRadius: '10px',
         padding: '8px 12px',
         margin: '10px 0',
-        border: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+        border: '1px solid var(--border-subtle, #e2e8f0)',
       }}
     >
       {/* Step 1: Booked */}
@@ -77,7 +77,7 @@ const PickupStepper = ({ status, isHindi }) => {
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            backgroundColor: '#10b981',
+            backgroundColor: '#16a34a',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
@@ -88,7 +88,7 @@ const PickupStepper = ({ status, isHindi }) => {
         >
           ✓
         </div>
-        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>
+        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#15803d' }}>
           {isHindi ? 'बुक हुआ' : 'Booked'}
         </span>
       </div>
@@ -98,7 +98,7 @@ const PickupStepper = ({ status, isHindi }) => {
         style={{
           flex: 1,
           height: '2px',
-          backgroundColor: isReady || isCompleted ? '#10b981' : 'var(--border-subtle, #cbd5e1)',
+          backgroundColor: isReady || isCompleted ? '#16a34a' : 'var(--border-subtle, #cbd5e1)',
           margin: '0 8px',
         }}
       />
@@ -110,7 +110,7 @@ const PickupStepper = ({ status, isHindi }) => {
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            backgroundColor: isCompleted ? '#10b981' : (isReady ? '#f59e0b' : 'var(--color-primary, #3b82f6)'),
+            backgroundColor: isCompleted ? '#16a34a' : (isReady ? '#f59e0b' : '#0f172a'),
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
@@ -124,8 +124,8 @@ const PickupStepper = ({ status, isHindi }) => {
         <span
           style={{
             fontSize: '0.72rem',
-            fontWeight: 700,
-            color: isCompleted ? '#10b981' : (isReady ? '#b45309' : 'var(--color-primary, #3b82f6)'),
+            fontWeight: 800,
+            color: isCompleted ? '#15803d' : (isReady ? '#b45309' : '#0f172a'),
           }}
         >
           {isReady ? (isHindi ? 'काउंटर पर तैयार' : 'Ready at Store') : (isHindi ? 'पैकिंग जारी' : 'Packing')}
@@ -137,7 +137,7 @@ const PickupStepper = ({ status, isHindi }) => {
         style={{
           flex: 1,
           height: '2px',
-          backgroundColor: isCompleted ? '#10b981' : 'var(--border-subtle, #cbd5e1)',
+          backgroundColor: isCompleted ? '#16a34a' : 'var(--border-subtle, #cbd5e1)',
           margin: '0 8px',
         }}
       />
@@ -149,7 +149,7 @@ const PickupStepper = ({ status, isHindi }) => {
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            backgroundColor: isCompleted ? '#10b981' : 'var(--text-muted, #94a3b8)',
+            backgroundColor: isCompleted ? '#16a34a' : '#94a3b8',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
@@ -163,8 +163,8 @@ const PickupStepper = ({ status, isHindi }) => {
         <span
           style={{
             fontSize: '0.72rem',
-            fontWeight: 700,
-            color: isCompleted ? '#10b981' : 'var(--text-muted, #64748b)',
+            fontWeight: 800,
+            color: isCompleted ? '#15803d' : '#64748b',
           }}
         >
           {isCompleted ? (isHindi ? 'प्राप्त हुआ' : 'Collected') : (isHindi ? 'पिकअप' : 'Pickup')}
@@ -318,8 +318,20 @@ export const ReservationsScreen = () => {
             key={tab.id}
             type="button"
             onClick={() => setActiveStatusTab(tab.id)}
-            className={`tab-pill ${activeStatusTab === tab.id ? 'active' : ''}`}
-            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '20px',
+              border: activeStatusTab === tab.id ? 'none' : '1px solid var(--border-subtle, #e2e8f0)',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              backgroundColor: activeStatusTab === tab.id ? '#0f172a' : 'var(--bg-surface, #ffffff)',
+              color: activeStatusTab === tab.id ? '#ffffff' : 'var(--text-secondary, #475569)',
+              boxShadow: activeStatusTab === tab.id ? '0 2px 6px rgba(15, 23, 42, 0.15)' : 'none',
+              transition: 'all 0.15s ease',
+              flexShrink: 0,
+            }}
           >
             {tab.label}
           </button>
@@ -370,6 +382,10 @@ export const ReservationsScreen = () => {
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   gap: '10px',
+                  border: '1px solid var(--border-subtle, #e2e8f0)',
+                  borderRadius: '14px',
+                  backgroundColor: 'var(--bg-surface, #ffffff)',
+                  boxShadow: 'var(--shadow-xs)',
                 }}
               >
                 <div>
@@ -422,7 +438,7 @@ export const ReservationsScreen = () => {
                           style={{
                             fontWeight: 800,
                             fontSize: '0.98rem',
-                            color: 'var(--text-primary)',
+                            color: 'var(--text-primary, #0f172a)',
                             lineHeight: 1.3,
                             cursor: targetProdId ? 'pointer' : 'default',
                           }}
@@ -431,8 +447,8 @@ export const ReservationsScreen = () => {
                           {productName}
                         </div>
                         {storeName && (
-                          <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Store size={12} />
+                          <div style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Store size={12} color="#0f172a" />
                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{storeName}</span>
                           </div>
                         )}
@@ -451,18 +467,18 @@ export const ReservationsScreen = () => {
                   <PickupStepper status={r.status} isHindi={isHindi} />
 
                   {/* Quantity, Time & Live Countdown */}
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #475569)', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span>{t('cart.quantity')}: <strong>{r.quantity || 1}</strong></span>
                       {totalAmount > 0 && (
                         <>
                           <span>•</span>
-                          <span>{t('common.price', 'Price')}: <strong style={{ color: 'var(--color-primary)' }}>₹{totalAmount.toFixed(0)}</strong></span>
+                          <span>{t('common.price', 'Price')}: <strong style={{ color: '#0f172a' }}>₹{totalAmount.toFixed(0)}</strong></span>
                         </>
                       )}
                       <span>•</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                        <Clock size={12} color="var(--color-primary)" />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#0f172a', fontWeight: 600 }}>
+                        <Clock size={12} color="#0f172a" />
                         <span>{isHindi ? 'आरक्षित किया:' : 'Booked at:'} <strong>{formatLocalTime(r.created_at)}</strong></span>
                       </span>
                     </div>
@@ -472,14 +488,15 @@ export const ReservationsScreen = () => {
                       <div
                         style={{
                           fontSize: '0.75rem',
-                          color: countdown.isUrgent ? '#dc2626' : 'var(--color-primary)',
-                          backgroundColor: countdown.isUrgent ? 'rgba(239, 68, 68, 0.08)' : 'var(--color-primary-light, rgba(59, 130, 246, 0.08))',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
+                          color: countdown.isUrgent ? '#dc2626' : '#1e40af',
+                          backgroundColor: countdown.isUrgent ? '#fee2e2' : '#eff6ff',
+                          border: countdown.isUrgent ? '1px solid #fca5a5' : '1px solid #bfdbfe',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
-                          fontWeight: 700,
+                          fontWeight: 800,
                           marginTop: '2px',
                           width: 'fit-content',
                         }}
@@ -502,7 +519,7 @@ export const ReservationsScreen = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     paddingTop: '12px',
-                    borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.06))',
+                    borderTop: '1px solid var(--border-subtle, #e2e8f0)',
                     gap: '8px',
                     flexWrap: 'wrap',
                   }}
@@ -514,22 +531,22 @@ export const ReservationsScreen = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '5px',
-                        background: 'var(--color-primary-light, rgba(59, 130, 246, 0.1))',
-                        color: 'var(--color-primary, #2563eb)',
-                        padding: '6px 12px',
-                        borderRadius: '8px',
+                        gap: '6px',
+                        backgroundColor: '#eff6ff',
+                        color: '#1e40af',
+                        padding: '6px 14px',
+                        borderRadius: '10px',
                         fontWeight: 900,
-                        fontSize: '0.88rem',
+                        fontSize: '0.95rem',
                         fontFamily: 'monospace',
-                        letterSpacing: '1px',
+                        letterSpacing: '2px',
                         cursor: 'pointer',
-                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        border: '1.5px dashed #3b82f6',
                       }}
                       title={isHindi ? 'क्लिक करके कोड कॉपी करें' : 'Click to copy PIN'}
                     >
                       <span>#{displayId}</span>
-                      {copiedId === r.id ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                      {copiedId === r.id ? <Check size={15} color="#16a34a" /> : <Copy size={15} />}
                     </div>
 
                     <Button
@@ -550,52 +567,30 @@ export const ReservationsScreen = () => {
                       size="sm"
                       icon={Navigation}
                       onClick={() => window.open(directionsUrl, '_blank', 'noopener,noreferrer')}
-                      title={isHindi ? 'दुकान का रास्ता देखें' : 'Get Store Directions'}
                     >
-                      {isHindi ? 'रास्ता' : 'Map'}
+                      {t('checkout.get_directions')}
                     </Button>
 
-                    {/* Direct Call to Shop */}
-                    {r.shop?.phone && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={Phone}
-                        onClick={() => window.open(`tel:${r.shop.phone}`, '_self')}
-                        title={isHindi ? 'दुकान पर कॉल करें' : 'Call Store'}
-                      >
-                        {isHindi ? 'कॉल' : 'Call'}
-                      </Button>
-                    )}
-
-                    {/* Share on WhatsApp */}
+                    {/* WhatsApp Share PIN */}
                     <Button
-                      variant="secondary"
+                      variant="whatsapp"
                       size="sm"
                       icon={Share2}
                       onClick={() => handleSharePickup(r, displayId)}
-                      title={isHindi ? 'व्हाट्सएप पर शेयर करें' : 'Share Pickup Code'}
                     >
-                      {isHindi ? 'शेयर' : 'Share'}
+                      {isHindi ? 'शेयर PIN' : 'Share PIN'}
                     </Button>
 
-                    {/* Cancel Button if Active */}
+                    {/* Cancel Button */}
                     {isActive && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        style={{ color: '#dc2626', fontWeight: 800 }}
                         onClick={() => handleCancel(r.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--color-danger, #ef4444)',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          padding: '4px 8px',
-                        }}
                       >
-                        {t('checkout.cancel_reservation')}
-                      </button>
+                        {t('checkout.cancel')}
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -605,146 +600,54 @@ export const ReservationsScreen = () => {
         </div>
       )}
 
-      {/* Inspect QR Code Modal */}
+      {/* QR Token Modal */}
       {inspectToken && (
         <BaseModal isOpen={Boolean(inspectToken)} onClose={() => setInspectToken(null)} maxWidth="420px">
           <ModalHeader
-            title={t('checkout.pickup_otp')}
-            subtitle={inspectToken.product?.name || `Order #${inspectToken.pickup_code || inspectToken.id}`}
+            title={isHindi ? 'काउंटर सत्यापन पास (QR Pass)' : 'Store Pickup Pass'}
+            subtitle={inspectToken.shop?.name || (isHindi ? 'दुकानदार काउंटर पर दिखाएं' : 'Show at store counter')}
             icon={QrCode}
             onClose={() => setInspectToken(null)}
           />
           <ModalBody padding="20px" style={{ textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+            <div style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+              {isHindi ? 'काउंटर 6-अंकीय पिकअप PIN' : '6-DIGIT COUNTER PICKUP PIN'}
+            </div>
+            <div
+              style={{
+                backgroundColor: '#eff6ff',
+                color: '#1e40af',
+                fontSize: '2.2rem',
+                fontWeight: 900,
+                letterSpacing: '4px',
+                padding: '12px',
+                borderRadius: '12px',
+                marginBottom: '16px',
+                fontFamily: 'monospace',
+                border: '1.5px dashed #3b82f6',
+              }}
+            >
+              #{inspectToken.pickup_code || inspectToken.reservation_number || String(inspectToken.id || '').slice(-6).toUpperCase()}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
               <RealQRCode
-                value={`SHOP-PICKUP:${inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id}`}
+                value={JSON.stringify({
+                  id: inspectToken.id,
+                  code: inspectToken.pickup_code || inspectToken.reservation_number,
+                  shop_id: inspectToken.shop_id || inspectToken.shop?.id,
+                })}
                 size={180}
-                logoText="PICKUP"
-                showDownload={true}
-                downloadFilename={"pickup-code-" + (inspectToken.pickup_code || inspectToken.id)}
               />
             </div>
 
-            {(() => {
-              const fullCode = String(inspectToken.pickup_code || inspectToken.reservation_number || inspectToken.id || '').trim();
-              const tokenCode = inspectToken.token_display || (fullCode.startsWith('#') ? fullCode : `#${fullCode}`);
-              const cleanCode = tokenCode.replace('#', '');
-              const modalProdName = inspectToken.product?.name || inspectToken.product_name || inspectToken.name || (isHindi ? 'सामान' : 'Item');
-              const modalProdImg = inspectToken.product?.image || (Array.isArray(inspectToken.product?.images) && inspectToken.product.images[0]) || inspectToken.product_image || (Array.isArray(inspectToken.product_images) && inspectToken.product_images[0]);
-              const modalStoreName = inspectToken.shop?.name || inspectToken.shop_name || (isHindi ? 'दुकान' : 'Store');
-              const modalPrice = Number(inspectToken.total_amount || (inspectToken.product?.price || inspectToken.product_price || 0) * (inspectToken.quantity || 1));
-              const dirUrl = getDirectionsUrl(inspectToken.shop?.latitude, inspectToken.shop?.longitude, modalStoreName, inspectToken.shop?.address);
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', lineHeight: 1.45, marginBottom: '16px' }}>
+              {isHindi
+                ? 'दुकानदार अपने POS काउंटर स्कैनर से इस QR कोड या PIN को स्कैन करके आपका सामान तुरंत हैंडओवर कर देगा।'
+                : 'Show this 6-digit PIN or QR code to the store merchant counter for instant verification & pickup.'}
+            </p>
 
-              return (
-                <>
-                  {/* Itemized Order Details Card in QR Modal */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                      border: '1px solid var(--border-subtle, #e2e8f0)',
-                      borderRadius: '12px',
-                      padding: '10px 14px',
-                      marginBottom: '14px',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '8px',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid var(--border-subtle, #e2e8f0)',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {modalProdImg ? (
-                        <img
-                          src={getImageUrl(modalProdImg)}
-                          alt={modalProdName}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                        />
-                      ) : (
-                        <Package size={20} color="var(--text-muted)" />
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {modalProdName}
-                      </div>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px' }}>
-                        <span>{isHindi ? 'मात्रा:' : 'Qty:'} <strong>{inspectToken.quantity || 1}</strong></span>
-                        {modalPrice > 0 && (
-                          <>
-                            <span>•</span>
-                            <strong style={{ color: 'var(--color-primary)' }}>₹{modalPrice.toFixed(0)}</strong>
-                          </>
-                        )}
-                        <span>•</span>
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{modalStoreName}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {isHindi ? '6-अंकों का पिकअप कोड' : '6-DIGIT PICKUP CODE'}
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--color-primary)', letterSpacing: '4px', margin: '6px 0', fontFamily: 'monospace' }}>
-                    {tokenCode}
-                  </div>
-
-                  {/* 1-Tap Quick Action Buttons inside Modal */}
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '12px 0', flexWrap: 'wrap' }}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={copiedId === inspectToken.id ? Check : Copy}
-                      onClick={() => handleCopyCode(cleanCode, inspectToken.id)}
-                    >
-                      {copiedId === inspectToken.id ? (isHindi ? 'कॉपी हुआ!' : 'Copied!') : (isHindi ? 'कोड कॉपी करें' : 'Copy PIN')}
-                    </Button>
-
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={Navigation}
-                      onClick={() => window.open(dirUrl, '_blank', 'noopener,noreferrer')}
-                    >
-                      {isHindi ? 'दुकान का रास्ता' : 'Store Directions'}
-                    </Button>
-
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={Share2}
-                      onClick={() => handleSharePickup(inspectToken, cleanCode)}
-                    >
-                      {isHindi ? 'व्हाट्सएप पर भेजें' : 'Share on WhatsApp'}
-                    </Button>
-                  </div>
-
-                  <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#065f46', borderRadius: '10px', padding: '10px 14px', fontSize: '0.78rem', lineHeight: 1.45, fontWeight: 600, marginTop: '8px', textAlign: 'left' }}>
-                    ⚡ {isHindi
-                      ? 'दुकान के काउंटर पर पहुँचकर केवल यह टोकन नंबर (#...) दिखाएं या QR कोड स्कैन करवाएं। दुकानदार POS में दर्ज करते ही आपका पैक किया हुआ सामान 10 सेकंड में मिल जाएगा!'
-                      : 'Show this 6-digit token or QR pass at the store counter. The merchant enters it into POS to hand over your packed goods in 10 seconds!'}
-                  </div>
-                </>
-              );
-            })()}
-
-            <Button
-              variant="primary"
-              fullWidth={true}
-              style={{ marginTop: '16px' }}
-              onClick={() => setInspectToken(null)}
-            >
+            <Button variant="primary" fullWidth onClick={() => setInspectToken(null)}>
               {t('common.close')}
             </Button>
           </ModalBody>
@@ -753,4 +656,5 @@ export const ReservationsScreen = () => {
     </AppLayout>
   );
 };
+
 export default ReservationsScreen;
