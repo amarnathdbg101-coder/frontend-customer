@@ -36,11 +36,12 @@ export const CategoryExplorerModal = ({
         title={isHindi ? 'कैटेगरी चुनें' : 'Choose Category'}
         subtitle={isHindi ? '44 कैटेगरीज उपलब्ध • फ़िल्टर करने के लिए टैप करें' : '44 categories available • Tap to filter products'}
         icon={Folder}
+        iconColor="#0f172a"
         onClose={onClose}
       />
       
       {/* Search Bar */}
-      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-subtle, #e2e8f0)', backgroundColor: 'var(--bg-surface)' }}>
+      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-subtle, #e2e8f0)', backgroundColor: 'var(--bg-surface, #ffffff)' }}>
         <SearchInput
           placeholder={isHindi ? 'कैटेगरी खोजें (उदा. दूध, तेल, आटा, साबुन...)' : 'Search category (e.g. Milk, Oil, Atta, Soap...)'}
           value={searchQuery}
@@ -59,79 +60,60 @@ export const CategoryExplorerModal = ({
             onClose();
           }}
           style={{
-            padding: '14px 16px',
-            borderRadius: '16px',
+            padding: '12px 16px',
+            borderRadius: '12px',
             border: isAllSelected
-              ? '1.5px solid rgba(99, 102, 241, 0.4)'
+              ? '1.5px solid #0f172a'
               : '1px solid var(--border-subtle, #e2e8f0)',
             backgroundColor: isAllSelected
-              ? 'rgba(99, 102, 241, 0.08)'
+              ? 'var(--bg-surface-subtle, #f8fafc)'
               : 'var(--bg-surface, #ffffff)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '14px',
+            gap: '12px',
             transition: 'all 0.15s ease',
           }}
         >
           <div
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              backgroundColor: isAllSelected ? '#6366f1' : 'var(--bg-surface-subtle, #f1f5f9)',
-              color: isAllSelected ? '#ffffff' : '#6366f1',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: isAllSelected ? '#0f172a' : 'var(--bg-surface-subtle, #f1f5f9)',
+              color: isAllSelected ? '#ffffff' : '#0f172a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.2rem',
               flexShrink: 0,
             }}
           >
-            ✨
+            <Sparkles size={18} />
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontSize: '0.94rem',
+                fontSize: '0.92rem',
                 fontWeight: 800,
-                color: isAllSelected ? '#4f46e5' : 'var(--text-primary, #0f172a)',
+                color: isAllSelected ? '#0f172a' : 'var(--text-primary, #0f172a)',
               }}
             >
-              {isHindi ? 'सभी कैटेगरीज (सब कुछ देखें)' : 'All Categories (Show Everything)'}
+              {isHindi ? 'सभी श्रेणियां (Show All)' : 'All Categories'}
             </div>
-            <div
-              style={{
-                fontSize: '0.74rem',
-                color: 'var(--text-secondary, #64748b)',
-                marginTop: '2px',
-              }}
-            >
-              {isHindi ? 'सभी डिपार्टमेंट्स के प्रोडक्ट्स देखें' : 'View all trending products across all departments'}
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px' }}>
+              {isHindi ? 'सभी लोकल दुकानों के प्रोडक्ट्स देखें' : 'Browse all items across all local stores'}
             </div>
           </div>
 
           {isAllSelected && (
-            <div
-              style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                backgroundColor: '#6366f1',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Check size={15} strokeWidth={3} />
+            <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#0f172a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Check size={12} strokeWidth={3} />
             </div>
           )}
         </div>
 
-        {/* 44 Category Items */}
+        {/* Categories List */}
         {filteredCategories.map((cat) => {
           const isSelected =
             selectedCategoryId === cat.id ||
@@ -143,90 +125,55 @@ export const CategoryExplorerModal = ({
             <div
               key={cat.id}
               onClick={() => {
-                onSelectCategory(cat.nameEn);
+                onSelectCategory(cat.id);
                 onClose();
               }}
               style={{
                 padding: '12px 16px',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 border: isSelected
-                  ? '1.5px solid rgba(99, 102, 241, 0.4)'
+                  ? '1.5px solid #0f172a'
                   : '1px solid var(--border-subtle, #e2e8f0)',
                 backgroundColor: isSelected
-                  ? 'rgba(99, 102, 241, 0.08)'
+                  ? 'var(--bg-surface-subtle, #f8fafc)'
                   : 'var(--bg-surface, #ffffff)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '14px',
+                gap: '12px',
                 transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f8fafc)';
-              }}
-              onMouseLeave={(e) => {
-                if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-surface, #ffffff)';
               }}
             >
               <div
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  backgroundColor: cat.color ? cat.color + '22' : 'var(--bg-surface-subtle, #f1f5f9)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.3rem',
+                  fontSize: '1.2rem',
                   flexShrink: 0,
-                  border: '1px solid var(--border-subtle, #f1f5f9)',
                 }}
               >
                 {cat.icon}
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: '0.92rem',
-                    fontWeight: 800,
-                    color: isSelected ? '#4f46e5' : 'var(--text-primary, #0f172a)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                   {isHindi ? cat.nameHi : cat.nameEn}
                 </div>
-                <div
-                  style={{
-                    fontSize: '0.74rem',
-                    color: 'var(--text-secondary, #64748b)',
-                    marginTop: '2px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {isHindi ? cat.descriptionHi : cat.descriptionEn}
-                </div>
+                {(cat.descriptionEn || cat.descriptionHi) && (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {isHindi ? cat.descriptionHi : cat.descriptionEn}
+                  </div>
+                )}
               </div>
 
               {isSelected && (
-                <div
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    backgroundColor: '#6366f1',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Check size={15} strokeWidth={3} />
+                <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#0f172a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Check size={12} strokeWidth={3} />
                 </div>
               )}
             </div>

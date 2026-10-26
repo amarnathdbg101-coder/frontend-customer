@@ -23,7 +23,7 @@ export const FloatingCartBar = () => {
         position: 'fixed',
         left: '50%',
         transform: 'translateX(-50%)',
-        bottom: 'calc(var(--bottom-nav-height, 64px) + var(--safe-area-bottom, 0px) + 10px)',
+        bottom: 'calc(var(--bottom-nav-height, 62px) + var(--safe-area-bottom, 0px) + 10px)',
         width: 'calc(100% - 24px)',
         maxWidth: '480px',
         zIndex: 90,
@@ -36,15 +36,15 @@ export const FloatingCartBar = () => {
         onClick={openCart}
         style={{
           width: '100%',
-          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          backgroundColor: '#0f172a',
           color: '#ffffff',
           border: 'none',
-          borderRadius: '16px',
+          borderRadius: '14px',
           padding: '12px 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
+          boxShadow: '0 8px 20px rgba(15, 23, 42, 0.3)',
           cursor: 'pointer',
           transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         }}
@@ -58,7 +58,7 @@ export const FloatingCartBar = () => {
               width: '34px',
               height: '34px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -91,3 +91,5 @@ export const FloatingCartBar = () => {
     </div>
   );
 };
+
+export default FloatingCartBar;
