@@ -70,7 +70,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const [reservedProduct, setReservedProduct] = useState(null);
   const [reservingId, setReservingId] = useState(null);
 
-  // Fast Autocomplete Suggestions with 150ms debounce (supports single-character input)
+  // Fast Autocomplete Suggestions with 150ms debounce
   useEffect(() => {
     const clean = query.trim();
     if (clean.length < 1) {
@@ -199,7 +199,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
         }
       }
 
-      // If no nearby products found via spatial query (or GPS not provided), fallback to catalog search
       if (list.length === 0) {
         const fallbackRes = await productApi.listProducts({ search: text, q: text, limit: 30 });
         const fallbackList = Array.isArray(fallbackRes?.products)
@@ -213,7 +212,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
       }
     } catch (err) {
       console.error('Multi-shop search error:', err);
-      // Fallback local search
       try {
         const fb = await productApi.listProducts({ search: text, q: text, limit: 20 });
         const fbList = Array.isArray(fb?.products) ? fb.products : (Array.isArray(fb?.data) ? fb.data : []);
@@ -231,7 +229,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
     performSearch();
   };
 
-  // Group search results by product name or normalize list for multi-shop comparison
   const processedResults = useMemo(() => {
     if (!results || results.length === 0) return [];
 
@@ -264,25 +261,21 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
       };
     });
 
-    // Sort based on selected tab
     return normalized.sort((a, b) => {
       if (sortBy === 'cheapest') {
         return a.price - b.price;
       }
-      // 'nearest'
       const distA = a.distance_km != null ? a.distance_km : 999;
       const distB = b.distance_km != null ? b.distance_km : 999;
       return distA - distB;
     });
   }, [results, coords, sortBy, isHindi]);
 
-  // Find minimum price among results to highlight "Lowest Price"
   const minPrice = useMemo(() => {
     if (processedResults.length === 0) return 0;
     return Math.min(...processedResults.map((p) => p.price).filter((p) => p > 0));
   }, [processedResults]);
 
-  // Find nearest distance to highlight "Nearest"
   const nearestDist = useMemo(() => {
     const validDists = processedResults
       .map((p) => p.distance_km)
@@ -291,7 +284,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
     return Math.min(...validDists);
   }, [processedResults]);
 
-  // 1-Tap Reserve from comparison card
   const handleReserve = async (item) => {
     try {
       setReservingId(item.id);
@@ -330,28 +322,30 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="680px" maxHeight="90vh" zIndex={9999}>
       <ModalHeader
-        title={isHindi ? '🔍 सामान कहाँ मिलेगा? (मल्टी-शॉप खोज)' : '🔍 Where is it available? (Multi-Shop Search)'}
+        title={isHindi ? 'सामान कहाँ मिलेगा? (मल्टी-शॉप खोज)' : 'Where is it available? (Multi-Shop Search)'}
         subtitle={isHindi ? 'आस-पास की सभी दुकानों और किराना में लाइव स्टॉक व कीमतें देखें' : 'Compare live stock & prices across all nearby stores'}
         icon={Sparkles}
-        iconColor="#4f46e5"
+        iconColor="#0f172a"
         onClose={onClose}
       />
+
+      <ModalBody padding="0">
         {/* Search Input Bar */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle, #e2e8f0)' }}>
           <form onSubmit={handleSubmit}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                borderRadius: '16px',
-                border: '1.5px solid var(--color-primary, #4f46e5)',
+                borderRadius: '14px',
+                border: '1.5px solid #0f172a',
                 padding: '10px 14px',
                 gap: '10px',
-                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.1)',
+                boxShadow: '0 2px 6px rgba(15, 23, 42, 0.08)',
               }}
             >
-              <Search size={20} color="var(--color-primary)" style={{ flexShrink: 0 }} />
+              <Search size={18} color="#0f172a" style={{ flexShrink: 0 }} />
               <input
                 type="text"
                 autoFocus
@@ -363,9 +357,9 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                   outline: 'none',
                   background: 'transparent',
                   width: '100%',
-                  fontSize: '0.92rem',
+                  fontSize: '0.9rem',
                   fontWeight: 600,
-                  color: 'var(--text-primary)',
+                  color: 'var(--text-primary, #0f172a)',
                 }}
               />
 
@@ -373,7 +367,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
                 >
                   <X size={16} />
                 </button>
@@ -383,8 +377,8 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                 type="button"
                 onClick={handleSpeech}
                 style={{
-                  background: isListening ? '#ef4444' : 'rgba(79, 70, 229, 0.1)',
-                  color: isListening ? '#ffffff' : 'var(--color-primary)',
+                  background: isListening ? '#dc2626' : '#f1f5f9',
+                  color: isListening ? '#ffffff' : '#0f172a',
                   border: 'none',
                   borderRadius: '50%',
                   width: '32px',
@@ -394,7 +388,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   flexShrink: 0,
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.15s ease',
                 }}
                 title={isListening ? 'Listening...' : 'Voice Search'}
               >
@@ -403,7 +397,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
             </div>
           </form>
 
-          {/* Autocomplete Instant Keyword Suggestions Dropdown */}
+          {/* Autocomplete Suggestions */}
           {suggestions.length > 0 && query.trim().length >= 1 && !isSearching && (
             <div
               style={{
@@ -433,448 +427,231 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                     textAlign: 'left',
                     background: 'none',
                     border: 'none',
-                    borderBottom: idx < suggestions.length - 1 ? '1px solid var(--border-subtle, #f1f5f9)' : 'none',
+                    borderBottom: idx < suggestions.length - 1 ? '1px solid #f1f5f9' : 'none',
                     cursor: 'pointer',
                     fontSize: '0.84rem',
                     fontWeight: 600,
                     color: 'var(--text-primary, #0f172a)',
-                    transition: 'background-color 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f8fafc)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
-                  <Search size={14} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+                  <Search size={14} color="#0f172a" style={{ flexShrink: 0 }} />
                   <span>{highlightMatch(s, query)}</span>
                 </button>
               ))}
             </div>
           )}
+        </div>
 
-          {/* Recent Searches Pills (Visible when input is empty) */}
-          {!query.trim() && recentSearches.length > 0 && (
-            <div style={{ marginTop: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={12} /> {isHindi ? 'हाल की खोजें' : 'Recent Searches'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.removeItem(RECENT_SEARCHES_KEY);
-                    setRecentSearches([]);
-                  }}
-                  style={{ background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 600 }}
-                >
-                  {isHindi ? 'हटाएं' : 'Clear All'}
-                </button>
+        {/* Results Body */}
+        <div style={{ padding: '16px 20px', minHeight: '260px' }}>
+          {isSearching ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800 }}>
+                {isHindi ? 'आस-पास की सभी दुकानों में लाइव स्टॉक खोज रहे हैं...' : 'Comparing live prices across all local shops...'}
               </div>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
-                {recentSearches.map((term, i) => (
-                  <span
-                    key={i}
+            </div>
+          ) : reservedProduct ? (
+            <div style={{ textAlign: 'center', padding: '24px 16px', backgroundColor: '#dcfce7', border: '1px solid #86efac', borderRadius: '14px' }}>
+              <CheckCircle size={48} color="#16a34a" style={{ margin: '0 auto 10px auto' }} />
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px 0', color: '#15803d' }}>
+                {isHindi ? '10-सेकंड काउंटर पिकअप पास जनरेटेड!' : 'Pickup Pass Generated!'}
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: '#166534', margin: '0 0 12px 0' }}>
+                {reservedProduct.name} — <strong>{reservedProduct.shopName}</strong>
+              </p>
+              <div style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '3px', color: '#1e40af', backgroundColor: '#eff6ff', border: '1.5px dashed #3b82f6', padding: '10px', borderRadius: '10px', margin: '0 auto 14px auto', maxWidth: '240px' }}>
+                {reservedProduct.code}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setReservedProduct(null);
+                  onClose();
+                  navigate('/reservations');
+                }}
+                style={{ padding: '10px 20px', borderRadius: '10px', backgroundColor: '#0f172a', color: '#ffffff', border: 'none', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                {isHindi ? 'मेरे पिकअप टोकन देखें →' : 'View In My Pickups →'}
+              </button>
+            </div>
+          ) : processedResults.length > 0 ? (
+            <div>
+              {/* Sort Tabs */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary, #475569)' }}>
+                  {processedResults.length} {isHindi ? 'दुकानों में सामान उपलब्ध' : 'Stores Available'}
+                </span>
+
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('nearest')}
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
                       padding: '4px 10px',
-                      borderRadius: '12px',
-                      backgroundColor: 'var(--bg-surface-subtle)',
-                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px',
                       fontSize: '0.74rem',
-                      fontWeight: 700,
-                      color: 'var(--text-primary)',
-                      whiteSpace: 'nowrap',
+                      fontWeight: 800,
+                      border: sortBy === 'nearest' ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                      backgroundColor: sortBy === 'nearest' ? '#0f172a' : '#f8fafc',
+                      color: sortBy === 'nearest' ? '#ffffff' : '#475569',
+                      cursor: 'pointer',
                     }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setQuery(term);
-                        performSearch(term);
+                    {isHindi ? 'समीप (Nearest)' : 'Nearest'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('cheapest')}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      fontSize: '0.74rem',
+                      fontWeight: 800,
+                      border: sortBy === 'cheapest' ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                      backgroundColor: sortBy === 'cheapest' ? '#0f172a' : '#f8fafc',
+                      color: sortBy === 'cheapest' ? '#ffffff' : '#475569',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isHindi ? 'सबसे सस्ता (Cheapest)' : 'Cheapest'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-Shop Result Cards List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {processedResults.map((item) => {
+                  const isLowest = minPrice > 0 && item.price === minPrice;
+                  const isNearest = nearestDist != null && item.distance_km === nearestDist;
+                  const travel = item.distance_km != null ? formatTravelTime(item.distance_km, isHindi) : null;
+
+                  return (
+                    <div
+                      key={`${item.id}_${item.shop_slug}`}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        border: isLowest ? '1.5px solid #16a34a' : '1px solid var(--border-subtle, #e2e8f0)',
+                        backgroundColor: 'var(--bg-surface, #ffffff)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
                       }}
-                      style={{ background: 'none', border: 'none', color: 'inherit', fontWeight: 'inherit', fontSize: 'inherit', cursor: 'pointer', padding: 0 }}
                     >
-                      {term}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecentSearches(removeRecentSearch(term))}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
+                      {/* Left Details */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary, #0f172a)' }}>
+                            {item.shop_name}
+                          </span>
+
+                          {isLowest && (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
+                              ✓ {isHindi ? 'सबसे सस्ता' : 'Cheapest'}
+                            </span>
+                          )}
+
+                          {isNearest && (
+                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
+                              📍 {isHindi ? 'सबसे पास' : 'Nearest'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 600 }}>
+                          {item.name}
+                        </div>
+
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {travel && <span>{travel.full}</span>}
+                          <span>•</span>
+                          <span style={{ color: item.inStock ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
+                            {item.inStock ? (isHindi ? '● स्टॉक में उपलब्ध' : '● In Stock') : (isHindi ? '● आउट ऑफ स्टॉक' : '● Out of Stock')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Price & Actions */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary, #0f172a)' }}>
+                          {formatCurrency(item.price)}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleReserve(item)}
+                            disabled={!item.inStock || reservingId === item.id}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              backgroundColor: '#0f172a',
+                              color: '#ffffff',
+                              border: 'none',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: item.inStock ? 'pointer' : 'not-allowed',
+                              opacity: item.inStock ? 1 : 0.5,
+                            }}
+                          >
+                            {reservingId === item.id ? '...' : (isHindi ? 'रिज़र्व' : 'Reserve')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : searchedOnce ? (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+              <Package size={36} style={{ margin: '0 auto 8px auto', opacity: 0.4 }} />
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {isHindi ? 'कोई सामान नहीं मिला' : 'No Stores Have This Item Right Now'}
+              </div>
+              <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                {isHindi ? 'कृपया स्पेलिंग जांचें या कोई दूसरा सामान खोजें।' : 'Check spelling or search for a different item.'}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Popular Search Suggestions Pills */}
+              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary, #64748b)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                {isHindi ? '🔥 लोकप्रिय खोजें' : 'Popular Searches'}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                {POPULAR_SEARCH_TERMS.map((term, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setQuery(term);
+                      performSearch(term);
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '16px',
+                      backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                      border: '1px solid var(--border-subtle, #e2e8f0)',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: 'var(--text-primary, #0f172a)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {term}
+                  </button>
                 ))}
               </div>
             </div>
           )}
-
-          {/* Popular Fast Search Chips */}
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', marginTop: '10px', paddingBottom: '2px', scrollbarWidth: 'none' }}>
-            {POPULAR_SEARCH_TERMS.map((term, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  const val = isHindi ? term.hi : term.en;
-                  setQuery(val);
-                  performSearch(val);
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-subtle)',
-                  backgroundColor: 'var(--bg-surface)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {isHindi ? term.hi : term.en}
-              </button>
-            ))}
-          </div>
         </div>
-
-        {/* Sort Filter Tabs (Visible when results exist) */}
-        {processedResults.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 20px',
-              backgroundColor: 'var(--bg-surface-subtle)',
-              borderBottom: '1px solid var(--border-subtle)',
-              fontSize: '0.78rem',
-            }}
-          >
-            <span style={{ fontWeight: 800, color: 'var(--text-secondary)' }}>
-              {processedResults.length} {isHindi ? 'दुकानों में उपलब्ध' : 'Stores with Stock'}
-            </span>
-
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => setSortBy('nearest')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  border: sortBy === 'nearest' ? 'none' : '1px solid var(--border-subtle)',
-                  backgroundColor: sortBy === 'nearest' ? 'var(--color-primary)' : 'var(--bg-surface)',
-                  color: sortBy === 'nearest' ? '#ffffff' : 'var(--text-secondary)',
-                  fontWeight: 800,
-                  fontSize: '0.74rem',
-                  cursor: 'pointer',
-                }}
-              >
-                📍 {isHindi ? 'सबसे पास' : 'Nearest First'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSortBy('cheapest')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: '8px',
-                  border: sortBy === 'cheapest' ? 'none' : '1px solid var(--border-subtle)',
-                  backgroundColor: sortBy === 'cheapest' ? 'var(--color-primary)' : 'var(--bg-surface)',
-                  color: sortBy === 'cheapest' ? '#ffffff' : 'var(--text-secondary)',
-                  fontWeight: 800,
-                  fontSize: '0.74rem',
-                  cursor: 'pointer',
-                }}
-              >
-                💰 {isHindi ? 'सबसे सस्ता' : 'Lowest Price'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal Content / Comparison Feed */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-          {/* Reservation Success Card */}
-          {reservedProduct && (
-            <div
-              style={{
-                backgroundColor: '#dcfce7',
-                border: '1.5px solid #86efac',
-                borderRadius: '16px',
-                padding: '16px',
-                marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                gap: '12px',
-                animation: 'fadeIn 0.2s ease',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#15803d', fontWeight: 900, fontSize: '0.94rem' }}>
-                  <CheckCircle size={18} />
-                  <span>{isHindi ? 'सामान सफलतापूर्वक रिजर्व हो गया!' : 'Item Reserved Successfully!'}</span>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#166534', marginTop: '4px' }}>
-                  {reservedProduct.name} • <strong>{reservedProduct.shopName}</strong>
-                </div>
-                <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#ffffff', padding: '4px 10px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                  <span style={{ fontSize: '0.74rem', color: '#15803d', fontWeight: 800 }}>{isHindi ? 'पिकअप टोकन:' : 'Pickup Token:'}</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#15803d', letterSpacing: '1px' }}>{reservedProduct.code}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReservedProduct(null)}
-                style={{ background: 'none', border: 'none', color: '#166534', cursor: 'pointer' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-
-          {isSearching ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-              <Sparkles size={32} className="spin" style={{ margin: '0 auto 10px auto', color: 'var(--color-primary)' }} />
-              <div style={{ fontSize: '0.88rem', fontWeight: 700 }}>
-                {isHindi ? 'आस-पास की सभी दुकानों में स्टॉक जांचा जा रहा है...' : 'Scanning stock across all nearby stores...'}
-              </div>
-            </div>
-          ) : errorMsg ? (
-            <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#b91c1c', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={18} />
-              <span>{errorMsg}</span>
-            </div>
-          ) : searchedOnce && processedResults.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
-              <Package size={48} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                {isHindi ? 'आस-पास की किसी दुकान पर स्टॉक नहीं मिला' : 'No Store Has This Item In Stock Right Now'}
-              </div>
-              <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                {isHindi ? 'कृपया दूसरा नाम टाइप करके खोजें या रेडियस बढ़ाएं।' : 'Try searching for another product name or brand.'}
-              </p>
-            </div>
-          ) : processedResults.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {processedResults.map((item) => {
-                const isCheapest = item.price > 0 && item.price === minPrice;
-                const isNearest = item.distance_km != null && item.distance_km === nearestDist;
-                const travel = formatTravelTime(item.distance_km, isHindi);
-
-                return (
-                  <div
-                    key={`${item.id}-${item.shop_slug || item.shop_name}`}
-                    style={{
-                      borderRadius: '16px',
-                      backgroundColor: 'var(--bg-surface)',
-                      border: isCheapest ? '2px solid #10b981' : '1px solid var(--border-subtle)',
-                      padding: '14px 16px',
-                      boxShadow: isCheapest ? '0 4px 14px rgba(16, 185, 129, 0.12)' : '0 2px 6px rgba(0,0,0,0.03)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '10px',
-                    }}
-                  >
-                    {/* Top Row: Shop Name & Distance Badges */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '1rem' }}>🟢</span>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)' }}>
-                            {item.shop_name}
-                          </div>
-                          {travel && (
-                            <div style={{ fontSize: '0.74rem', color: travel.mode === 'walk' ? '#047857' : '#1d4ed8', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span>{travel.icon}</span>
-                              <span>{travel.full}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Best Value / Nearest Badges */}
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {isCheapest && (
-                          <span
-                            style={{
-                              backgroundColor: '#dcfce7',
-                              color: '#15803d',
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.72rem',
-                              fontWeight: 800,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <TrendingDown size={12} />
-                            <span>{isHindi ? 'सबसे सस्ता' : 'Lowest Price'}</span>
-                          </span>
-                        )}
-
-                        {isNearest && (
-                          <span
-                            style={{
-                              backgroundColor: '#eff6ff',
-                              color: '#1d4ed8',
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.72rem',
-                              fontWeight: 800,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <MapPin size={12} />
-                            <span>{isHindi ? 'सबसे पास' : 'Nearest'}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Middle Row: Product Name, Price & Stock (Clickable to open Product Details) */}
-                    <div
-                      onClick={() => {
-                        onClose();
-                        navigate(`/shop/${item.shop_slug || 'store'}/product/${item.id}`, { state: { product: item } });
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 12px',
-                        backgroundColor: 'var(--bg-surface-subtle)',
-                        borderRadius: '10px',
-                        border: '1px solid var(--border-subtle)',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.15s ease',
-                      }}
-                      title={isHindi ? 'उत्पाद विवरण देखें' : 'View Product Details'}
-                    >
-                      <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
-                        <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {highlightMatch(item.name, query)}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 700, marginTop: '2px' }}>
-                          {item.inStock ? (isHindi ? `✓ स्टॉक में उपलब्ध (${item.stock} यूनिट)` : `✓ In Stock (${item.stock} units)`) : (isHindi ? 'स्टॉक समाप्त' : 'Out of Stock')}
-                        </div>
-                      </div>
-
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-primary)' }}>
-                          {formatCurrency(item.price)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bottom Row: 1-Tap Reserve & Visit Shop Actions */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleReserve(item)}
-                        disabled={reservingId === item.id || !item.inStock}
-                        className="btn btn-primary btn-sm"
-                        style={{
-                          flex: 1.2,
-                          padding: '8px 12px',
-                          fontSize: '0.82rem',
-                          fontWeight: 800,
-                          borderRadius: '10px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <Clock size={14} />
-                        <span>{reservingId === item.id ? (isHindi ? 'रिजर्व हो रहा है...' : 'Reserving...') : (isHindi ? '1-टैप तुरंत रिजर्व करें' : '1-Tap Reserve')}</span>
-                      </button>
-
-                      {item.shop_slug && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onClose();
-                            navigate(`/shop/${item.shop_slug}`);
-                          }}
-                          className="btn btn-secondary btn-sm"
-                          style={{
-                            flex: 1,
-                            padding: '8px 12px',
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            borderRadius: '10px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          <Store size={14} />
-                          <span>{isHindi ? 'दुकान देखें' : 'Visit Shop'}</span>
-                        </button>
-                      )}
-
-                      {item.shop_latitude && item.shop_longitude && (
-                        <a
-                          href={getDirectionsUrl(item.shop_latitude, item.shop_longitude, item.shop_name)}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: '10px',
-                            border: '1px solid var(--border-subtle)',
-                            backgroundColor: 'var(--bg-surface)',
-                            color: 'var(--text-secondary)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textDecoration: 'none',
-                          }}
-                          title={isHindi ? 'गूगल मैप्स रास्ता' : 'Google Maps Directions'}
-                        >
-                          <Navigation size={14} />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* Idle state / instructions */
-            <div style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-secondary)' }}>
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 14px auto',
-                }}
-              >
-                <Search size={30} />
-              </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
-                {isHindi ? 'सामान कहाँ मिलेगा?' : 'Where Can I Find It?'}
-              </h3>
-              <p style={{ fontSize: '0.84rem', lineHeight: 1.5, maxWidth: '380px', margin: '0 auto 20px auto' }}>
-                {isHindi
-                  ? 'किसी भी सामान का नाम ऊपर लिखें। हम आपके आस-पास की सभी दुकानों में लाइव स्टॉक और कीमतों की तुलना करके सबसे नज़दीक और सबसे सस्ती दुकान दिखाएंगे!'
-                  : 'Search any product above to instantly compare live stock and prices across all neighborhood stores!'}
-              </p>
-            </div>
-          )}
-        </div>
+      </ModalBody>
     </BaseModal>
   );
 };
+
 export default SmartSearchModal;
