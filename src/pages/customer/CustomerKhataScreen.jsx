@@ -435,12 +435,12 @@ export const CustomerKhataScreen = () => {
           <div
             className="card"
             style={{
-              background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
+              backgroundColor: '#0f172a',
               color: '#ffffff',
               padding: '20px',
               marginBottom: '16px',
-              borderRadius: 'var(--radius-xl)',
-              boxShadow: '0 10px 25px -5px rgba(49, 46, 129, 0.4)',
+              borderRadius: '16px',
+              boxShadow: '0 4px 16px rgba(15, 23, 42, 0.12)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
