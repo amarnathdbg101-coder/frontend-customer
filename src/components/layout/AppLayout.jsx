@@ -11,11 +11,12 @@ export const AppLayout = ({
   showBack = false,
   hideNav = false,
   showFooter = true,
+  rightAction = null,
 }) => {
   return (
     <div className="app-container">
       {!hideNav && <DesktopNavbar />}
-      <AppHeader title={title} subtitle={subtitle} showBack={showBack} />
+      <AppHeader title={title} subtitle={subtitle} showBack={showBack} rightAction={rightAction} />
       <main className={`app-content ${hideNav ? 'no-bottom-nav' : ''}`}>
         {children}
         {showFooter && <AppFooter />}

@@ -161,7 +161,14 @@ function App() {
                         <Route path="/product/:productId" element={<ProductDetailScreen />} />
 
                         {/* Customer Pickups & Orders */}
-                        <Route path="/reservations" element={<ReservationsScreen />} />
+                        <Route
+                          path="/reservations"
+                          element={
+                            <ProtectedCustomerRoute>
+                              <ReservationsScreen />
+                            </ProtectedCustomerRoute>
+                          }
+                        />
 
                         {/* Customer Khata Passbook & Udhar */}
                         <Route

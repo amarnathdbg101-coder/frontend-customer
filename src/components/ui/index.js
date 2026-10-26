@@ -19,3 +19,4 @@ export {
   SkeletonProductGrid,
   SkeletonShopGrid,
 } from './Skeleton';
+export { OverflowMenu } from './OverflowMenu';

@@ -19,6 +19,11 @@ import {
   Package,
   Navigation,
   Loader2,
+  Compass,
+  RefreshCw,
+  RotateCcw,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -35,13 +40,25 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skeleton';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { OverflowMenu } from '../../components/ui/OverflowMenu';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
+import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
 import { CategoryBar } from '../../components/customer/CategoryBar';
+import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
+import { CuratedShelfDetailView } from '../../components/customer/CuratedShelfDetailView';
+import { DidYouMeanBanner } from '../../components/customer/DidYouMeanBanner';
+import { ZeroDeadEndSearchState } from '../../components/customer/ZeroDeadEndSearchState';
 import { calculateDistanceKm } from '../../utils/distance';
 import { isProductInCategory, isShopInCategory } from '../../utils/categoryMatcher';
+import {
+  getStoredRecentSearches,
+  persistRecentSearch,
+  removeRecentSearch,
+  clearAllRecentSearches,
+} from '../../utils/searchHelpers';
 
 const PAGE_LIMIT = 20;
 
@@ -85,6 +102,7 @@ export const ExploreShopsScreen = () => {
   const [searchTerm, setSearchTerm] = useState(savedExploreState.searchTerm || '');
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
+  const [activeShelf, setActiveShelf] = useState(null); // When user clicks View All / See More on any shelf
   const [sortBy, setSortBy] = useState('relevant');
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [page, setPage] = useState(1);
@@ -118,7 +136,82 @@ export const ExploreShopsScreen = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
 
+  // Autocomplete Suggestions & Voice Search States
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+
   const debouncedSearch = useDebounce(searchTerm, 250);
+
+  // 1-Tap Voice Search for Explore Screen
+  const handleVoiceSearch = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(isHindi ? 'इस ब्राउज़र में वॉइस इनपुट समर्थित नहीं है। कृपया टाइप करके खोजें।' : 'Voice input is not supported in this browser. Please type to search.');
+      return;
+    }
+
+    if (isVoiceListening) {
+      setIsVoiceListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => setIsVoiceListening(true);
+      recognition.onend = () => setIsVoiceListening(false);
+      recognition.onerror = () => setIsVoiceListening(false);
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0]?.[0]?.transcript || '';
+        if (transcript) {
+          setSearchTerm(transcript);
+          setIsSuggestionsOpen(false);
+        }
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.warn('Explore voice search error:', e);
+      setIsVoiceListening(false);
+    }
+  }, [isHindi, isVoiceListening]);
+
+  // Fast Autocomplete Suggestions (150ms debounce)
+  useEffect(() => {
+    const clean = searchTerm.trim();
+    if (clean.length < 2) {
+      setSearchSuggestions([]);
+      setIsLoadingSuggestions(false);
+      return;
+    }
+
+    let active = true;
+    setIsLoadingSuggestions(true);
+    const timer = setTimeout(async () => {
+      try {
+        const list = await productApi.getSearchSuggestions(clean, '', 6);
+        if (active) {
+          setSearchSuggestions(Array.isArray(list) ? list : []);
+        }
+      } catch (e) {
+        if (active) setSearchSuggestions([]);
+      } finally {
+        if (active) setIsLoadingSuggestions(false);
+      }
+    }, 150);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
   // 1. Fetch Shops & Products (SWR 0ms Cache First)
   const loadMarketplaceData = useCallback(async () => {
@@ -265,6 +358,8 @@ export const ExploreShopsScreen = () => {
     }
 
     setIsSearchingServer(true);
+    let active = true;
+
     const timer = setTimeout(async () => {
       try {
         const isCatActive = selectedCategory && selectedCategory !== 'All';
@@ -290,11 +385,13 @@ export const ExploreShopsScreen = () => {
           shopApi.listPublicShops(searchParams).catch(() => shopApi.listPublicShops({ search: clean, q: clean, page: 1, limit: 30 })),
         ]);
 
+        if (!active) return;
+
         let rawProds = prodRes.status === 'fulfilled' ? extractArray(prodRes.value, 'products') : [];
         if (rawProds.length === 0 && (coords?.lat && coords?.lng)) {
           try {
             const fallbackProds = await productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 });
-            rawProds = extractArray(fallbackProds, 'products');
+            if (active) rawProds = extractArray(fallbackProds, 'products');
           } catch (e) {
             console.warn('Fallback products search error:', e);
           }
@@ -304,11 +401,13 @@ export const ExploreShopsScreen = () => {
         if (rawShops.length === 0 && (coords?.lat && coords?.lng)) {
           try {
             const fallbackShops = await shopApi.listPublicShops({ search: clean, q: clean, page: 1, limit: 30 });
-            rawShops = extractArray(fallbackShops, 'shops');
+            if (active) rawShops = extractArray(fallbackShops, 'shops');
           } catch (e) {
             console.warn('Fallback shops search error:', e);
           }
         }
+
+        if (!active) return;
 
         const normalizedProds = rawProds.map((p) => {
           const qty = Number(
@@ -334,14 +433,19 @@ export const ExploreShopsScreen = () => {
 
         setServerSearchResults(normalizedProds);
         setServerShopResults(normalizedShops);
+        // Persist to recent searches
+        setRecentSearches(persistRecentSearch(clean));
       } catch (err) {
         console.warn('Server database search error, keeping instant local results:', err);
       } finally {
-        setIsSearchingServer(false);
+        if (active) setIsSearchingServer(false);
       }
-    }, 300);
+    }, 200);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [searchTerm, selectedCategory, coords?.lat, coords?.lng, radiusKm]);
 
   // 1b. Infinite Scroll Pagination: Fetch next page of products on scroll
@@ -453,11 +557,13 @@ export const ExploreShopsScreen = () => {
 
   // 2. Filter & Sort Products (Location-Aware + Fast Smart Search)
   const filteredProducts = useMemo(() => {
+    const isSearching = Boolean(debouncedSearch.trim());
+    const hasServerResults = Array.isArray(serverSearchResults);
+
     let baseSource;
-    if (debouncedSearch.trim() && Array.isArray(serverSearchResults)) {
-      const seenIds = new Set(serverSearchResults.map((p) => p.id));
-      const localMatches = products.filter((p) => !seenIds.has(p.id));
-      baseSource = [...serverSearchResults, ...localMatches];
+    if (isSearching && hasServerResults) {
+      // Products in serverSearchResults are already matched & ranked by PostgreSQL pg_trgm fuzzy search
+      baseSource = serverSearchResults;
     } else {
       baseSource = Array.isArray(products) ? products : [];
     }
@@ -473,7 +579,8 @@ export const ExploreShopsScreen = () => {
         return false;
       }
 
-      if (debouncedSearch.trim()) {
+      // Only perform client-side substring check if server results are not active yet
+      if (isSearching && !hasServerResults) {
         const query = debouncedSearch.toLowerCase();
         const matchesName = (p.name || '').toLowerCase().includes(query);
         const matchesBrand = (p.attributes?.brand || p.brand || '').toLowerCase().includes(query);
@@ -502,8 +609,10 @@ export const ExploreShopsScreen = () => {
       if (sortBy === 'discount') {
         const mrpA = Number(a.compare_price || a.mrp || 0);
         const mrpB = Number(b.compare_price || b.mrp || 0);
-        const pctA = mrpA > a.price ? ((mrpA - a.price) / mrpA) * 100 : 0;
-        const pctB = mrpB > b.price ? ((mrpB - b.price) / mrpB) * 100 : 0;
+        const priceA = Number(a.price || 0);
+        const priceB = Number(b.price || 0);
+        const pctA = mrpA > priceA && mrpA > 0 ? ((mrpA - priceA) / mrpA) * 100 : 0;
+        const pctB = mrpB > priceB && mrpB > 0 ? ((mrpB - priceB) / mrpB) * 100 : 0;
         return pctB - pctA;
       }
       return 0;
@@ -512,11 +621,12 @@ export const ExploreShopsScreen = () => {
 
   // 3. Filter & Sort Shops
   const filteredShops = useMemo(() => {
+    const isSearching = Boolean(debouncedSearch.trim());
+    const hasServerResults = Array.isArray(serverShopResults);
+
     let baseSource;
-    if (debouncedSearch.trim() && Array.isArray(serverShopResults)) {
-      const seenIds = new Set(serverShopResults.map((s) => s.id));
-      const localMatches = shops.filter((s) => !seenIds.has(s.id));
-      baseSource = [...serverShopResults, ...localMatches];
+    if (isSearching && hasServerResults) {
+      baseSource = serverShopResults;
     } else {
       baseSource = Array.isArray(shops) ? shops : [];
     }
@@ -529,7 +639,8 @@ export const ExploreShopsScreen = () => {
         return false;
       }
 
-      if (debouncedSearch.trim()) {
+      // Only perform client-side substring check if server results are not active yet
+      if (isSearching && !hasServerResults) {
         const query = debouncedSearch.toLowerCase();
         const matchesName = (s.name || '').toLowerCase().includes(query);
         const matchesAddr = (s.address || '').toLowerCase().includes(query);
@@ -556,6 +667,26 @@ export const ExploreShopsScreen = () => {
       return 0;
     });
   }, [shops, serverShopResults, debouncedSearch, selectedCategory, coords, radiusKm, sortBy, showOpenOnly]);
+
+  // Calculate typo/spell correction suggestion
+  const spellCorrection = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (q.length < 3) return null;
+
+    // If direct substring matches exist, no need for correction banner
+    const hasDirectMatch = filteredProducts.some((p) => (p.name || '').toLowerCase().includes(q));
+    if (hasDirectMatch) return null;
+
+    // Check top suggestion
+    if (searchSuggestions.length > 0 && searchSuggestions[0].toLowerCase() !== q) {
+      return searchSuggestions[0];
+    }
+    // Check top returned product from fuzzy search
+    if (filteredProducts.length > 0 && filteredProducts[0].name.toLowerCase() !== q) {
+      return filteredProducts[0].name;
+    }
+    return null;
+  }, [searchTerm, filteredProducts, searchSuggestions]);
 
   const handleReserveFromModal = useCallback(async ({ product, quantity, hold_hours, notes }) => {
     try {
@@ -590,8 +721,80 @@ export const ExploreShopsScreen = () => {
     }
   };
 
+  const exploreMenuItems = useMemo(() => {
+    return [
+      {
+        id: 'toggle_open_only',
+        label: showOpenOnly
+          ? (isHindi ? 'सभी दुकानें दिखाएं' : 'Show All Stores')
+          : (isHindi ? 'सिर्फ खुली दुकानें दिखाएं' : 'Show Open Stores Only'),
+        icon: <span>{showOpenOnly ? '🏪' : '🟢'}</span>,
+        badge: showOpenOnly ? (isHindi ? 'सक्रिय' : 'ON') : null,
+        onClick: () => setShowOpenOnly((prev) => !prev),
+      },
+      { separator: true },
+      {
+        id: 'radius_3',
+        label: isHindi ? 'दायरा: 3 किमी' : 'Radius: 3 km',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 3 ? '✓' : null,
+        onClick: () => setRadiusKm(3),
+      },
+      {
+        id: 'radius_5',
+        label: isHindi ? 'दायरा: 5 किमी' : 'Radius: 5 km',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 5 ? '✓' : null,
+        onClick: () => setRadiusKm(5),
+      },
+      {
+        id: 'radius_10',
+        label: isHindi ? 'दायरा: 10 किमी' : 'Radius: 10 km',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 10 ? '✓' : null,
+        onClick: () => setRadiusKm(10),
+      },
+      {
+        id: 'radius_all',
+        label: isHindi ? 'दायरा: सभी (दूरी सीमा नहीं)' : 'Radius: All (No limit)',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 999 ? '✓' : null,
+        onClick: () => setRadiusKm(999),
+      },
+      { separator: true },
+      {
+        id: 'refresh',
+        label: isHindi ? 'फ़ीड रिफ्रेश करें' : 'Refresh Marketplace',
+        icon: <RefreshCw size={16} color="var(--text-secondary, #64748b)" />,
+        onClick: () => {
+          loadMarketplaceData();
+        },
+      },
+      {
+        id: 'reset',
+        label: isHindi ? 'सभी फ़िल्टर हटाएं' : 'Reset All Filters',
+        icon: <RotateCcw size={16} color="var(--color-danger, #ef4444)" />,
+        danger: true,
+        onClick: () => {
+          setSearchTerm('');
+          setSelectedCategory('All');
+          setShowOpenOnly(false);
+          setSortBy('relevant');
+          setRadiusKm(5);
+        },
+      },
+    ];
+  }, [showOpenOnly, radiusKm, isHindi, loadMarketplaceData]);
+
   return (
-    <AppLayout>
+    <AppLayout
+      rightAction={
+        <OverflowMenu
+          items={exploreMenuItems}
+          ariaLabel={isHindi ? 'मार्केटप्लेस विकल्प' : 'Marketplace options'}
+        />
+      }
+    >
       {/* 1. COMPACT 1-LINE GPS LOCATION & RADIUS CONTROL BAR */}
       <div
         style={{
@@ -680,18 +883,23 @@ export const ExploreShopsScreen = () => {
         </div>
       </div>
 
-      {/* 2. SLEEK SEARCH INPUT BAR */}
-      <div style={{ margin: '6px 0 12px 0' }}>
+      {/* 2. SLEEK SEARCH INPUT BAR WITH LIVE AUTOCOMPLETE & VOICE */}
+      <div style={{ margin: '6px 0 12px 0', position: 'relative' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             backgroundColor: 'var(--bg-surface, #ffffff)',
             borderRadius: '14px',
-            border: '1px solid var(--border-subtle, #cbd5e1)',
+            border: isSuggestionsOpen
+              ? '1.5px solid var(--color-primary, #4f46e5)'
+              : '1px solid var(--border-subtle, #cbd5e1)',
             padding: '8px 12px',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+            boxShadow: isSuggestionsOpen
+              ? '0 0 0 3px rgba(79, 70, 229, 0.12)'
+              : '0 2px 6px rgba(0, 0, 0, 0.03)',
             gap: '8px',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
           }}
         >
           {isSearchingServer ? (
@@ -703,7 +911,19 @@ export const ExploreShopsScreen = () => {
             type="search"
             placeholder={isHindi ? 'दुकानें, सामान या ब्रांड खोजें...' : 'Search local shops, products, brands...'}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setIsSuggestionsOpen(true)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setIsSuggestionsOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setIsSuggestionsOpen(false);
+                if (searchTerm.trim()) {
+                  setRecentSearches(persistRecentSearch(searchTerm.trim()));
+                }
+              }
+            }}
             style={{
               border: 'none',
               outline: 'none',
@@ -721,12 +941,33 @@ export const ExploreShopsScreen = () => {
                 setSearchTerm('');
                 setServerSearchResults(null);
                 setServerShopResults(null);
+                setSearchSuggestions([]);
               }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)' }}
+              title={isHindi ? 'साफ़ करें' : 'Clear'}
             >
               <X size={15} />
             </button>
           )}
+
+          {/* 1-Tap Voice Search */}
+          <button
+            type="button"
+            onClick={handleVoiceSearch}
+            title={isVoiceListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice Search')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px 4px',
+              color: isVoiceListening ? '#ef4444' : 'var(--text-secondary, #64748b)',
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {isVoiceListening ? <MicOff size={16} className="animate-pulse" /> : <Mic size={16} />}
+          </button>
 
           <button
             type="button"
@@ -753,6 +994,28 @@ export const ExploreShopsScreen = () => {
             <span>{isHindi ? 'सामान कहाँ मिलेगा?' : 'Compare Shops'}</span>
           </button>
         </div>
+
+        {/* Live Autocomplete Suggestions Dropdown */}
+        <SearchSuggestionsDropdown
+          isOpen={isSuggestionsOpen}
+          onClose={() => setIsSuggestionsOpen(false)}
+          query={searchTerm}
+          suggestions={searchSuggestions}
+          isLoading={isLoadingSuggestions}
+          onSelectSuggestion={(term) => {
+            setSearchTerm(term);
+            setIsSuggestionsOpen(false);
+            setRecentSearches(persistRecentSearch(term));
+          }}
+          recentSearches={recentSearches}
+          onSelectRecent={(term) => {
+            setSearchTerm(term);
+            setIsSuggestionsOpen(false);
+          }}
+          onRemoveRecent={(term) => setRecentSearches(removeRecentSearch(term))}
+          onClearAllRecent={() => setRecentSearches(clearAllRecentSearches())}
+          isHindi={isHindi}
+        />
       </div>
 
       {/* 3. SLEEK PROMO CAROUSEL */}
@@ -1017,18 +1280,109 @@ export const ExploreShopsScreen = () => {
             <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में सामान खोजा जा रहा है...' : 'Searching database for products...'} />
           </div>
         ) : filteredProducts.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
-            description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
-          />
+          searchTerm.trim() ? (
+            <ZeroDeadEndSearchState
+              query={searchTerm}
+              onSelectPopular={(term) => {
+                setSearchTerm(term);
+                setRecentSearches(persistRecentSearch(term));
+              }}
+              onResetFilters={() => {
+                setSearchTerm('');
+                setSelectedCategory('All');
+              }}
+              isHindi={isHindi}
+            />
+          ) : (
+            <EmptyState
+              icon={Package}
+              title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
+              description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
+            />
+          )
         ) : (
           <>
+            {/* 1. DID YOU MEAN SPELL CORRECTION BANNER */}
+            <DidYouMeanBanner
+              originalQuery={searchTerm}
+              suggestedQuery={spellCorrection}
+              onApplySuggestion={(term) => {
+                setSearchTerm(term);
+                setRecentSearches(persistRecentSearch(term));
+              }}
+              isHindi={isHindi}
+            />
+
+            {activeShelf ? (
+              <CuratedShelfDetailView
+                shelf={activeShelf}
+                onBack={() => setActiveShelf(null)}
+                onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                isProductSaved={isProductSaved}
+                onToggleSave={toggleSaveProduct}
+                isHindi={isHindi}
+              />
+            ) : (
+              <>
+                {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
+                  <CuratedStoreAisles
+                    products={products}
+                    onOpenShelf={(shelfData) => setActiveShelf(shelfData)}
+                    onSelectCategory={(cat) => setSelectedCategory(cat)}
+                    onSelectQuickFilter={() => {}}
+                    onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                    isProductSaved={isProductSaved}
+                    onToggleSave={toggleSaveProduct}
+                    isHindi={isHindi}
+                  />
+                )}
+
+            {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  margin: '18px 0 12px 0',
+                  paddingBottom: '8px',
+                  borderBottom: '1.5px solid var(--border-subtle, #e2e8f0)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Package size={18} color="var(--color-primary, #4f46e5)" />
+                  <h3
+                    style={{
+                      fontSize: '0.98rem',
+                      fontWeight: 800,
+                      margin: 0,
+                      color: 'var(--text-primary, #0f172a)',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {isHindi ? 'सभी उपलब्ध सामान' : 'All Nearby Products'}
+                  </h3>
+                </div>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+                    color: 'var(--text-secondary, #64748b)',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                  }}
+                >
+                  {filteredProducts.length} {isHindi ? 'सामान' : 'items'}
+                </span>
+              </div>
+            )}
+
             <div className="customer-product-grid">
               {filteredProducts.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
+                  highlightQuery={searchTerm}
                   isSaved={isProductSaved(p.id)}
                   onToggleSave={toggleSaveProduct}
                   onClick={() => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
@@ -1091,7 +1445,9 @@ export const ExploreShopsScreen = () => {
             )}
           </>
         )}
-      </div>
+      </>
+    )}
+  </div>
 
       {/* PRODUCT DETAIL MODAL */}
       {inspectedProduct && (

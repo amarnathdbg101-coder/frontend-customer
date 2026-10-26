@@ -154,7 +154,7 @@ export const ALL_CATEGORIES = [
     nameHi: 'ताजी सब्जियां (Vegetables)',
     descriptionEn: 'Fresh vegetables and leafy greens',
     descriptionHi: 'आलू, प्याज, टमाटर, हरी मिर्च व ताजी हरी सब्जियां',
-    icon: '🥦',
+    icon: '🧺',
     color: '#16a34a',
     keywords: ['vegetables', 'potato', 'onion', 'tomato', 'aloo', 'pyaz', 'tamatar', 'sabzi', 'gobhi'],
   },

@@ -14,7 +14,7 @@ import { SideDrawer } from './SideDrawer';
 import { ShopSiloLogo } from '../common/ShopSiloLogo';
 import { sessionState } from '../../utils/sessionState';
 
-export const AppHeader = ({ title, subtitle, showBack = false }) => {
+export const AppHeader = ({ title, subtitle, showBack = false, rightAction = null }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isHindi } = useLanguage();
@@ -75,7 +75,9 @@ export const AppHeader = ({ title, subtitle, showBack = false }) => {
           </div>
         </div>
 
-        <div className="header-actions">
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {rightAction}
+
           {/* Menu Button to Open Side Drawer (Menu Bar) */}
           <button
             type="button"
