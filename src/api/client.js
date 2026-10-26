@@ -11,7 +11,8 @@ import axios from 'axios';
 
 // Backend server URL
 const rawUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
-export const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : 'https://shopsiloapi.shopsilo.in';
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+export const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : (isLocalhost ? 'http://localhost:8080' : 'https://shopsiloapi.shopsilo.in');
 
 const client = axios.create({
   baseURL: API_BASE_URL,
