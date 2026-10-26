@@ -97,7 +97,7 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
         backdropFilter: 'blur(6px)',
         zIndex: 1000,
         display: 'flex',
@@ -107,7 +107,7 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
     >
       <div
         style={{
-          background: 'var(--bg-card)',
+          backgroundColor: 'var(--bg-surface, #ffffff)',
           width: '100%',
           maxWidth: '520px',
           margin: '0 auto',
@@ -117,19 +117,20 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 -8px 30px rgba(0,0,0,0.5)',
-          border: '1px solid var(--border-subtle)',
+          boxShadow: '0 -8px 30px rgba(0,0,0,0.25)',
+          border: '1px solid var(--border-subtle, #e2e8f0)',
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid var(--border-subtle)',
+            borderBottom: '1px solid var(--border-subtle, #e2e8f0)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(168, 85, 247, 0.1))',
+            backgroundColor: '#0f172a',
+            color: '#ffffff',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -138,32 +139,33 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
                 width: '38px',
                 height: '38px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                backgroundColor: '#ffffff',
+                color: '#0f172a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#fff',
-                boxShadow: '0 2px 10px rgba(37, 99, 235, 0.4)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
               }}
             >
-              <Bot size={22} />
+              <Bot size={22} color="#0f172a" />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                Pick Co-Pilot <Sparkles size={14} color="#eab308" />
+              <div style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#ffffff' }}>
+                Pick Shopping Assistant <Sparkles size={14} color="#f59e0b" />
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                 Your Local Shopping Assistant
               </div>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             style={{
-              background: 'transparent',
+              background: 'none',
               border: 'none',
-              color: 'var(--text-muted)',
+              color: '#ffffff',
               cursor: 'pointer',
               padding: '6px',
             }}
@@ -197,11 +199,12 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
                   maxWidth: '85%',
                   padding: '12px 16px',
                   borderRadius: msg.sender === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  background: msg.sender === 'user' ? 'var(--color-primary)' : 'rgba(255,255,255,0.06)',
-                  color: msg.sender === 'user' ? '#fff' : 'var(--text-primary)',
+                  backgroundColor: msg.sender === 'user' ? '#0f172a' : 'var(--bg-surface-subtle, #f8fafc)',
+                  color: msg.sender === 'user' ? '#ffffff' : 'var(--text-primary, #0f172a)',
                   fontSize: '0.88rem',
                   lineHeight: 1.45,
-                  border: msg.sender === 'user' ? 'none' : '1px solid var(--border-subtle)',
+                  fontWeight: 500,
+                  border: msg.sender === 'user' ? 'none' : '1px solid var(--border-subtle, #e2e8f0)',
                 }}
               >
                 {msg.text}
@@ -226,139 +229,134 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
                           margin: 0,
                           padding: '12px',
                           borderRadius: '12px',
-                          border: '1px solid var(--border-subtle)',
+                          border: '1px solid var(--border-subtle, #e2e8f0)',
+                          backgroundColor: 'var(--bg-surface, #ffffff)',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{p.name}</div>
+                            <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '3px' }}>
-                              <span style={{ fontWeight: 800, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
+                              <span style={{ fontWeight: 900, color: '#0f172a', fontSize: '0.95rem' }}>
                                 ₹{p.price}
                               </span>
                               {p.mrp && p.mrp > p.price && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8', textDecoration: 'line-through' }}>
                                   ₹{p.mrp}
                                 </span>
                               )}
                               {p.mrp && p.mrp > p.price && (
-                                <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
-                                  Below MRP
+                                <span style={{ fontSize: '0.7rem', color: '#15803d', fontWeight: 800, backgroundColor: '#dcfce7', padding: '1px 6px', borderRadius: '4px' }}>
+                                  Save ₹{p.mrp - p.price}
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <Store size={12} /> {p.shop_name || p.shop_slug || 'Local Shop'}
-                              {distKm != null && <span>• {formatDistance(distKm)}</span>}
+                            <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Store size={12} color="#0f172a" />
+                              <span>{p.shop_name || 'Local Store'}</span>
+                              {distKm !== null && <span>• {formatDistance(distKm)}</span>}
                             </div>
                           </div>
 
-                          {(() => {
-                            const inStock = Number(p.available_quantity ?? p.stock_quantity ?? p.inventory?.available_quantity ?? p.inventory?.quantity ?? p.stock ?? 0) > 0;
-                            return (
-                              <span
-                                style={{
-                                  fontSize: '0.72rem',
-                                  padding: '3px 8px',
-                                  borderRadius: '6px',
-                                  background: inStock ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                                  color: inStock ? '#10b981' : '#ef4444',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {inStock ? 'In Stock' : 'Out of Stock'}
-                              </span>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Actions */}
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                          {p.shop_latitude && p.shop_longitude && (
-                            <a
-                              href={`https://maps.google.com/?q=${p.shop_latitude},${p.shop_longitude}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                flex: 1,
-                                background: 'rgba(59, 130, 246, 0.1)',
-                                color: '#3b82f6',
-                                padding: '6px',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '4px',
-                                textDecoration: 'none',
-                              }}
-                            >
-                              <Navigation size={12} /> Directions
-                            </a>
-                          )}
-                          {p.shop_slug && (
-                            <button
-                              onClick={() => {
-                                onClose();
-                                navigate(`/shop/${p.shop_slug}`);
-                              }}
-                              style={{
-                                flex: 1,
-                                background: 'var(--color-primary)',
-                                color: '#fff',
-                                border: 'none',
-                                padding: '6px',
-                                borderRadius: '8px',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                              }}
-                            >
-                              View Shop
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } });
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              backgroundColor: '#0f172a',
+                              color: '#ffffff',
+                              border: 'none',
+                              fontSize: '0.76rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            View →
+                          </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               )}
+
+              {/* Shop Cards Result */}
+              {msg.shops && msg.shops.length > 0 && (
+                <div style={{ width: '100%', marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {msg.shops.map((s) => (
+                    <div
+                      key={s.id || s.slug}
+                      style={{
+                        padding: '12px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-subtle, #e2e8f0)',
+                        backgroundColor: 'var(--bg-surface, #ffffff)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>{s.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <MapPin size={11} color="#0f172a" />
+                          <span>{s.address || s.city || 'Local Store'}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          navigate(`/shop/${s.slug}`);
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: '#0f172a',
+                          color: '#ffffff',
+                          border: 'none',
+                          fontSize: '0.76rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Visit Store →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
 
           {searching && (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Sparkles size={14} className="spin" /> Searching nearby physical inventory...
+            <div style={{ fontSize: '0.82rem', color: '#64748b', fontStyle: 'italic', fontWeight: 600 }}>
+              Searching nearby stores for you...
             </div>
           )}
         </div>
 
-        {/* Suggestion Chips */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-            padding: '8px 16px',
-            borderTop: '1px solid var(--border-subtle)',
-            background: 'var(--bg-app)',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {SUGGESTED_QUERIES.map((q, idx) => (
+        {/* Suggested Queries */}
+        <div style={{ padding: '8px 16px', overflowX: 'auto', display: 'flex', gap: '6px', borderTop: '1px solid var(--border-subtle, #e2e8f0)', scrollbarWidth: 'none' }}>
+          {SUGGESTED_QUERIES.map((q, i) => (
             <button
-              key={idx}
+              key={i}
+              type="button"
               onClick={() => handleQuery(q)}
               style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                padding: '5px 12px',
-                borderRadius: '16px',
                 whiteSpace: 'nowrap',
+                padding: '5px 10px',
+                borderRadius: '16px',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                color: 'var(--text-primary, #0f172a)',
+                fontSize: '0.74rem',
+                fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
@@ -375,49 +373,51 @@ export const CustomerCopilotModal = ({ isOpen, onClose }) => {
           }}
           style={{
             padding: '12px 16px',
-            borderTop: '1px solid var(--border-subtle)',
+            borderTop: '1px solid var(--border-subtle, #e2e8f0)',
             display: 'flex',
-            gap: '10px',
-            background: 'var(--bg-card)',
+            gap: '8px',
+            backgroundColor: 'var(--bg-surface, #ffffff)',
           }}
         >
           <input
             type="text"
-            placeholder="Ask Pick... (e.g. cheapest headphones, nearby pharmacy)"
+            placeholder="Ask Pick (e.g., 'In stock Paracetamol near me')..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             style={{
               flex: 1,
-              background: 'var(--bg-app)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '24px',
-              padding: '10px 16px',
-              fontSize: '0.88rem',
-              color: 'var(--text-primary)',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+              color: 'var(--text-primary, #0f172a)',
+              fontSize: '0.86rem',
               outline: 'none',
+              fontWeight: 500,
             }}
           />
           <button
             type="submit"
             disabled={!input.trim() || searching}
             style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '50%',
-              background: 'var(--color-primary)',
-              color: '#fff',
+              padding: '10px 16px',
+              borderRadius: '12px',
+              backgroundColor: '#0f172a',
+              color: '#ffffff',
               border: 'none',
+              cursor: !input.trim() || searching ? 'not-allowed' : 'pointer',
+              opacity: !input.trim() || searching ? 0.5 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: input.trim() ? 'pointer' : 'not-allowed',
-              opacity: input.trim() ? 1 : 0.6,
             }}
           >
-            <Send size={18} />
+            <Send size={16} />
           </button>
         </form>
       </div>
     </div>
   );
 };
+
+export default CustomerCopilotModal;
