@@ -41,7 +41,12 @@ export const SearchSuggestionsDropdown = ({
     if (!isOpen) return;
 
     const handleOutsideClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !e.target.closest('input') &&
+        !e.target.closest('[role="search"]')
+      ) {
         onClose?.();
       }
     };
