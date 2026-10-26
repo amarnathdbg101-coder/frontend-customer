@@ -17,7 +17,7 @@ export function SmartSearchWidget({ onSelectProduct, onClose }) {
 
   const handleSearchChange = async (text) => {
     setQuery(text);
-    if (text.trim().length < 2) {
+    if (text.trim().length < 1) {
       setSuggestions([]);
       return;
     }

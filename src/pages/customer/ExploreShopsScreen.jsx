@@ -183,10 +183,10 @@ export const ExploreShopsScreen = () => {
     }
   }, [isHindi, isVoiceListening]);
 
-  // Fast Autocomplete Suggestions (150ms debounce)
+  // Fast Autocomplete Suggestions (150ms debounce - supports single-character queries)
   useEffect(() => {
     const clean = searchTerm.trim();
-    if (clean.length < 2) {
+    if (clean.length < 1) {
       setSearchSuggestions([]);
       setIsLoadingSuggestions(false);
       return;
@@ -397,6 +397,16 @@ export const ExploreShopsScreen = () => {
           }
         }
 
+        // If category filter was active and produced 0 results, fallback to search across ALL categories so customer never hits a dead end
+        if (rawProds.length === 0 && categoryParam) {
+          try {
+            const globalProds = await productApi.listProducts({ search: clean, q: clean, page: 1, limit: 50 });
+            if (active) rawProds = extractArray(globalProds, 'products');
+          } catch (e) {
+            console.warn('Global products fallback search error:', e);
+          }
+        }
+
         let rawShops = shopRes.status === 'fulfilled' ? extractArray(shopRes.value, 'shops') : [];
         if (rawShops.length === 0 && (coords?.lat && coords?.lng)) {
           try {
@@ -590,7 +600,8 @@ export const ExploreShopsScreen = () => {
       }
 
       if (selectedCategory && selectedCategory !== 'All') {
-        if (!isProductInCategory(p, selectedCategory)) return false;
+        const hasCategoryMatches = baseSource.some((item) => isProductInCategory(item, selectedCategory));
+        if (hasCategoryMatches && !isProductInCategory(p, selectedCategory)) return false;
       }
 
       return true;

@@ -70,10 +70,10 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const [reservedProduct, setReservedProduct] = useState(null);
   const [reservingId, setReservingId] = useState(null);
 
-  // Fast Autocomplete Suggestions with 160ms debounce
+  // Fast Autocomplete Suggestions with 150ms debounce (supports single-character input)
   useEffect(() => {
     const clean = query.trim();
-    if (clean.length < 2) {
+    if (clean.length < 1) {
       setSuggestions([]);
       return;
     }
@@ -84,9 +84,23 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
       } catch {
         setSuggestions([]);
       }
-    }, 160);
+    }, 150);
     return () => clearTimeout(timer);
   }, [query]);
+
+  // Live debounced search as customer types
+  useEffect(() => {
+    const clean = query.trim();
+    if (clean.length < 1) {
+      setResults([]);
+      setSearchedOnce(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      performSearch(clean, false);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [query, coords?.lat, coords?.lng]);
 
   useEffect(() => {
     if (isOpen) {
@@ -144,36 +158,50 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
     }
   };
 
-  const performSearch = async (searchQuery) => {
-    const text = (searchQuery || query).trim();
-    if (!text) return;
+  const performSearch = async (searchQuery, persistToRecent = true) => {
+    const text = (searchQuery ?? query).trim();
+    if (!text) {
+      setResults([]);
+      setSearchedOnce(false);
+      return;
+    }
 
-    persistRecentSearch(text);
-    setRecentSearches(getStoredRecentSearches());
-    setSuggestions([]);
+    if (persistToRecent) {
+      persistRecentSearch(text);
+      setRecentSearches(getStoredRecentSearches());
+      setSuggestions([]);
+    }
 
     try {
       setIsSearching(true);
       setErrorMsg('');
       setSearchedOnce(true);
 
-      const res = await productApi.findNearbyProducts({
-        q: text,
-        lat: coords?.lat,
-        lng: coords?.lng,
-        radius_km: 25,
-        limit: 50,
-      });
+      let list = [];
+      if (coords?.lat && coords?.lng) {
+        try {
+          const res = await productApi.findNearbyProducts({
+            q: text,
+            search: text,
+            lat: coords.lat,
+            lng: coords.lng,
+            radius_km: 25,
+            limit: 50,
+          });
 
-      const list = Array.isArray(res?.products)
-        ? res.products
-        : (Array.isArray(res?.data?.products)
-          ? res.data.products
-          : (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])));
+          list = Array.isArray(res?.products)
+            ? res.products
+            : (Array.isArray(res?.data?.products)
+              ? res.data.products
+              : (Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : [])));
+        } catch (nearbyErr) {
+          console.warn('findNearbyProducts query error, falling back to catalog:', nearbyErr);
+        }
+      }
 
-      // If no nearby products found via spatial query, fallback to catalog search
+      // If no nearby products found via spatial query (or GPS not provided), fallback to catalog search
       if (list.length === 0) {
-        const fallbackRes = await productApi.listProducts({ search: text, limit: 30 });
+        const fallbackRes = await productApi.listProducts({ search: text, q: text, limit: 30 });
         const fallbackList = Array.isArray(fallbackRes?.products)
           ? fallbackRes.products
           : (Array.isArray(fallbackRes?.data?.products)
@@ -187,7 +215,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
       console.error('Multi-shop search error:', err);
       // Fallback local search
       try {
-        const fb = await productApi.listProducts({ search: text, limit: 20 });
+        const fb = await productApi.listProducts({ search: text, q: text, limit: 20 });
         const fbList = Array.isArray(fb?.products) ? fb.products : (Array.isArray(fb?.data) ? fb.data : []);
         setResults(fbList);
       } catch {
@@ -376,7 +404,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
           </form>
 
           {/* Autocomplete Instant Keyword Suggestions Dropdown */}
-          {suggestions.length > 0 && query.trim().length >= 2 && !isSearching && (
+          {suggestions.length > 0 && query.trim().length >= 1 && !isSearching && (
             <div
               style={{
                 marginTop: '8px',

@@ -128,10 +128,10 @@ export const StorefrontScreen = () => {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
 
-  // Fast in-store autocomplete suggestions (scoped to this store's catalog)
+  // Fast in-store autocomplete suggestions (supports single-character input, scoped to this store's catalog)
   useEffect(() => {
     const clean = searchTerm.trim();
-    if (clean.length < 2) {
+    if (clean.length < 1) {
       setSearchSuggestions([]);
       setIsLoadingSuggestions(false);
       return;
@@ -598,9 +598,10 @@ export const StorefrontScreen = () => {
       : (Array.isArray(products) ? products : []);
 
     const list = baseSource.filter((p) => {
-      // Category Filter
+      // Category Filter (Zero dead-end: keep category filter if it has matches, else preserve matching products)
       if (selectedCategory !== 'ALL' && selectedCategory !== 'All') {
-        if (!isProductInCategory(p, selectedCategory)) return false;
+        const hasCategoryMatches = baseSource.some((item) => isProductInCategory(item, selectedCategory));
+        if (hasCategoryMatches && !isProductInCategory(p, selectedCategory)) return false;
       }
 
       // Quick Filter (Price & Deals)
