@@ -44,6 +44,63 @@ import { formatCurrency } from '../../utils/format';
 import { getImageUrl } from '../../utils/imageUrl';
 import { BaseModal, ModalHeader, ModalBody, Button } from '../ui';
 
+const RECENT_SEARCHES_KEY = 'shopsilo_recent_searches';
+
+function getStoredRecentSearches() {
+  try {
+    const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistRecentSearch(term) {
+  if (!term || !term.trim()) return;
+  try {
+    const clean = term.trim();
+    const existing = getStoredRecentSearches().filter((t) => t.toLowerCase() !== clean.toLowerCase());
+    const updated = [clean, ...existing].slice(0, 6);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
+function removeRecentSearch(term) {
+  try {
+    const existing = getStoredRecentSearches().filter((t) => t !== term);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(existing));
+    return existing;
+  } catch {
+    return [];
+  }
+}
+
+function highlightMatch(text, query) {
+  if (!query || !query.trim() || !text) return text;
+  const parts = query.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return text;
+  const regex = new RegExp(`(${parts.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+  const splitText = text.split(regex);
+  return splitText.map((chunk, idx) =>
+    regex.test(chunk) ? (
+      <mark
+        key={idx}
+        style={{
+          backgroundColor: 'rgba(234, 179, 8, 0.32)',
+          color: 'inherit',
+          fontWeight: 800,
+          padding: '0 2px',
+          borderRadius: '3px',
+        }}
+      >
+        {chunk}
+      </mark>
+    ) : (
+      chunk
+    )
+  );
+}
+
 const POPULAR_SEARCH_TERMS = [
   { en: 'Fortune Sunlite Oil 1L', hi: 'फॉर्च्यून तेल 1L' },
   { en: 'Amul Taaza Milk 500ml', hi: 'अमूल ताज़ा दूध' },
@@ -60,6 +117,8 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const { addItem, openCart } = useCart();
 
   const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
   const [isListening, setIsListening] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState([]);
@@ -69,14 +128,34 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const [reservedProduct, setReservedProduct] = useState(null);
   const [reservingId, setReservingId] = useState(null);
 
+  // Fast Autocomplete Suggestions with 160ms debounce
+  useEffect(() => {
+    const clean = query.trim();
+    if (clean.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const list = await productApi.getSearchSuggestions(clean, '', 5);
+        setSuggestions(list || []);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 160);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   useEffect(() => {
     if (isOpen) {
+      setRecentSearches(getStoredRecentSearches());
       if (initialQuery) {
         setQuery(initialQuery);
         performSearch(initialQuery);
       }
     } else {
       setQuery('');
+      setSuggestions([]);
       setResults([]);
       setSearchedOnce(false);
       setErrorMsg('');
@@ -126,6 +205,10 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const performSearch = async (searchQuery) => {
     const text = (searchQuery || query).trim();
     if (!text) return;
+
+    persistRecentSearch(text);
+    setRecentSearches(getStoredRecentSearches());
+    setSuggestions([]);
 
     try {
       setIsSearching(true);
@@ -349,6 +432,112 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
               </button>
             </div>
           </form>
+
+          {/* Autocomplete Instant Keyword Suggestions Dropdown */}
+          {suggestions.length > 0 && query.trim().length >= 2 && !isSearching && (
+            <div
+              style={{
+                marginTop: '8px',
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '12px',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+                overflow: 'hidden',
+              }}
+            >
+              {suggestions.map((s, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setQuery(s);
+                    setSuggestions([]);
+                    performSearch(s);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '9px 14px',
+                    textAlign: 'left',
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: idx < suggestions.length - 1 ? '1px solid var(--border-subtle, #f1f5f9)' : 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.84rem',
+                    fontWeight: 600,
+                    color: 'var(--text-primary, #0f172a)',
+                    transition: 'background-color 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-surface-subtle, #f8fafc)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                >
+                  <Search size={14} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+                  <span>{highlightMatch(s, query)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Recent Searches Pills (Visible when input is empty) */}
+          {!query.trim() && recentSearches.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={12} /> {isHindi ? 'हाल की खोजें' : 'Recent Searches'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem(RECENT_SEARCHES_KEY);
+                    setRecentSearches([]);
+                  }}
+                  style={{ background: 'none', border: 'none', fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {isHindi ? 'हटाएं' : 'Clear All'}
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
+                {recentSearches.map((term, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      backgroundColor: 'var(--bg-surface-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery(term);
+                        performSearch(term);
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'inherit', fontWeight: 'inherit', fontSize: 'inherit', cursor: 'pointer', padding: 0 }}
+                    >
+                      {term}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecentSearches(removeRecentSearch(term))}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Popular Fast Search Chips */}
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', marginTop: '10px', paddingBottom: '2px', scrollbarWidth: 'none' }}>
@@ -598,7 +787,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                     >
                       <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
                         <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {item.name}
+                          {highlightMatch(item.name, query)}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 700, marginTop: '2px' }}>
                           {item.inStock ? (isHindi ? `✓ स्टॉक में उपलब्ध (${item.stock} यूनिट)` : `✓ In Stock (${item.stock} units)`) : (isHindi ? 'स्टॉक समाप्त' : 'Out of Stock')}

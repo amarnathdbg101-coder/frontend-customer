@@ -90,6 +90,19 @@ export const productApi = {
     return res.data || res;
   },
 
+  // Public: Fast autocomplete search suggestions
+  getSearchSuggestions: async (query, shopId = '', limit = 5) => {
+    if (!query || !query.trim()) return [];
+    try {
+      const res = await client.get('/products/search/suggestions', {
+        params: { q: query.trim(), shop_id: shopId, limit },
+      });
+      return res.data?.data?.suggestions || res.data?.suggestions || [];
+    } catch {
+      return [];
+    }
+  },
+
   // Public: Categories list
   getCategories: async () => {
     const res = await client.get('/categories');
