@@ -34,6 +34,7 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
+import { CuratedShelfDetailView } from '../../components/customer/CuratedShelfDetailView';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
@@ -109,6 +110,7 @@ export const StorefrontScreen = () => {
 
   // Curated Aisles Discovery Mode vs All Products Grid Mode
   const [browseMode, setBrowseMode] = useState('aisles'); // 'aisles' | 'grid'
+  const [activeShelf, setActiveShelf] = useState(null); // When user clicks "View All" on any shelf
   const [isListening, setIsListening] = useState(false);
 
   // 1-Tap Voice Search for Storefront
@@ -1089,8 +1091,36 @@ export const StorefrontScreen = () => {
         </div>
       )}
 
-      {/* 2. In-Store Search & Sorting Bar */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+      {/* If a curated shelf is open (via View All / See More), show dedicated collection view */}
+      {activeShelf ? (
+        <CuratedShelfDetailView
+          shelf={activeShelf}
+          onBack={() => setActiveShelf(null)}
+          onProductClick={(p) => {
+            const enriched = {
+              ...p,
+              shop_name: p.shop_name || shop?.name,
+              shop_slug: p.shop_slug || shop?.slug,
+              shop_address: p.shop_address || shop?.address,
+              shop_city: p.shop_city || shop?.city,
+              shop_phone: p.shop_phone || shop?.phone,
+              shop_latitude: p.shop_latitude || shop?.latitude,
+              shop_longitude: p.shop_longitude || shop?.longitude,
+            };
+            navigate(`/shop/${shop?.slug || p.shop_slug || 'store'}/product/${p.id}`, {
+              state: { product: enriched, shop },
+            });
+          }}
+          isProductSaved={isProductSaved}
+          onToggleSave={toggleSaveProduct}
+          shopName={shop?.name}
+          shopSlug={shop?.slug}
+          isHindi={isHindi}
+        />
+      ) : (
+        <>
+          {/* 2. In-Store Search & Sorting Bar */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
         <div style={{ flex: 1 }}>
           <SearchInput
             placeholder={isHindi ? `${shop?.name || 'दुकान'} में सामान खोजें...` : `Search inside ${shop?.name || 'store'}...`}
@@ -1516,6 +1546,7 @@ export const StorefrontScreen = () => {
           {browseMode === 'aisles' && searchTerm.trim() === '' && selectedCategory === 'ALL' && quickFilter === 'ALL' && (
             <CuratedStoreAisles
               products={products}
+              onOpenShelf={(shelfData) => setActiveShelf(shelfData)}
               onSelectCategory={(cat) => {
                 setSelectedCategory(cat);
                 setBrowseMode('grid');
@@ -1678,6 +1709,8 @@ export const StorefrontScreen = () => {
           )}
         </>
       )}
+    </>
+  )}
 
       {/* 6. Shop Reviews Section */}
       {shop && <ShopReviewsSection shopSlug={shop.slug} shopName={shop.name} />}

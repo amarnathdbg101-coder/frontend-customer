@@ -45,6 +45,7 @@ import { CategoryExplorerModal } from '../../components/customer/CategoryExplore
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
 import { CategoryBar } from '../../components/customer/CategoryBar';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
+import { CuratedShelfDetailView } from '../../components/customer/CuratedShelfDetailView';
 import { calculateDistanceKm } from '../../utils/distance';
 import { isProductInCategory, isShopInCategory } from '../../utils/categoryMatcher';
 
@@ -90,6 +91,7 @@ export const ExploreShopsScreen = () => {
   const [searchTerm, setSearchTerm] = useState(savedExploreState.searchTerm || '');
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
+  const [activeShelf, setActiveShelf] = useState(null); // When user clicks View All / See More on any shelf
   const [sortBy, setSortBy] = useState('relevant');
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [page, setPage] = useState(1);
@@ -1103,17 +1105,29 @@ export const ExploreShopsScreen = () => {
           />
         ) : (
           <>
-            {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
-              <CuratedStoreAisles
-                products={products}
-                onSelectCategory={(cat) => setSelectedCategory(cat)}
-                onSelectQuickFilter={() => {}}
+            {activeShelf ? (
+              <CuratedShelfDetailView
+                shelf={activeShelf}
+                onBack={() => setActiveShelf(null)}
                 onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
                 isProductSaved={isProductSaved}
                 onToggleSave={toggleSaveProduct}
                 isHindi={isHindi}
               />
-            )}
+            ) : (
+              <>
+                {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
+                  <CuratedStoreAisles
+                    products={products}
+                    onOpenShelf={(shelfData) => setActiveShelf(shelfData)}
+                    onSelectCategory={(cat) => setSelectedCategory(cat)}
+                    onSelectQuickFilter={() => {}}
+                    onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                    isProductSaved={isProductSaved}
+                    onToggleSave={toggleSaveProduct}
+                    isHindi={isHindi}
+                  />
+                )}
 
             {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
               <div
@@ -1222,7 +1236,9 @@ export const ExploreShopsScreen = () => {
             )}
           </>
         )}
-      </div>
+      </>
+    )}
+  </div>
 
       {/* PRODUCT DETAIL MODAL */}
       {inspectedProduct && (
