@@ -19,6 +19,9 @@ import {
   Package,
   Navigation,
   Loader2,
+  Compass,
+  RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -35,6 +38,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { SkeletonProductGrid, SkeletonShopGrid } from '../../components/ui/Skeleton';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { OverflowMenu } from '../../components/ui/OverflowMenu';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
@@ -502,8 +506,10 @@ export const ExploreShopsScreen = () => {
       if (sortBy === 'discount') {
         const mrpA = Number(a.compare_price || a.mrp || 0);
         const mrpB = Number(b.compare_price || b.mrp || 0);
-        const pctA = mrpA > a.price ? ((mrpA - a.price) / mrpA) * 100 : 0;
-        const pctB = mrpB > b.price ? ((mrpB - b.price) / mrpB) * 100 : 0;
+        const priceA = Number(a.price || 0);
+        const priceB = Number(b.price || 0);
+        const pctA = mrpA > priceA && mrpA > 0 ? ((mrpA - priceA) / mrpA) * 100 : 0;
+        const pctB = mrpB > priceB && mrpB > 0 ? ((mrpB - priceB) / mrpB) * 100 : 0;
         return pctB - pctA;
       }
       return 0;
@@ -590,8 +596,80 @@ export const ExploreShopsScreen = () => {
     }
   };
 
+  const exploreMenuItems = useMemo(() => {
+    return [
+      {
+        id: 'toggle_open_only',
+        label: showOpenOnly
+          ? (isHindi ? 'सभी दुकानें दिखाएं' : 'Show All Stores')
+          : (isHindi ? 'सिर्फ खुली दुकानें दिखाएं' : 'Show Open Stores Only'),
+        icon: <span>{showOpenOnly ? '🏪' : '🟢'}</span>,
+        badge: showOpenOnly ? (isHindi ? 'सक्रिय' : 'ON') : null,
+        onClick: () => setShowOpenOnly((prev) => !prev),
+      },
+      { separator: true },
+      {
+        id: 'radius_3',
+        label: isHindi ? 'दायरा: 3 किमी' : 'Radius: 3 km',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 3 ? '✓' : null,
+        onClick: () => setRadiusKm(3),
+      },
+      {
+        id: 'radius_5',
+        label: isHindi ? 'दायरा: 5 किमी' : 'Radius: 5 km',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 5 ? '✓' : null,
+        onClick: () => setRadiusKm(5),
+      },
+      {
+        id: 'radius_10',
+        label: isHindi ? 'दायरा: 10 किमी' : 'Radius: 10 km',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 10 ? '✓' : null,
+        onClick: () => setRadiusKm(10),
+      },
+      {
+        id: 'radius_all',
+        label: isHindi ? 'दायरा: सभी (दूरी सीमा नहीं)' : 'Radius: All (No limit)',
+        icon: <Compass size={16} color="var(--color-primary, #4f46e5)" />,
+        badge: radiusKm === 999 ? '✓' : null,
+        onClick: () => setRadiusKm(999),
+      },
+      { separator: true },
+      {
+        id: 'refresh',
+        label: isHindi ? 'फ़ीड रिफ्रेश करें' : 'Refresh Marketplace',
+        icon: <RefreshCw size={16} color="var(--text-secondary, #64748b)" />,
+        onClick: () => {
+          loadMarketplaceData();
+        },
+      },
+      {
+        id: 'reset',
+        label: isHindi ? 'सभी फ़िल्टर हटाएं' : 'Reset All Filters',
+        icon: <RotateCcw size={16} color="var(--color-danger, #ef4444)" />,
+        danger: true,
+        onClick: () => {
+          setSearchTerm('');
+          setSelectedCategory('All');
+          setShowOpenOnly(false);
+          setSortBy('relevant');
+          setRadiusKm(5);
+        },
+      },
+    ];
+  }, [showOpenOnly, radiusKm, isHindi, loadMarketplaceData]);
+
   return (
-    <AppLayout>
+    <AppLayout
+      rightAction={
+        <OverflowMenu
+          items={exploreMenuItems}
+          ariaLabel={isHindi ? 'मार्केटप्लेस विकल्प' : 'Marketplace options'}
+        />
+      }
+    >
       {/* 1. COMPACT 1-LINE GPS LOCATION & RADIUS CONTROL BAR */}
       <div
         style={{

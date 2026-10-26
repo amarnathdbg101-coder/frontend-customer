@@ -16,6 +16,8 @@
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
 }
 
 .product-card-image-box {
@@ -181,6 +183,8 @@
   justify-content: space-between;
   gap: 12px;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 280px;
 }
 
 .shop-card-banner {

@@ -14,7 +14,7 @@ import { localCache, CACHE_KEYS } from '../utils/localCache';
 import { cacheEvents, CACHE_EVENTS } from '../utils/cacheEvents';
 
 export const useRealtimeStorefront = (slug, options = {}) => {
-  const { onProductMutated, onStockChanged, onShopStatusChanged } = options;
+  const { onProductMutated, onStockChanged, onShopStatusChanged, onOfferMutated } = options;
   const [isConnected, setIsConnected] = useState(false);
 
   const wsRef = useRef(null);
@@ -119,24 +119,31 @@ export const useRealtimeStorefront = (slug, options = {}) => {
 
             case 'STOCK_CHANGED': {
               const prodId = payload.product_id || payload.id;
-              const newStock = Number(payload.stock ?? 0);
+              if (!prodId) break;
 
-              const cached = localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug));
-              if (Array.isArray(cached) && prodId) {
-                const idx = cached.findIndex((p) => (p.id || p.product_id) === prodId);
-                if (idx >= 0) {
-                  const updatedList = [...cached];
-                  updatedList[idx] = {
-                    ...updatedList[idx],
-                    stock_quantity: newStock,
-                    available_quantity: newStock,
-                  };
-                  localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), updatedList);
+              if (payload.stock !== undefined && payload.stock !== null) {
+                const newStock = Number(payload.stock);
+
+                const cached = localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug));
+                if (Array.isArray(cached)) {
+                  const idx = cached.findIndex((p) => (p.id || p.product_id) === prodId);
+                  if (idx >= 0) {
+                    const updatedList = [...cached];
+                    updatedList[idx] = {
+                      ...updatedList[idx],
+                      stock_quantity: newStock,
+                      available_quantity: newStock,
+                    };
+                    localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), updatedList);
+                  }
                 }
-              }
 
-              callbacksRef.current.onStockChanged?.(payload);
-              cacheEvents.emit(CACHE_EVENTS.STOREFRONT_MUTATED, { slug, payload });
+                callbacksRef.current.onStockChanged?.({ ...payload, stock: newStock });
+                cacheEvents.emit(CACHE_EVENTS.STOREFRONT_MUTATED, { slug, payload });
+              } else {
+                // If stock number is omitted, trigger SWR background revalidation instead of resetting to 0
+                cacheEvents.emit(CACHE_EVENTS.STOREFRONT_MUTATED, { slug, payload });
+              }
               break;
             }
 
@@ -149,6 +156,12 @@ export const useRealtimeStorefront = (slug, options = {}) => {
 
               callbacksRef.current.onShopStatusChanged?.(payload);
               cacheEvents.emit(CACHE_EVENTS.STOREFRONT_MUTATED, { slug, payload });
+              break;
+            }
+
+            case 'OFFER_MUTATED': {
+              callbacksRef.current.onOfferMutated?.(payload);
+              cacheEvents.emit('OFFER_MUTATED', { slug, payload });
               break;
             }
 

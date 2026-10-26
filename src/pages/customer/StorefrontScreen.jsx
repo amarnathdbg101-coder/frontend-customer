@@ -11,9 +11,16 @@ import {
   Sparkles,
   ChevronRight,
   Filter,
+  Share2,
+  Info,
+  PhoneCall,
+  Compass,
+  RefreshCw,
+  Tag,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
+import { dealsApi } from '../../api/deals.api';
 import { reservationApi } from '../../api/reservation.api';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
@@ -30,7 +37,7 @@ import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../u
 import { isProductInCategory } from '../../utils/categoryMatcher';
 import { getImageUrl } from '../../utils/imageUrl';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
-import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState } from '../../components/ui';
+import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState, OverflowMenu } from '../../components/ui';
 
 const PAGE_LIMIT = 20;
 
@@ -83,6 +90,11 @@ export const StorefrontScreen = () => {
   const [serverSearchResults, setServerSearchResults] = useState(null);
   const [isSearchingServer, setIsSearchingServer] = useState(false);
 
+  // Live Storefront Offers States
+  const [offers, setOffers] = useState([]);
+  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [copiedPromo, setCopiedPromo] = useState('');
+
   // Infinite Scroll & Pagination States
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -91,7 +103,24 @@ export const StorefrontScreen = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 
-  // Live Storefront Real-Time Synchronization Engine
+  // Fetch Live Day-Wise Offers for Storefront
+  const fetchOffers = useCallback(async () => {
+    if (!slug) return;
+    try {
+      setLoadingOffers(true);
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const currentDay = days[new Date().getDay()];
+      const res = await dealsApi.getShopOffers(slug, currentDay);
+      const list = extractArray(res, 'offers');
+      setOffers(list);
+    } catch (err) {
+      console.warn('[StorefrontScreen] Failed to fetch offers:', err);
+    } finally {
+      setLoadingOffers(false);
+    }
+  }, [slug]);
+
+  // Live Storefront Real-Time Synchronization Engine (<15ms WebSocket push)
   useRealtimeStorefront(slug, {
     onProductMutated: (payload) => {
       const prodId = payload.id || payload.product_id;
@@ -120,6 +149,9 @@ export const StorefrontScreen = () => {
     },
     onShopStatusChanged: (payload) => {
       setShop((prev) => (prev ? { ...prev, ...payload } : prev));
+    },
+    onOfferMutated: () => {
+      fetchOffers();
     },
   });
 
@@ -221,6 +253,7 @@ export const StorefrontScreen = () => {
   useEffect(() => {
     if (slug) {
       loadShopAndProducts();
+      fetchOffers();
 
       const unsub = cacheEvents.on(CACHE_EVENTS.STOREFRONT_MUTATED, (payload) => {
         if (!payload || !payload.slug || payload.slug === slug) {
@@ -228,9 +261,18 @@ export const StorefrontScreen = () => {
         }
       });
 
-      return () => unsub();
+      const unsubOffer = cacheEvents.on('OFFER_MUTATED', (payload) => {
+        if (!payload || !payload.slug || payload.slug === slug) {
+          fetchOffers();
+        }
+      });
+
+      return () => {
+        unsub();
+        unsubOffer();
+      };
     }
-  }, [slug, loadShopAndProducts]);
+  }, [slug, loadShopAndProducts, fetchOffers]);
 
   // 2. Infinite Scroll: Fetch Next Page of Filtered Products for this Shop from Database
   const loadMoreProducts = useCallback(async () => {
@@ -484,8 +526,10 @@ export const StorefrontScreen = () => {
       if (sortBy === 'discount') {
         const mrpA = Number(a.compare_price || a.mrp || 0);
         const mrpB = Number(b.compare_price || b.mrp || 0);
-        const pctA = mrpA > a.price ? ((mrpA - a.price) / mrpA) * 100 : 0;
-        const pctB = mrpB > b.price ? ((mrpB - b.price) / mrpB) * 100 : 0;
+        const priceA = Number(a.price || 0);
+        const priceB = Number(b.price || 0);
+        const pctA = mrpA > priceA && mrpA > 0 ? ((mrpA - priceA) / mrpA) * 100 : 0;
+        const pctB = mrpB > priceB && mrpB > 0 ? ((mrpB - priceB) / mrpB) * 100 : 0;
         return pctB - pctA;
       }
       return 0;
@@ -520,10 +564,80 @@ export const StorefrontScreen = () => {
   const distKm = shop?.latitude && shop?.longitude
     ? calculateDistanceKm(coords?.lat, coords?.lng, shop.latitude, shop.longitude)
     : null;
-  const travelInfo = distKm !== null ? formatTravelTime(distKm, isHindi) : null;
+  const storefrontMenuItems = useMemo(() => {
+    if (!shop) return [];
+    return [
+      {
+        id: 'share',
+        label: isHindi ? 'दुकान लिंक शेयर करें' : 'Share Store Link',
+        icon: <Share2 size={16} color="var(--color-primary, #2563eb)" />,
+        onClick: () => {
+          const url = window.location.href;
+          if (navigator.share) {
+            navigator.share({ title: shop.name, url }).catch(() => {});
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(url);
+            alert(isHindi ? 'दुकान का लिंक कॉपी हो गया!' : 'Store link copied to clipboard!');
+          }
+        },
+      },
+      {
+        id: 'info',
+        label: isHindi ? 'दुकान की जानकारी व समय' : 'Store Info & Timings',
+        icon: <Info size={16} color="#0284c7" />,
+        onClick: () => setShowShopDetailModal(true),
+      },
+      ...(shop.phone
+        ? [
+            {
+              id: 'call',
+              label: isHindi ? 'दुकानदार को कॉल करें' : 'Call Store',
+              icon: <PhoneCall size={16} color="#16a34a" />,
+              onClick: () => {
+                window.location.href = `tel:${shop.phone}`;
+              },
+            },
+          ]
+        : []),
+      ...(shop.latitude && shop.longitude
+        ? [
+            {
+              id: 'directions',
+              label: isHindi ? 'गूगल मैप्स पर रास्ता देखें' : 'Get Directions (Maps)',
+              icon: <Compass size={16} color="#ea580c" />,
+              onClick: () => {
+                const url = getDirectionsUrl(shop.latitude, shop.longitude, shop.name);
+                window.open(url, '_blank', 'noopener,noreferrer');
+              },
+            },
+          ]
+        : []),
+      { separator: true },
+      {
+        id: 'refresh',
+        label: isHindi ? 'कैटलॉग रिफ्रेश करें' : 'Refresh Catalog',
+        icon: <RefreshCw size={16} color="var(--text-secondary, #64748b)" />,
+        onClick: () => {
+          localCache.remove(CACHE_KEYS.STOREFRONT_PRODUCTS(slug));
+          loadShopAndProducts();
+        },
+      },
+    ];
+  }, [shop, isHindi, slug, loadShopAndProducts]);
 
   return (
-    <AppLayout title={shop?.name || t('nav.explore')} showBack={true}>
+    <AppLayout
+      title={shop?.name || t('nav.explore')}
+      showBack={true}
+      rightAction={
+        shop ? (
+          <OverflowMenu
+            items={storefrontMenuItems}
+            ariaLabel={isHindi ? 'दुकान विकल्प' : 'Store options'}
+          />
+        ) : null
+      }
+    >
       {/* 1. Sleek Shop Header Card */}
       {shop && (
         <div
@@ -617,6 +731,286 @@ export const StorefrontScreen = () => {
               {totalProductCount || products.length} {isHindi ? 'सामान' : 'Items'}
             </span>
             <ChevronRight size={18} color="var(--text-secondary, #94a3b8)" />
+          </div>
+        </div>
+      )}
+
+      {/* 1b. Live Day-Wise Offers & Deals Banner Carousel (<15ms Real-Time Push) */}
+      {offers && offers.length > 0 && (
+        <div style={{ marginBottom: '14px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '8px',
+              padding: '0 2px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fee2e2',
+                  color: '#dc2626',
+                  fontSize: '11px',
+                }}
+              >
+                ⚡
+              </span>
+              <span
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  color: 'var(--text-primary, #0f172a)',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {isHindi ? 'दुकान के लाइव ऑफर्स व छूट' : 'Live Store Offers & Deals'}
+              </span>
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  backgroundColor: '#dcfce7',
+                  color: '#166534',
+                  padding: '2px 7px',
+                  borderRadius: '12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: '#16a34a',
+                    display: 'inline-block',
+                  }}
+                />
+                LIVE
+              </span>
+            </div>
+
+            <span
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--text-secondary, #64748b)',
+                fontWeight: 600,
+              }}
+            >
+              {offers.length} {offers.length === 1 ? (isHindi ? 'ऑफर' : 'Offer') : (isHindi ? 'ऑफ़र' : 'Offers')}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '10px',
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              paddingBottom: '4px',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {offers.map((offer) => {
+              const isFlat = offer.discount_type === 'flat';
+              const hasMinOrder = Number(offer.min_order_amount || 0) > 0;
+              const hasPromo = Boolean(offer.promo_code);
+
+              return (
+                <div
+                  key={offer.id}
+                  style={{
+                    flex: '0 0 min(280px, 82vw)',
+                    scrollSnapAlign: 'start',
+                    background: 'linear-gradient(135deg, var(--bg-card, #ffffff) 0%, var(--bg-surface-subtle, #f8fafc) 100%)',
+                    borderRadius: '16px',
+                    border: '1.5px solid var(--border-subtle, #e2e8f0)',
+                    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
+                    padding: '14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '3px',
+                      background: 'linear-gradient(90deg, #2563eb 0%, #7c3aed 50%, #db2777 100%)',
+                    }}
+                  />
+
+                  <div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '6px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          color: '#ffffff',
+                          backgroundColor: '#16a34a',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
+                        {offer.discount_text || (isFlat ? `₹${offer.discount_value} OFF` : `${offer.discount_value}% OFF`)}
+                      </span>
+
+                      {offer.banner_tag && (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            color: '#2563eb',
+                            backgroundColor: '#eff6ff',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            border: '1px solid #bfdbfe',
+                          }}
+                        >
+                          {offer.banner_tag}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4
+                      style={{
+                        fontSize: '0.92rem',
+                        fontWeight: 800,
+                        margin: '0 0 4px 0',
+                        color: 'var(--text-primary, #0f172a)',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {offer.title}
+                    </h4>
+
+                    {offer.description && (
+                      <p
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--text-secondary, #64748b)',
+                          margin: '0 0 10px 0',
+                          lineHeight: 1.35,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {offer.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginTop: '8px',
+                      paddingTop: '8px',
+                      borderTop: '1px dashed var(--border-subtle, #e2e8f0)',
+                      gap: '6px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      {hasMinOrder && (
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            color: 'var(--text-secondary, #64748b)',
+                            backgroundColor: 'var(--bg-surface, #f1f5f9)',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          Min ₹{Number(offer.min_order_amount).toFixed(0)}
+                        </span>
+                      )}
+
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 600,
+                          color: '#0284c7',
+                          backgroundColor: '#f0f9ff',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {offer.applicable_days === 'all' || !offer.applicable_days
+                          ? (isHindi ? '📅 सभी दिन' : '📅 All Days')
+                          : `📅 ${offer.applicable_days.split(',').join(', ')}`}
+                      </span>
+                    </div>
+
+                    {hasPromo && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (navigator.clipboard) {
+                            navigator.clipboard.writeText(offer.promo_code);
+                            setCopiedPromo(offer.promo_code);
+                            setTimeout(() => setCopiedPromo(''), 2000);
+                          }
+                        }}
+                        style={{
+                          padding: '4px 9px',
+                          borderRadius: '6px',
+                          border: '1px solid #93c5fd',
+                          backgroundColor: copiedPromo === offer.promo_code ? '#16a34a' : '#eff6ff',
+                          color: copiedPromo === offer.promo_code ? '#ffffff' : '#1d4ed8',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease',
+                          flexShrink: 0,
+                        }}
+                        title={isHindi ? 'कूपन कोड कॉपी करें' : 'Copy Coupon Code'}
+                      >
+                        {copiedPromo === offer.promo_code ? (
+                          <>✓ {isHindi ? 'कॉपी हो गया' : 'Copied'}</>
+                        ) : (
+                          <>
+                            <Tag size={11} /> {offer.promo_code}
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
