@@ -893,15 +893,14 @@ export const StorefrontScreen = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '20px',
-                  height: '20px',
+                  width: '22px',
+                  height: '22px',
                   borderRadius: '50%',
                   backgroundColor: '#fee2e2',
                   color: '#dc2626',
-                  fontSize: '11px',
                 }}
               >
-                ⚡
+                <Sparkles size={13} />
               </span>
               <span
                 style={{
