@@ -1,84 +1,95 @@
 /* ==========================================================================
-   ShopSilo Design System - Fluid Variables & Modern Theme Tokens
-   Provides pixel-perfect rendering across Mobile, Tablet, and High-DPI Desktop
+   ShopSilo Design System - Modern Minimalist Tokens & Color Psychology
+   Provides clean, high-contrast rendering across Mobile, Tablet, and Desktop
    ========================================================================== */
 
 :root {
-  /* Brand Colors */
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #eef2ff;
-  
-  --color-success: #10b981;
+  /* Psychological Color Palette */
+  --color-primary: #0f172a;           /* Deep Slate Navy - Authority & Trust */
+  --color-primary-hover: #1e293b;
+  --color-primary-light: #f1f5f9;
+  --color-accent: #2563eb;            /* Action Blue - Primary CTAs */
+  --color-accent-hover: #1d4ed8;
+
+  --color-success: #10b981;           /* Emerald Green - Savings & In-Stock */
   --color-success-hover: #059669;
-  --color-success-light: #ecfdf5;
-  
-  --color-warning: #f59e0b;
-  --color-warning-light: #fffbeb;
-  
-  --color-danger: #ef4444;
-  --color-danger-light: #fef2f2;
+  --color-success-light: #dcfce7;
+  --color-success-text: #15803d;
+
+  --color-warning: #d97706;           /* Amber - Warm Highlights & Urgent Holds */
+  --color-warning-light: #fef3c7;
+  --color-warning-text: #92400e;
+
+  --color-danger: #dc2626;            /* Pure Red - Discounts & Cancel */
+  --color-danger-hover: #b91c1c;
+  --color-danger-light: #fee2e2;
+  --color-danger-text: #991b1b;
 
   --color-info: #0284c7;
   --color-info-light: #f0f9ff;
 
-  /* Surfaces & Backgrounds */
-  --bg-app: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-subtle: #f1f5f9;
+  /* Clean Surfaces & Backgrounds */
+  --bg-app: #f8fafc;                  /* Soft neutral backdrop */
+  --bg-surface: #ffffff;              /* Pure white card surface */
+  --bg-surface-subtle: #f8fafc;
   --bg-card: #ffffff;
   --bg-dark-header: #0f172a;
 
-  /* Typography Colors */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  /* High-Contrast Typography */
+  --text-primary: #0f172a;            /* High contrast dark slate */
+  --text-secondary: #475569;          /* Medium dark slate for descriptions */
+  --text-muted: #94a3b8;              /* Muted gray for secondary meta */
   --text-inverse: #ffffff;
 
-  /* Borders & Dividers */
+  /* Clean Subtle Borders */
   --border-subtle: #e2e8f0;
   --border-strong: #cbd5e1;
 
-  /* Fluid Spacing Scale */
+  /* Standardized Typography Scale */
+  --font-size-h1: 1.35rem;            /* Page Headings */
+  --font-size-h2: 1.15rem;            /* Section Titles */
+  --font-size-title: 0.88rem;         /* Card / Item Titles */
+  --font-size-price: 1.1rem;          /* Primary Price */
+  --font-size-body: 0.82rem;          /* Standard Body Text */
+  --font-size-meta: 0.72rem;          /* Badges & Micro Meta */
+
+  /* Spacing Scale */
   --space-2xs: 2px;
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
-  --space-2xl: 48px;
 
   /* Border Radii */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* Depth & Elevation Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.09), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --shadow-floating: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  /* Elevation Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --shadow-floating: 0 20px 40px -10px rgba(15, 23, 42, 0.2);
 
   /* Typography Families */
   --font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   --font-family-hindi: 'Noto Sans Devanagari', 'Inter', -apple-system, sans-serif;
   --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Hardware Transitions */
-  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.25s ease-in-out;
 
   /* Viewport Layout Bounds */
-  --content-max-width: 1380px;
+  --content-max-width: 1280px;
   --top-header-height: 58px;
-  --desktop-header-height: 68px;
-  --bottom-nav-height: 64px;
+  --desktop-header-height: 64px;
+  --bottom-nav-height: 62px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-top: env(safe-area-inset-top, 0px);
 
@@ -112,21 +123,18 @@
 
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-floating: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
 }
 
 /* Devanagari Typography Adaptation */
 body.lang-hi {
   font-family: var(--font-family-hindi);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 body.lang-hi h1,
 body.lang-hi h2,
 body.lang-hi h3,
 body.lang-hi h4,
-body.lang-hi .btn,
-body.lang-hi .header-title {
+body.lang-hi .btn {
   font-family: var(--font-family-hindi);
 }

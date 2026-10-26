@@ -812,7 +812,7 @@ export const ExploreShopsScreen = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '6px 0',
+          padding: '8px 0',
           gap: '8px',
         }}
       >
@@ -822,73 +822,84 @@ export const ExploreShopsScreen = () => {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '5px',
-            background: 'transparent',
-            border: 'none',
-            padding: 0,
+            gap: '6px',
+            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+            border: '1px solid var(--border-subtle, #e2e8f0)',
+            borderRadius: '20px',
+            padding: '5px 12px',
             cursor: 'pointer',
-            color: 'var(--text-primary)',
+            color: 'var(--text-primary, #0f172a)',
             fontSize: '0.8rem',
             fontWeight: 800,
-            maxWidth: '220px',
-            textAlign: 'left',
+            maxWidth: '240px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
           }}
           title={isHindi ? 'GPS लोकेशन अपडेट करें' : 'Update GPS Location'}
         >
-          <MapPin size={15} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
+          <MapPin size={14} color="#2563eb" style={{ flexShrink: 0 }} />
           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {isDetecting ? (isHindi ? 'लोकेशन...' : 'Detecting...') : (locationName || 'Local Area')}
           </span>
-          <ChevronDown size={13} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+          <ChevronDown size={12} color="#64748b" style={{ flexShrink: 0 }} />
         </button>
 
-        {/* Compact Radius Dropdown Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-            {isHindi ? 'दूरी:' : 'Radius:'}
-          </span>
-          <select
-            value={radiusKm}
-            onChange={(e) => setRadiusKm(Number(e.target.value))}
+        {/* Compact Radius Dropdown & Open Stores Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div
             style={{
-              padding: '2px 6px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-subtle)',
-              backgroundColor: 'var(--bg-surface-subtle)',
-              color: 'var(--color-primary, #4f46e5)',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              outline: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              borderRadius: '12px',
+              padding: '3px 8px',
             }}
           >
-            {RADIUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted, #94a3b8)' }}>
+              {isHindi ? 'दूरी:' : 'Radius:'}
+            </span>
+            <select
+              value={radiusKm}
+              onChange={(e) => setRadiusKm(Number(e.target.value))}
+              style={{
+                border: 'none',
+                backgroundColor: 'transparent',
+                color: 'var(--text-primary, #0f172a)',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {RADIUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Open Stores Only Pill Toggle */}
           <button
             type="button"
             onClick={() => setShowOpenOnly((prev) => !prev)}
             style={{
-              padding: '2px 8px',
-              borderRadius: '8px',
-              border: showOpenOnly ? '1.5px solid #10b981' : '1px solid var(--border-subtle)',
-              backgroundColor: showOpenOnly ? '#dcfce7' : 'var(--bg-surface-subtle)',
-              color: showOpenOnly ? '#15803d' : 'var(--text-secondary)',
-              fontSize: '0.72rem',
+              padding: '4px 10px',
+              borderRadius: '12px',
+              border: showOpenOnly ? '1.5px solid #16a34a' : '1px solid var(--border-subtle, #e2e8f0)',
+              backgroundColor: showOpenOnly ? '#dcfce7' : 'var(--bg-surface-subtle, #f8fafc)',
+              color: showOpenOnly ? '#15803d' : 'var(--text-secondary, #475569)',
+              fontSize: '0.74rem',
               fontWeight: 800,
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
-              marginLeft: '4px',
+              gap: '6px',
+              transition: 'all 0.15s ease',
             }}
           >
-            <span>🟢</span>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: showOpenOnly ? '#16a34a' : '#94a3b8' }} />
             <span>{isHindi ? 'खुली दुकानें' : 'Open Stores'}</span>
           </button>
         </div>
@@ -987,16 +998,16 @@ export const ExploreShopsScreen = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              background: '#0f172a',
               color: '#ffffff',
               border: 'none',
               borderRadius: '10px',
-              padding: '5px 10px',
-              fontSize: '0.72rem',
+              padding: '6px 12px',
+              fontSize: '0.74rem',
               fontWeight: 800,
               cursor: 'pointer',
               flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(79, 70, 229, 0.2)',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
               whiteSpace: 'nowrap',
             }}
             title={isHindi ? 'सामान कहाँ मिलेगा? मल्टी-शॉप तुलना' : 'Where is it available? Multi-Shop Search'}
@@ -1029,7 +1040,7 @@ export const ExploreShopsScreen = () => {
         />
       </div>
 
-      {/* 3. SLEEK PROMO CAROUSEL */}
+      {/* 3. SLEEK MINIMAL PROMO CAROUSEL */}
       <div
         style={{
           display: 'flex',
@@ -1048,11 +1059,12 @@ export const ExploreShopsScreen = () => {
             minWidth: '75%',
             maxWidth: '280px',
             scrollSnapAlign: 'start',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-            color: '#ffffff',
+            borderRadius: '12px',
+            backgroundColor: 'var(--bg-surface, #ffffff)',
+            border: '1px solid var(--border-subtle, #e2e8f0)',
+            color: 'var(--text-primary, #0f172a)',
             padding: '12px 14px',
-            boxShadow: '0 6px 16px -4px rgba(15, 23, 42, 0.25)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1060,21 +1072,21 @@ export const ExploreShopsScreen = () => {
           }}
         >
           <div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', lineHeight: 1.2 }}>
               {isHindi ? 'स्मार्ट बार्गेन' : 'Direct Negotiation'}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '2px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px' }}>
               {isHindi ? 'दुकानदार को सीधे ऑफर भेजें' : 'Send bulk pricing offers directly'}
             </div>
           </div>
           <span
             style={{
-              backgroundColor: 'rgba(245, 158, 11, 0.2)',
-              border: '1px solid rgba(245, 158, 11, 0.4)',
-              color: '#f59e0b',
-              fontSize: '0.62rem',
+              backgroundColor: '#fef3c7',
+              border: '1px solid #fcd34d',
+              color: '#92400e',
+              fontSize: '0.68rem',
               fontWeight: 800,
-              padding: '3px 6px',
+              padding: '3px 8px',
               borderRadius: '6px',
               whiteSpace: 'nowrap',
             }}
@@ -1089,11 +1101,12 @@ export const ExploreShopsScreen = () => {
             minWidth: '75%',
             maxWidth: '280px',
             scrollSnapAlign: 'start',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
-            color: '#ffffff',
+            borderRadius: '12px',
+            backgroundColor: 'var(--bg-surface, #ffffff)',
+            border: '1px solid var(--border-subtle, #e2e8f0)',
+            color: 'var(--text-primary, #0f172a)',
             padding: '12px 14px',
-            boxShadow: '0 6px 16px -4px rgba(6, 78, 59, 0.25)',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1101,21 +1114,21 @@ export const ExploreShopsScreen = () => {
           }}
         >
           <div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', lineHeight: 1.2 }}>
               {isHindi ? '15-मिनट पिकअप' : '15-Min Pickup'}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#a7f3d0', marginTop: '2px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px' }}>
               {isHindi ? 'सामान रिज़र्व करें व OTP से लें' : 'Reserve & collect with OTP'}
             </div>
           </div>
           <span
             style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              color: '#34d399',
-              fontSize: '0.62rem',
+              backgroundColor: '#dcfce7',
+              border: '1px solid #86efac',
+              color: '#15803d',
+              fontSize: '0.68rem',
               fontWeight: 800,
-              padding: '3px 6px',
+              padding: '3px 8px',
               borderRadius: '6px',
               whiteSpace: 'nowrap',
             }}
@@ -1136,11 +1149,12 @@ export const ExploreShopsScreen = () => {
         id="marketplace-feed-header"
         style={{
           display: 'flex',
-          gap: '8px',
+          gap: '6px',
           marginBottom: '16px',
-          backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+          backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
           padding: '4px',
-          borderRadius: '16px',
+          borderRadius: '14px',
+          border: '1px solid var(--border-subtle, #e2e8f0)',
         }}
       >
         <button
@@ -1148,11 +1162,11 @@ export const ExploreShopsScreen = () => {
           onClick={handleSelectProductsTab}
           style={{
             flex: 1,
-            padding: '10px 14px',
-            borderRadius: '12px',
+            padding: '9px 12px',
+            borderRadius: '10px',
             border: 'none',
             backgroundColor: activeTab === 'products' ? 'var(--bg-surface, #ffffff)' : 'transparent',
-            color: activeTab === 'products' ? 'var(--color-primary, #4f46e5)' : 'var(--text-secondary, #64748b)',
+            color: activeTab === 'products' ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)',
             fontWeight: 800,
             fontSize: '0.84rem',
             cursor: 'pointer',
@@ -1160,19 +1174,20 @@ export const ExploreShopsScreen = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '6px',
-            boxShadow: activeTab === 'products' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+            boxShadow: activeTab === 'products' ? '0 2px 6px rgba(0, 0, 0, 0.05)' : 'none',
             transition: 'all 0.15s ease',
           }}
         >
-          <Package size={16} />
+          <Package size={15} />
           <span>{isHindi ? 'ट्रेंडिंग सामान' : 'Products'}</span>
           <span
             style={{
               fontSize: '0.7rem',
               fontWeight: 800,
-              backgroundColor: activeTab === 'products' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(0,0,0,0.05)',
+              backgroundColor: activeTab === 'products' ? '#f1f5f9' : 'rgba(0,0,0,0.04)',
+              color: activeTab === 'products' ? '#0f172a' : '#64748b',
               padding: '1px 6px',
-              borderRadius: '8px',
+              borderRadius: '6px',
             }}
           >
             {filteredProducts.length}
@@ -1184,11 +1199,11 @@ export const ExploreShopsScreen = () => {
           onClick={handleSelectShopTab}
           style={{
             flex: 1,
-            padding: '10px 14px',
-            borderRadius: '12px',
+            padding: '9px 12px',
+            borderRadius: '10px',
             border: 'none',
             backgroundColor: activeTab === 'shops' ? 'var(--bg-surface, #ffffff)' : 'transparent',
-            color: activeTab === 'shops' ? 'var(--color-primary, #4f46e5)' : 'var(--text-secondary, #64748b)',
+            color: activeTab === 'shops' ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)',
             fontWeight: 800,
             fontSize: '0.84rem',
             cursor: 'pointer',
@@ -1196,19 +1211,20 @@ export const ExploreShopsScreen = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '6px',
-            boxShadow: activeTab === 'shops' ? '0 2px 8px rgba(0, 0, 0, 0.08)' : 'none',
+            boxShadow: activeTab === 'shops' ? '0 2px 6px rgba(0, 0, 0, 0.05)' : 'none',
             transition: 'all 0.15s ease',
           }}
         >
-          <Store size={16} />
+          <Store size={15} />
           <span>{isHindi ? 'लोकल दुकानें' : 'Local Shops'}</span>
           <span
             style={{
               fontSize: '0.7rem',
               fontWeight: 800,
-              backgroundColor: activeTab === 'shops' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(0,0,0,0.05)',
+              backgroundColor: activeTab === 'shops' ? '#f1f5f9' : 'rgba(0,0,0,0.04)',
+              color: activeTab === 'shops' ? '#0f172a' : '#64748b',
               padding: '1px 6px',
-              borderRadius: '8px',
+              borderRadius: '6px',
             }}
           >
             {filteredShops.length}
@@ -1238,18 +1254,18 @@ export const ExploreShopsScreen = () => {
               borderRadius: '8px',
               backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
               border: '1px solid var(--border-subtle, #e2e8f0)',
-              color: 'var(--color-primary, #2563eb)',
+              color: 'var(--text-primary, #0f172a)',
               cursor: 'pointer',
               outline: 'none',
             }}
           >
-            <option value="relevant">⚡ {isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
-            <option value="nearest">📍 {isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
+            <option value="relevant">{isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
+            <option value="nearest">{isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
             {activeTab === 'products' && (
               <>
-                <option value="price_low">💰 {isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
-                <option value="price_high">💎 {isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
-                <option value="discount">🔥 {isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Savings (% OFF)'}</option>
+                <option value="price_low">{isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
+                <option value="price_high">{isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
+                <option value="discount">{isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Discount (% OFF)'}</option>
               </>
             )}
           </select>
