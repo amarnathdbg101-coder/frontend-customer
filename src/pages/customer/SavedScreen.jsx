@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Store, Phone, Navigation, MapPin } from 'lucide-react';
+import { Heart, Store, Phone, Navigation, MapPin, ArrowRight } from 'lucide-react';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -28,21 +28,88 @@ export const SavedScreen = () => {
     >
       <title>{t('nav.saved')} — ShopSilo</title>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      {/* Segmented Tab Switcher */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '6px',
+          marginBottom: '16px',
+          backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+          padding: '4px',
+          borderRadius: '14px',
+          border: '1px solid var(--border-subtle, #e2e8f0)',
+        }}
+      >
         <button
+          type="button"
           onClick={() => setActiveTab('products')}
-          className={`tab-pill ${activeTab === 'products' ? 'active' : ''}`}
-          style={{ flex: 1 }}
+          style={{
+            flex: 1,
+            padding: '9px 12px',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: activeTab === 'products' ? 'var(--bg-surface, #ffffff)' : 'transparent',
+            color: activeTab === 'products' ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            boxShadow: activeTab === 'products' ? '0 2px 6px rgba(0, 0, 0, 0.05)' : 'none',
+            transition: 'all 0.15s ease',
+          }}
         >
-          {isHindi ? 'सहेजे गए सामान' : 'Saved Products'} ({savedProducts.length})
+          <span>{isHindi ? 'सहेजे गए सामान' : 'Saved Products'}</span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              backgroundColor: activeTab === 'products' ? '#f1f5f9' : 'rgba(0,0,0,0.04)',
+              color: activeTab === 'products' ? '#0f172a' : '#64748b',
+              padding: '1px 6px',
+              borderRadius: '6px',
+            }}
+          >
+            {savedProducts.length}
+          </span>
         </button>
+
         <button
+          type="button"
           onClick={() => setActiveTab('shops')}
-          className={`tab-pill ${activeTab === 'shops' ? 'active' : ''}`}
-          style={{ flex: 1 }}
+          style={{
+            flex: 1,
+            padding: '9px 12px',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: activeTab === 'shops' ? 'var(--bg-surface, #ffffff)' : 'transparent',
+            color: activeTab === 'shops' ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            boxShadow: activeTab === 'shops' ? '0 2px 6px rgba(0, 0, 0, 0.05)' : 'none',
+            transition: 'all 0.15s ease',
+          }}
         >
-          {isHindi ? 'पसंदीदा दुकानें' : 'Favorite Shops'} ({savedShops.length})
+          <span>{isHindi ? 'पसंदीदा दुकानें' : 'Favorite Shops'}</span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              backgroundColor: activeTab === 'shops' ? '#f1f5f9' : 'rgba(0,0,0,0.04)',
+              color: activeTab === 'shops' ? '#0f172a' : '#64748b',
+              padding: '1px 6px',
+              borderRadius: '6px',
+            }}
+          >
+            {savedShops.length}
+          </span>
         </button>
       </div>
 
@@ -86,7 +153,7 @@ export const SavedScreen = () => {
           }
         />
       ) : (
-        <div className="saved-grid">
+        <div className="saved-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
           {savedShops.map((s) => (
             <Card
               key={s.id}
@@ -96,6 +163,10 @@ export const SavedScreen = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '14px',
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                boxShadow: 'var(--shadow-xs)',
               }}
             >
               <div>
@@ -106,13 +177,13 @@ export const SavedScreen = () => {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        backgroundColor: 'var(--color-primary-light)',
+                        backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
                         overflow: 'hidden',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
-                        border: '1px solid var(--border-subtle)',
+                        border: '1px solid var(--border-subtle, #e2e8f0)',
                       }}
                     >
                       {s.logo_url ? (
@@ -124,18 +195,18 @@ export const SavedScreen = () => {
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
-                        <Store size={22} color="var(--color-primary)" />
+                        <Store size={22} color="#0f172a" />
                       )}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {s.name}
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #475569)' }}>
                         {s.category || (isHindi ? 'जनरल स्टोर' : 'General Store')}
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                        <MapPin size={11} /> {s.address || s.city || (isHindi ? 'स्थानीय क्षेत्र' : 'Local Area')}
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <MapPin size={11} color="#0f172a" /> {s.address || s.city || (isHindi ? 'स्थानीय क्षेत्र' : 'Local Area')}
                       </div>
                     </div>
                   </div>
@@ -159,73 +230,60 @@ export const SavedScreen = () => {
               </div>
 
               {/* Actions */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle, #e2e8f0)' }}>
                 {s.phone && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon={Phone}
-                    style={{ flex: 1 }}
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#f1f5f9',
+                      color: '#0f172a',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
                     onClick={() => window.open(`tel:${s.phone}`)}
                   >
-                    {t('common.call_shop')}
-                  </Button>
+                    <Phone size={13} />
+                    <span>{t('common.call_shop')}</span>
+                  </button>
                 )}
-                {s.latitude && s.longitude && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={Navigation}
-                    style={{ flex: 1 }}
-                    onClick={() => window.open(`https://maps.google.com/?q=${s.latitude},${s.longitude}`, '_blank')}
-                  >
-                    {t('common.directions')}
-                  </Button>
-                )}
-                <Button
-                  variant="primary"
-                  size="sm"
-                  style={{ flex: 1.2 }}
+                <button
+                  type="button"
+                  style={{
+                    flex: 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px',
+                    padding: '7px 12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#0f172a',
+                    color: '#ffffff',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
                   onClick={() => navigate(`/shop/${s.slug}`)}
                 >
-                  {t('products.visit_storefront')}
-                </Button>
+                  <span>{isHindi ? 'दुकान देखें' : 'Visit Store'}</span>
+                  <ArrowRight size={13} />
+                </button>
               </div>
             </Card>
           ))}
         </div>
       )}
-
-      {/* Product Detail Modal */}
-      {inspectedProduct && (
-        <ProductDetailModal
-          product={inspectedProduct}
-          onClose={() => setInspectedProduct(null)}
-          onReserve={async ({ product, quantity, hold_hours, notes }) => {
-            if (!isAuthenticated) {
-              alert(t('auth.login_required_reserve'));
-              navigate('/login');
-              return;
-            }
-            try {
-              const res = await reservationApi.createReservation({
-                product_id: product.id,
-                shop_id: product.shop_id || product.shopId || product.shop?.id || '',
-                quantity,
-                hold_hours,
-                notes,
-              });
-              cacheEvents.emit(CACHE_EVENTS.RESERVATIONS_MUTATED);
-              alert(`${t('checkout.reservation_success_title')} ${t('checkout.pickup_otp')}: ${res.pickup_code || res.reservation_number || 'OK'}`);
-              setInspectedProduct(null);
-            } catch (err) {
-              alert(err.message || t('common.error'));
-            }
-          }}
-          isMerchant={false}
-        />
-      )}
     </AppLayout>
   );
 };
+
 export default SavedScreen;
