@@ -113,32 +113,32 @@ export const CustomerProfileScreen = () => {
       }, 1200);
     } catch (err) {
       console.error('Profile update error:', err);
-        const errMsg = err?.response?.data?.message || err?.message || '';
-        const msgLower = errMsg.toLowerCase();
-        if (msgLower.includes('phone') || msgLower.includes('conflict') || msgLower.includes('already')) {
-          setUpdateError(
-            isHindi
-              ? 'यह मोबाइल नंबर पहले से ही किसी अन्य खाते से जुड़ा हुआ है। कृपया कोई दूसरा नंबर दर्ज करें या उस खाते से लॉगिन करें।'
-              : 'This mobile number is already linked to another account. Please use a different number or sign in with that account.'
-          );
-        } else if (msgLower.includes('user not found') || msgLower.includes('unauthorized') || msgLower.includes('session expired')) {
-          setUpdateError(
-            isHindi
-              ? 'आपका सत्र समाप्त हो गया है। कृपया दोबारा लॉग इन करें।'
-              : 'Your session has expired. Please sign in again.'
-          );
-          setTimeout(() => {
-            logout();
-            navigate('/login');
-          }, 1500);
-        } else {
-          setUpdateError(
-            isHindi
-              ? 'प्रोफ़ाइल अपडेट करने में विफल: ' + (errMsg || 'त्रुटि')
-              : 'Failed to update profile: ' + (errMsg || 'Server Error')
-          );
-        }
-      } finally {
+      const errMsg = err?.response?.data?.message || err?.message || '';
+      const msgLower = errMsg.toLowerCase();
+      if (msgLower.includes('phone') || msgLower.includes('conflict') || msgLower.includes('already')) {
+        setUpdateError(
+          isHindi
+            ? 'यह मोबाइल नंबर पहले से ही किसी अन्य खाते से जुड़ा हुआ है। कृपया कोई दूसरा नंबर दर्ज करें या उस खाते से लॉगिन करें।'
+            : 'This mobile number is already linked to another account. Please use a different number or sign in with that account.'
+        );
+      } else if (msgLower.includes('user not found') || msgLower.includes('unauthorized') || msgLower.includes('session expired')) {
+        setUpdateError(
+          isHindi
+            ? 'आपका सत्र समाप्त हो गया है। कृपया दोबारा लॉग इन करें।'
+            : 'Your session has expired. Please sign in again.'
+        );
+        setTimeout(() => {
+          logout();
+          navigate('/login');
+        }, 1500);
+      } else {
+        setUpdateError(
+          isHindi
+            ? 'प्रोफ़ाइल अपडेट करने में विफल: ' + (errMsg || 'त्रुटि')
+            : 'Failed to update profile: ' + (errMsg || 'Server Error')
+        );
+      }
+    } finally {
       setIsSaving(false);
     }
   };
@@ -170,22 +170,32 @@ export const CustomerProfileScreen = () => {
         )}
 
         {/* User Card */}
-        <Card padding="24px 20px" style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <Card
+          padding="24px 20px"
+          style={{
+            textAlign: 'center',
+            marginBottom: '16px',
+            border: '1px solid var(--border-subtle, #e2e8f0)',
+            borderRadius: '16px',
+            backgroundColor: 'var(--bg-surface, #ffffff)',
+            boxShadow: 'var(--shadow-xs)',
+          }}
+        >
           <div style={{ position: 'relative', width: '90px', height: '90px', margin: '0 auto 14px auto' }}>
             <div
               style={{
                 width: '90px',
                 height: '90px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%)',
+                backgroundColor: '#0f172a',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
+                color: '#ffffff',
                 fontSize: '2.2rem',
                 fontWeight: 900,
                 overflow: 'hidden',
-                boxShadow: '0 6px 18px rgba(79, 70, 229, 0.35)',
+                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)',
               }}
             >
               {user?.avatar_url ? (
@@ -210,20 +220,20 @@ export const CustomerProfileScreen = () => {
                 position: 'absolute',
                 bottom: '0',
                 right: '0',
-                background: 'var(--color-primary)',
-                color: 'white',
+                backgroundColor: '#0f172a',
+                color: '#ffffff',
                 padding: '7px',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid var(--bg-surface)',
+                border: '2px solid #ffffff',
               }}
               title={isHindi ? 'प्रोफ़ाइल फ़ोटो बदलें' : 'Change profile photo'}
             >
-              <Camera size={15} />
+              <Camera size={14} />
             </label>
             <input
               id="customer-avatar-upload"
@@ -236,13 +246,13 @@ export const CustomerProfileScreen = () => {
           </div>
 
           {avatarUploading && (
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>
+            <p style={{ fontSize: '0.8rem', color: '#2563eb', marginBottom: '0.5rem', fontWeight: 600 }}>
               {isHindi ? 'फ़ोटो अपलोड हो रही है...' : 'Uploading photo...'}
             </p>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0 }}>
               {user?.name || user?.full_name || (isHindi ? 'ग्राहक' : 'Customer')}
             </h2>
             <button
@@ -250,28 +260,38 @@ export const CustomerProfileScreen = () => {
               onClick={handleOpenEditModal}
               title={isHindi ? 'विवरण बदलें' : 'Edit Profile'}
               style={{
-                background: 'var(--bg-surface-subtle)',
-                border: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
                 borderRadius: '8px',
-                padding: '4px 8px',
+                padding: '4px 10px',
                 cursor: 'pointer',
-                color: 'var(--color-primary)',
-                fontSize: '0.78rem',
-                fontWeight: 600,
+                color: 'var(--text-primary, #0f172a)',
+                fontSize: '0.76rem',
+                fontWeight: 800,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
             >
-              <Edit2 size={13} />
-              {isHindi ? 'संपादित करें' : 'Edit'}
+              <Edit2 size={12} />
+              <span>{isHindi ? 'संपादित करें' : 'Edit'}</span>
             </button>
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <Badge variant="primary">
-              {isHindi ? 'सत्यापित ग्राहक (Buyer)' : 'Verified Customer (Shopper)'}
-            </Badge>
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                backgroundColor: '#dcfce7',
+                color: '#15803d',
+                padding: '4px 12px',
+                borderRadius: '12px',
+                border: '1px solid #86efac',
+              }}
+            >
+              ✓ {isHindi ? 'सत्यापित ग्राहक (Buyer)' : 'Verified Customer (Shopper)'}
+            </span>
           </div>
 
           <div
@@ -280,10 +300,10 @@ export const CustomerProfileScreen = () => {
               flexDirection: 'column',
               gap: '0.75rem',
               textAlign: 'left',
-              background: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
               padding: '14px 16px',
-              borderRadius: 'var(--radius-md)',
+              borderRadius: '12px',
             }}
           >
             {/* Phone Row */}
@@ -296,42 +316,46 @@ export const CustomerProfileScreen = () => {
                 flexWrap: 'wrap',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 600 }}>
-                <Phone size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-primary, #0f172a)', fontSize: '0.88rem', fontWeight: 600 }}>
+                <Phone size={16} color="#0f172a" style={{ flexShrink: 0 }} />
                 <span>
                   {displayPhone ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 800 }}>
                       +91 {displayPhone}
-                      <CheckCircle2 size={14} style={{ color: '#059669' }} title={isHindi ? 'सत्यापित मोबाइल' : 'Verified Mobile'} />
+                      <CheckCircle2 size={14} color="#16a34a" title={isHindi ? 'सत्यापित मोबाइल' : 'Verified Mobile'} />
                     </span>
                   ) : (
-                    <span style={{ color: '#d97706', fontWeight: 500 }}>
+                    <span style={{ color: '#d97706', fontWeight: 600 }}>
                       {isHindi ? 'फ़ोन नंबर लिंक नहीं है' : 'No mobile number linked'}
                     </span>
                   )}
                 </span>
               </div>
 
-              <Button
-                variant={displayPhone ? 'secondary' : 'primary'}
-                size="sm"
+              <button
+                type="button"
                 onClick={handleOpenEditModal}
                 style={{
                   fontSize: '0.78rem',
-                  padding: '4px 12px',
-                  height: '32px',
+                  fontWeight: 800,
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#f1f5f9',
+                  color: '#0f172a',
+                  cursor: 'pointer',
                 }}
               >
                 {displayPhone
                   ? (isHindi ? 'बदलें' : 'Change Phone')
                   : (isHindi ? '+ फ़ोन नंबर लिंक करें' : '+ Link Mobile Number')}
-              </Button>
+              </button>
             </div>
 
             {/* Email Row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.86rem' }}>
-              <Mail size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-              <span>{user?.email || (isHindi ? 'ईमेल दर्ज नहीं है' : 'No email address linked')}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-secondary, #475569)', fontSize: '0.86rem' }}>
+              <Mail size={16} color="#0f172a" style={{ flexShrink: 0 }} />
+              <span style={{ fontWeight: 600 }}>{user?.email || (isHindi ? 'ईमेल दर्ज नहीं है' : 'No email address linked')}</span>
             </div>
           </div>
         </Card>
@@ -342,20 +366,29 @@ export const CustomerProfileScreen = () => {
         </div>
 
         {/* Logout */}
-        <Button
-          variant="danger"
-          icon={LogOut}
-          fullWidth={true}
+        <button
+          type="button"
           onClick={handleLogout}
           style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            color: '#ef4444',
-            border: '1px solid rgba(239, 68, 68, 0.25)',
-            boxShadow: 'none',
+            width: '100%',
+            padding: '12px',
+            borderRadius: '12px',
+            backgroundColor: '#fee2e2',
+            color: '#dc2626',
+            border: '1px solid #fca5a5',
+            fontWeight: 800,
+            fontSize: '0.88rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
           }}
         >
-          {isHindi ? 'लॉग आउट करें' : 'Sign Out'}
-        </Button>
+          <LogOut size={16} />
+          <span>{isHindi ? 'लॉग आउट करें' : 'Sign Out'}</span>
+        </button>
       </div>
 
       {/* Link & Edit Mobile Number Modal */}
@@ -368,7 +401,7 @@ export const CustomerProfileScreen = () => {
           title={displayPhone ? (isHindi ? 'प्रोफ़ाइल व मोबाइल नंबर बदलें' : 'Update Profile & Phone') : (isHindi ? '📱 नया मोबाइल नंबर लिंक करें' : '📱 Link Mobile Phone Number')}
           subtitle={isHindi ? 'ऑर्डर अपडेट, खाता पासबुक व पिकअप अलर्ट हेतु मोबाइल जोड़ें' : 'Enter 10-digit mobile number for order receipts & pickup alerts'}
           icon={Smartphone}
-          iconColor="var(--color-primary)"
+          iconColor="#0f172a"
           onClose={() => !isSaving && setIsEditModalOpen(false)}
         />
 
@@ -382,80 +415,72 @@ export const CustomerProfileScreen = () => {
               />
             )}
 
-            {updateSuccessMsg && (
-              <AlertBanner
-                type="success"
-                message={updateSuccessMsg}
-              />
-            )}
-
-            <FormField
-              label={isHindi ? 'आपका पूरा नाम' : 'Your Full Name'}
-              required={true}
-            >
+            <FormField label={isHindi ? 'पूरा नाम' : 'Full Name'} required>
               <Input
                 type="text"
-                placeholder={isHindi ? 'उदा. राहुल शर्मा' : 'e.g. Rahul Sharma'}
                 value={fullNameInput}
                 onChange={(e) => setFullNameInput(e.target.value)}
+                placeholder={isHindi ? 'अपना नाम दर्ज करें' : 'Enter your name'}
                 disabled={isSaving}
-                autoFocus={true}
+                autoFocus
               />
             </FormField>
 
             <FormField
-              label={isHindi ? '10 अंकों का मोबाइल नंबर' : '10-Digit Mobile Phone Number'}
-              required={true}
-              helperText={isHindi ? 'दुकानदार से व्हाट्सएप रसीद व पिकअप अलर्ट पाने के लिए अनिवार्य' : 'Required for WhatsApp receipts & counter pickup PIN alerts'}
+              label={isHindi ? '10-अंकों का मोबाइल नंबर' : '10-Digit Indian Mobile Number'}
+              hint={isHindi ? 'उदाहरण: 9876543210' : 'Format: 9876543210 (without +91)'}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div
-                  style={{
-                    height: '42px',
-                    padding: '0 12px',
-                    backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
-                    border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    color: 'var(--text-primary)',
-                    flexShrink: 0,
-                  }}
-                >
-                  🇮🇳 +91
-                </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-subtle, #e2e8f0)', backgroundColor: '#f8fafc', fontWeight: 800, fontSize: '0.88rem', color: '#0f172a' }}>
+                  +91
+                </span>
                 <Input
                   type="tel"
                   maxLength={10}
-                  placeholder="98765 43210"
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="9876543210"
                   disabled={isSaving}
+                  style={{ flex: 1 }}
                 />
               </div>
             </FormField>
           </ModalBody>
 
           <ModalFooter>
-            <Button
+            <button
               type="button"
-              variant="secondary"
               onClick={() => setIsEditModalOpen(false)}
               disabled={isSaving}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#f1f5f9',
+                color: '#0f172a',
+                fontWeight: 800,
+                fontSize: '0.84rem',
+                cursor: 'pointer',
+              }}
             >
-              {isHindi ? 'रद्द करें' : 'Cancel'}
-            </Button>
-            <Button
+              {t('common.cancel')}
+            </button>
+            <button
               type="submit"
-              variant="primary"
-              isLoading={isSaving}
+              disabled={isSaving}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '10px',
+                border: 'none',
+                backgroundColor: '#0f172a',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.84rem',
+                cursor: 'pointer',
+              }}
             >
-              {displayPhone
-                ? (isHindi ? 'अपडेट सेव करें' : 'Save Changes')
-                : (isHindi ? 'फ़ोन नंबर लिंक करें' : 'Link Mobile Number')}
-            </Button>
+              {isSaving ? (isHindi ? 'सहेज रहे हैं...' : 'Saving...') : (isHindi ? 'सहेजें' : 'Save Changes')}
+            </button>
           </ModalFooter>
         </form>
       </BaseModal>
