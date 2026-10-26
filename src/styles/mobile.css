@@ -537,4 +537,23 @@ body {
     border-radius: var(--radius-xl);
     animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  .floating-cart-bar-container {
+    bottom: 24px !important;
+  }
 }
+
+@keyframes slideUpBounce {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 30px) scale(0.96);
+  }
+  70% {
+    transform: translate(-50%, -3px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+

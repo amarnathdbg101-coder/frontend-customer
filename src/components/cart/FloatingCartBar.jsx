@@ -18,6 +18,7 @@ export const FloatingCartBar = () => {
 
   return (
     <div
+      className="floating-cart-bar-container"
       style={{
         position: 'fixed',
         left: '50%',

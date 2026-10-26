@@ -17,6 +17,9 @@ import {
   Compass,
   RefreshCw,
   Tag,
+  Mic,
+  MicOff,
+  LayoutGrid,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -30,6 +33,7 @@ import { ProductCard } from '../../components/cards/ProductCard';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
+import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { localCache, CACHE_KEYS, DEFAULT_TTL } from '../../utils/localCache';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
@@ -102,6 +106,46 @@ export const StorefrontScreen = () => {
   const [totalProductCount, setTotalProductCount] = useState(0);
 
   const debouncedSearch = useDebounce(searchTerm, 250);
+
+  // Curated Aisles Discovery Mode vs All Products Grid Mode
+  const [browseMode, setBrowseMode] = useState('aisles'); // 'aisles' | 'grid'
+  const [isListening, setIsListening] = useState(false);
+
+  // 1-Tap Voice Search for Storefront
+  const handleVoiceSearch = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(isHindi ? 'इस ब्राउज़र में वॉइस सर्च समर्थित नहीं है। कृपया टाइप करके खोजें।' : 'Voice search is not supported in this browser. Please type.');
+      return;
+    }
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0]?.[0]?.transcript || '';
+        if (transcript) {
+          setSearchTerm(transcript);
+          setBrowseMode('grid');
+        }
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.warn('Voice search error:', e);
+      setIsListening(false);
+    }
+  }, [isHindi, isListening]);
 
   // Fetch Live Day-Wise Offers for Storefront
   const fetchOffers = useCallback(async () => {
@@ -1051,10 +1095,38 @@ export const StorefrontScreen = () => {
           <SearchInput
             placeholder={isHindi ? `${shop?.name || 'दुकान'} में सामान खोजें...` : `Search inside ${shop?.name || 'store'}...`}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              if (e.target.value.trim() !== '') setBrowseMode('grid');
+            }}
             onClear={() => setSearchTerm('')}
           />
         </div>
+
+        {/* 1-Tap Voice Search Button */}
+        <button
+          type="button"
+          onClick={handleVoiceSearch}
+          title={isListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice Search')}
+          style={{
+            height: '42px',
+            width: '42px',
+            borderRadius: '12px',
+            border: isListening ? '2px solid #ef4444' : '1.5px solid var(--border-subtle, #e2e8f0)',
+            backgroundColor: isListening ? '#fee2e2' : 'var(--bg-surface-subtle, #f8fafc)',
+            color: isListening ? '#dc2626' : 'var(--color-primary, #2563eb)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+            boxShadow: isListening ? '0 0 10px rgba(239, 68, 68, 0.4)' : 'none',
+          }}
+          aria-label="Voice search"
+        >
+          {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+        </button>
 
         <select
           value={sortBy}
@@ -1079,6 +1151,76 @@ export const StorefrontScreen = () => {
           <option value="price_high">💎 {isHindi ? 'अधिक कीमत' : 'Price: High'}</option>
           <option value="discount">🔥 {isHindi ? 'छूट % OFF' : 'Discount %'}</option>
         </select>
+      </div>
+
+      {/* 2b. View Mode Switcher: Themed Aisles vs All Products Grid */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '10px',
+          padding: '0 2px',
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+            borderRadius: '10px',
+            padding: '3px',
+            border: '1px solid var(--border-subtle, #e2e8f0)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setBrowseMode('aisles')}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: browseMode === 'aisles' ? 'var(--bg-card, #ffffff)' : 'transparent',
+              color: browseMode === 'aisles' ? 'var(--color-primary, #2563eb)' : 'var(--text-secondary, #64748b)',
+              fontWeight: 800,
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: browseMode === 'aisles' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Sparkles size={13} />
+            <span>{isHindi ? 'सुपरमार्केट शेल्व्स' : 'Themed Aisles'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setBrowseMode('grid')}
+            style={{
+              padding: '5px 12px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: browseMode === 'grid' ? 'var(--bg-card, #ffffff)' : 'transparent',
+              color: browseMode === 'grid' ? 'var(--color-primary, #2563eb)' : 'var(--text-secondary, #64748b)',
+              fontWeight: 800,
+              fontSize: '0.74rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: browseMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <LayoutGrid size={13} />
+            <span>{isHindi ? 'कैटलॉग ग्रिड' : 'Full Grid'}</span>
+          </button>
+        </div>
+
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', fontWeight: 600 }}>
+          {totalProductCount || products.length} {isHindi ? 'सामान' : 'items'}
+        </span>
       </div>
 
       {/* 2b. Quick Price & Deal Filter Pills */}
@@ -1370,6 +1512,82 @@ export const StorefrontScreen = () => {
         </div>
       ) : (
         <>
+          {/* Curated Themed Aisles / Shelves (Inspired by Blinkit & Zepto) */}
+          {browseMode === 'aisles' && searchTerm.trim() === '' && selectedCategory === 'ALL' && quickFilter === 'ALL' && (
+            <CuratedStoreAisles
+              products={products}
+              onSelectCategory={(cat) => {
+                setSelectedCategory(cat);
+                setBrowseMode('grid');
+              }}
+              onSelectQuickFilter={(qf) => {
+                setQuickFilter(qf);
+                setBrowseMode('grid');
+              }}
+              onProductClick={(p) => {
+                const enriched = {
+                  ...p,
+                  shop_name: p.shop_name || shop?.name,
+                  shop_slug: p.shop_slug || shop?.slug,
+                  shop_address: p.shop_address || shop?.address,
+                  shop_city: p.shop_city || shop?.city,
+                  shop_phone: p.shop_phone || shop?.phone,
+                  shop_latitude: p.shop_latitude || shop?.latitude,
+                  shop_longitude: p.shop_longitude || shop?.longitude,
+                };
+                navigate(`/shop/${shop?.slug || p.shop_slug || 'store'}/product/${p.id}`, {
+                  state: { product: enriched, shop },
+                });
+              }}
+              isProductSaved={isProductSaved}
+              onToggleSave={toggleSaveProduct}
+              shopName={shop?.name}
+              shopSlug={shop?.slug}
+              isHindi={isHindi}
+            />
+          )}
+
+          {/* Section Divider Header for Full Grid in Aisles Mode */}
+          {browseMode === 'aisles' && searchTerm.trim() === '' && selectedCategory === 'ALL' && quickFilter === 'ALL' && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                margin: '18px 0 12px 0',
+                paddingBottom: '8px',
+                borderBottom: '1.5px solid var(--border-subtle, #e2e8f0)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Package size={18} color="var(--color-primary, #2563eb)" />
+                <h3
+                  style={{
+                    fontSize: '0.98rem',
+                    fontWeight: 800,
+                    margin: 0,
+                    color: 'var(--text-primary, #0f172a)',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {isHindi ? 'दुकान का पूरा कैटलॉग' : 'All Store Products'}
+                </h3>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+                  color: 'var(--text-secondary, #64748b)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                }}
+              >
+                {filteredProducts.length} {isHindi ? 'सामान' : 'items'}
+              </span>
+            </div>
+          )}
+
           <div className="customer-product-grid">
             {filteredProducts.map((p) => {
               const handleOpenModal = () => {

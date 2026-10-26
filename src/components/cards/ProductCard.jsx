@@ -240,20 +240,34 @@ const ProductCardInner = ({
         }}
       >
         {isPricePublic ? (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0 }}>
-            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
-              {formatCurrency(price)}
-            </span>
-            {hasDiscount && (
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
+                {formatCurrency(price)}
+              </span>
+              {hasDiscount && (
+                <span
+                  style={{
+                    fontSize: '0.68rem',
+                    color: '#94a3b8',
+                    textDecoration: 'line-through',
+                    fontWeight: 500,
+                  }}
+                >
+                  {formatCurrency(mrp)}
+                </span>
+              )}
+            </div>
+            {hasDiscount && mrp > price && (
               <span
                 style={{
-                  fontSize: '0.7rem',
-                  color: '#94a3b8',
-                  textDecoration: 'line-through',
-                  fontWeight: 500,
+                  fontSize: '0.62rem',
+                  fontWeight: 800,
+                  color: '#16a34a',
+                  marginTop: '1px',
                 }}
               >
-                {formatCurrency(mrp)}
+                {isHindi ? `₹${Math.round(mrp - price)} बचत` : `Save ₹${Math.round(mrp - price)}`}
               </span>
             )}
           </div>
@@ -270,12 +284,13 @@ const ProductCardInner = ({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              backgroundColor: '#0f172a',
+              backgroundColor: '#16a34a',
               color: '#ffffff',
-              borderRadius: '6px',
-              padding: '3px 6px',
-              gap: '6px',
+              borderRadius: '8px',
+              padding: '3px 7px',
+              gap: '7px',
               flexShrink: 0,
+              boxShadow: '0 2px 6px rgba(22, 163, 74, 0.35)',
             }}
           >
             <button
@@ -292,13 +307,13 @@ const ProductCardInner = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 0,
+                padding: '2px',
               }}
               aria-label="Decrease quantity"
             >
               <Minus size={12} strokeWidth={3} />
             </button>
-            <span style={{ fontSize: '0.76rem', fontWeight: 800, minWidth: '12px', textAlign: 'center' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, minWidth: '14px', textAlign: 'center' }}>
               {qtyInCart}
             </span>
             <button
@@ -315,7 +330,7 @@ const ProductCardInner = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 0,
+                padding: '2px',
               }}
               aria-label="Increase quantity"
             >
@@ -345,17 +360,18 @@ const ProductCardInner = ({
               color: !isPricePublic || inStock ? '#ffffff' : '#94a3b8',
               border: 'none',
               padding: '5px 10px',
-              borderRadius: '6px',
+              borderRadius: '8px',
               fontSize: '0.74rem',
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: inStock ? 'pointer' : 'default',
               flexShrink: 0,
+              boxShadow: inStock ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
             {isPricePublic ? (
               <>
-                <ShoppingCart size={12} strokeWidth={2} />
+                <ShoppingCart size={12} strokeWidth={2.5} />
                 <span>
                   {inStock
                     ? (isHindi ? 'जोड़ें' : 'ADD')
