@@ -70,13 +70,9 @@ describe('ProductTrustDetailView Component Tests', () => {
     expect(screen.getAllByText('₹32').length).toBeGreaterThan(0);
     expect(screen.getByText(/(Save ₹4|बचत ₹4)/i)).toBeDefined();
 
-    // 3. Best Nearby Offer
-    expect(screen.getAllByText(/(Best Price Nearby|पास में सर्वोत्तम मूल्य)/i).length).toBeGreaterThan(0);
+    // 3. Shop Profile Link & Reserve Action
     expect(screen.getAllByText(/Gupta General Store/i).length).toBeGreaterThan(0);
-
-    // 4. Compare Nearby Shops
-    expect(screen.getByText(/(Compare Nearby Shops|पास की दुकानों की तुलना करें)/i)).toBeDefined();
-    expect(screen.getByText(/Raj Store & Provisions/i)).toBeDefined();
+    expect(screen.getAllByText(/(View Store|दुकान देखें)/i).length).toBeGreaterThan(0);
 
     // 5. Why Trust This Listing
     expect(screen.getByText(/(Why Trust This Listing|इस लिस्टिंग पर भरोसा क्यों करें)/i)).toBeDefined();

@@ -1,139 +1,142 @@
 /**
  * HowShopSiloWorksSection Component
  *
- * Compact, Visually Premium 3-Step Flow Guide.
- * Helps first-time users understand the complete ShopSilo experience
- * in under 5 seconds:
- * 🔍 1. Search -> Find products available nearby
- * 💰 2. Compare -> Compare multiple local shops
- * 🏪 3. Reserve -> Reserve and pickup locally
+ * Ultra-Compact 1-Row Connected Stepper Banner (< 65px Height on Mobile).
+ * Communicates ShopSilo's 3-step value proposition with zero vertical clutter:
+ * 1. 🔍 Search (Nearby products)
+ * 2. ⚡ Compare (Local stores)
+ * 3. 🏪 Reserve (Counter pickup)
  */
 
 import React from 'react';
-import { Search, Store, Coins } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const HowShopSiloWorksSection = () => {
   const { isHindi } = useLanguage();
 
-  const steps = [
-    {
-      id: 'search',
-      icon: Search,
-      title: isHindi ? '1. खोजें (Search)' : '1. Search',
-      subtitle: isHindi ? 'आस-पास उपलब्ध सामान खोजें' : 'Find products available nearby',
-      iconBg: 'rgba(37, 99, 235, 0.1)',
-      iconColor: '#2563eb',
-    },
-    {
-      id: 'compare',
-      icon: Coins,
-      title: isHindi ? '2. तुलना करें (Compare)' : '2. Compare',
-      subtitle: isHindi ? 'विभिन्न स्थानीय दुकानों के दाम तुलना करें' : 'Compare multiple local shops',
-      iconBg: 'rgba(16, 185, 129, 0.1)',
-      iconColor: '#10b981',
-    },
-    {
-      id: 'reserve',
-      icon: Store,
-      title: isHindi ? '3. रिज़र्व करें (Reserve)' : '3. Reserve',
-      subtitle: isHindi ? 'मुफ़्त रिज़र्व करें और दुकान से लें' : 'Reserve and pickup locally',
-      iconBg: 'rgba(139, 92, 246, 0.1)',
-      iconColor: '#8b5cf6',
-    },
-  ];
-
   return (
     <div
       style={{
-        margin: '16px auto 8px auto',
+        margin: '10px auto 6px auto',
         maxWidth: '1200px',
-        padding: '0 16px',
+        padding: '0 12px',
       }}
+      aria-label="How ShopSilo Works Guide"
     >
-      {/* Section Tag */}
       <div
         style={{
-          fontSize: '0.68rem',
-          fontWeight: 800,
-          color: 'var(--text-muted, #94a3b8)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          marginBottom: '8px',
+          backgroundColor: 'var(--bg-surface, #ffffff)',
+          border: '1.5px solid var(--border-subtle, #e2e8f0)',
+          borderRadius: '14px',
+          padding: '10px 12px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
         }}
       >
-        {isHindi ? 'शॉपसिलो कैसे काम करता है' : 'How ShopSilo Works'}
-      </div>
+        {/* Micro Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-primary, #4f46e5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {isHindi ? '💡 शॉपसिलो कैसे काम करता है (3 आसान स्टेप्स)' : '💡 How ShopSilo Works (3 Easy Steps)'}
+          </span>
+          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#15803d', backgroundColor: '#dcfce7', padding: '1px 6px', borderRadius: '4px' }}>
+            {isHindi ? '0-अग्रिम भुगतान जोखिम' : '0-Risk Pickup'}
+          </span>
+        </div>
 
-      {/* 3 Compact Horizontal Step Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '10px',
-        }}
-      >
-        {steps.map((step) => {
-          const IconComp = step.icon;
-
-          return (
+        {/* 1-Row 3 Connected Flow Steps */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+          {/* Step 1: Search */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div
-              key={step.id}
               style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                backgroundColor: '#f0f4ff',
+                color: '#4f46e5',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
-                border: '1px solid var(--border-subtle, #e2e8f0)',
-                borderRadius: '12px',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+                justifyContent: 'center',
+                fontWeight: 900,
+                fontSize: '0.72rem',
+                flexShrink: 0,
               }}
             >
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  backgroundColor: step.iconBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <IconComp size={18} color={step.iconColor} />
+              1
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isHindi ? '🔍 खोजें' : '🔍 Search'}
               </div>
-
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: '0.84rem',
-                    fontWeight: 800,
-                    color: 'var(--text-primary, #0f172a)',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {step.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: '0.73rem',
-                    color: 'var(--text-secondary, #64748b)',
-                    lineHeight: 1.25,
-                    marginTop: '2px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                  title={step.subtitle}
-                >
-                  {step.subtitle}
-                </div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted, #64748b)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isHindi ? 'पास में उपलब्ध' : 'Nearby products'}
               </div>
             </div>
-          );
-        })}
+          </div>
+
+          {/* Connected Arrow */}
+          <span style={{ color: 'var(--border-strong, #cbd5e1)', fontWeight: 800, fontSize: '0.78rem', flexShrink: 0 }}>›</span>
+
+          {/* Step 2: Compare */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                backgroundColor: '#f0fdf4',
+                color: '#10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 900,
+                fontSize: '0.72rem',
+                flexShrink: 0,
+              }}
+            >
+              2
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isHindi ? '⚡ तुलना करें' : '⚡ Compare'}
+              </div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted, #64748b)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isHindi ? 'स्थानीय दुकानें' : 'Local stores'}
+              </div>
+            </div>
+          </div>
+
+          {/* Connected Arrow */}
+          <span style={{ color: 'var(--border-strong, #cbd5e1)', fontWeight: 800, fontSize: '0.78rem', flexShrink: 0 }}>›</span>
+
+          {/* Step 3: Reserve */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                backgroundColor: '#fdf4ff',
+                color: '#c026d3',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 900,
+                fontSize: '0.72rem',
+                flexShrink: 0,
+              }}
+            >
+              3
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isHindi ? '🏪 रिज़र्व करें' : '🏪 Reserve'}
+              </div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted, #64748b)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isHindi ? 'काउंटर पिकअप' : 'Counter pickup'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

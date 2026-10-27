@@ -929,32 +929,34 @@ export const ExploreShopsScreen = () => {
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
-              {isHindi ? 'क्रमबद्ध:' : 'Sort:'}
-            </span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                fontSize: '0.76rem',
-                fontWeight: 800,
-                padding: '5px 10px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                border: '1px solid var(--border-subtle, #e2e8f0)',
-                color: 'var(--text-primary, #0f172a)',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              <option value="relevant">{isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
-              <option value="nearest">{isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
-              <option value="price_low">{isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
-              <option value="price_high">{isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
-              <option value="discount">{isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Discount (% OFF)'}</option>
-            </select>
-          </div>
+          {searchTerm && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
+                {isHindi ? 'क्रमबद्ध:' : 'Sort:'}
+              </span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  padding: '5px 10px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                  border: '1px solid var(--border-subtle, #e2e8f0)',
+                  color: 'var(--text-primary, #0f172a)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="relevant">{isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
+                <option value="nearest">{isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
+                <option value="price_low">{isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
+                <option value="price_high">{isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
+                <option value="discount">{isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Discount (% OFF)'}</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {/* If user searched and shops were found, show shop matches cleanly */}

@@ -14,6 +14,8 @@ html {
   font-size: 16px;
   scroll-behavior: smooth;
   text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -24,6 +26,8 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   width: 100%;
+  max-width: 100vw;
+  touch-action: manipulation;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -222,6 +226,30 @@ body {
   }
 }
 
+/* Screen Viewport Fine-Tuning: 320px (iPhone SE / Compact Mobile) */
+@media (max-width: 350px) {
+  .app-content {
+    padding: 10px 12px;
+  }
+  .customer-product-grid,
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+
+/* Screen Viewport Fine-Tuning: 360px - 430px (Standard Mobile & Pro Max) */
+@media (min-width: 351px) and (max-width: 639px) {
+  .app-content {
+    padding: 12px 14px;
+  }
+  .customer-product-grid,
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
 /* Content Area: Mobile-First Compact Padding */
 .app-content {
   flex: 1;
@@ -234,6 +262,13 @@ body {
 
 .app-content.no-bottom-nav {
   padding-bottom: calc(16px + var(--safe-area-bottom));
+}
+
+/* Hide Traditional Website Footer on Mobile (<768px) for True Native PWA Shell */
+@media (max-width: 767px) {
+  .app-footer-container {
+    display: none !important;
+  }
 }
 
 /* Mobile Bottom Navigation Bar */
