@@ -44,7 +44,25 @@ client.interceptors.response.use(
   (response) => {
     return response.data;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+    const isNetworkError = !error.response && (error.code === 'ERR_NETWORK' || (typeof error.message === 'string' && error.message.toLowerCase().includes('network error')));
+
+    // Localhost down fallback: If local Go backend is not running, seamlessly fallback to live API
+    if (isNetworkError && originalRequest && !originalRequest._retry && API_BASE_URL.includes('localhost')) {
+      originalRequest._retry = true;
+      const fallbackUrl = 'https://shopsiloapi.shopsilo.in';
+      console.warn(`[ShopSilo API] Local backend not reachable at ${API_BASE_URL}. Retrying with production API: ${fallbackUrl}`);
+      originalRequest.baseURL = fallbackUrl;
+      try {
+        const retryRes = await axios(originalRequest);
+        return retryRes.data;
+      } catch (retryErr) {
+        // Continue to standard error handler with fallback error
+        error = retryErr;
+      }
+    }
+
     const status = error.response?.status;
     const backendMessage = error.response?.data?.error || error.response?.data?.message;
     const fallbackMessage = error.message || 'Something went wrong. Please try again. / तकनीकी समस्या आई, पुनः प्रयास करें।';

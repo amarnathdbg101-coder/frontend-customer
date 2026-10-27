@@ -157,14 +157,15 @@ const ProductCardInner = ({
       onReserve(p);
       return;
     }
-    if (onClick) {
-      onClick(p);
-      return;
-    }
     if (p.id) {
       navigate(`/shop/${targetSlug}/product/${p.id}`, {
         state: { product: p, autoReserve: true },
       });
+      return;
+    }
+    if (onClick) {
+      onClick(p);
+      return;
     }
   };
 

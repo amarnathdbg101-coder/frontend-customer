@@ -14,17 +14,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ChevronRight, Package } from 'lucide-react';
+import { ChevronRight, Package, MapPin } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLanguage } from '../../context/LanguageContext';
+import { useLocation as useGeoLocation } from '../../context/LocationContext';
 import { productApi } from '../../api/product.api';
 import { shopApi } from '../../api/shop.api';
 import { reservationApi } from '../../api/reservation.api';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
+import { calculateDistanceKm } from '../../utils/distance';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { LoadingSpinner, Button } from '../../components/ui';
-import { ProductStudioView } from '../../components/product/ProductStudioView';
 import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
 
 // Safe helper to extract an array from varied API response shapes
@@ -43,6 +44,7 @@ export const ProductDetailScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isHindi } = useLanguage();
+  const { coords } = useGeoLocation();
 
   // Optimistic initial product from navigation state if available
   const [product, setProduct] = useState(location.state?.product || null);
@@ -262,26 +264,34 @@ export const ProductDetailScreen = () => {
           product={product}
           shop={shop}
           onReserve={handleReserve}
+          initialReserveOpen={Boolean(location.state?.autoReserve)}
         />
 
-        {/* Clean Horizontal Row of Similar Products */}
+        {/* Redesigned Useful Similar Products Carousel (Larger Cards, Crisp Images, Price & Distance) */}
         {similarProducts.length > 0 && (
-          <div style={{ marginTop: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
-                {isHindi ? 'मिलते-जुलते सामान (Similar Products)' : 'Similar Products'}
-              </h3>
-              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted, #64748b)' }}>
-                {similarProducts.length} {isHindi ? 'सामान' : 'Items'}
+          <div style={{ marginTop: '36px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
+                  {isHindi ? 'मिलते-जुलते सामान (Similar Products)' : 'Similar Products'}
+                </h3>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #64748b)', marginTop: '2px' }}>
+                  {isHindi ? 'समान श्रेणी और आस-पास की दुकानों के बेहतरीन विकल्प' : 'Handpicked recommendations based on your choice'}
+                </div>
+              </div>
+              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-primary, #2563eb)', backgroundColor: 'var(--color-primary-light, #eff6ff)', padding: '3px 9px', borderRadius: '12px' }}>
+                {similarProducts.length} {isHindi ? 'विकल्प' : 'Items'}
               </span>
             </div>
 
             <div
               style={{
                 display: 'flex',
-                gap: '12px',
+                gap: '14px',
                 overflowX: 'auto',
-                paddingBottom: '8px',
+                paddingBottom: '12px',
+                paddingTop: '4px',
+                paddingLeft: '2px',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
               }}
@@ -290,90 +300,114 @@ export const ProductDetailScreen = () => {
                 const itemId = item.id || item.product_id;
                 const itemPrice = Number(item.price || item.selling_price || 0);
                 const firstImg = extractFirstImage(item.images || item.image || item.image_url);
-                const itemCat = typeof item.category === 'object' ? (item.category?.name || '') : String(item.category || '');
+                const sLat = item.shop_latitude || item.shop?.latitude || shop?.latitude;
+                const sLng = item.shop_longitude || item.shop?.longitude || shop?.longitude;
+                const sName = item.shop_name || item.shop?.name || storeName;
+
+                const distKm = (sLat && sLng && coords?.lat && coords?.lng)
+                  ? calculateDistanceKm(coords.lat, coords.lng, sLat, sLng)
+                  : null;
 
                 return (
                   <div
                     key={itemId}
                     onClick={() => {
-                      navigate(`/shop/${storeSlug || 'store'}/product/${itemId}`, {
+                      navigate(`/shop/${storeSlug || item.shop_slug || 'store'}/product/${itemId}`, {
                         state: { product: item, shop },
                       });
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     style={{
-                      flex: '0 0 145px',
-                      width: '145px',
+                      flex: '0 0 195px',
+                      width: '195px',
                       backgroundColor: 'var(--bg-surface, #ffffff)',
                       border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                      borderRadius: '12px',
-                      padding: '8px',
+                      borderRadius: '16px',
+                      padding: '10px',
                       cursor: 'pointer',
-                      transition: 'all 0.15s ease-in-out',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                      transition: 'all 0.18s ease-in-out',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    <div
-                      style={{
-                        width: '129px',
-                        height: '105px',
-                        backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '6px',
-                      }}
-                    >
-                      {firstImg ? (
-                        <img
-                          src={getImageUrl(firstImg)}
-                          alt={item.name}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
-                        />
-                      ) : (
-                        <Package size={28} color="#94a3b8" style={{ opacity: 0.35 }} />
-                      )}
-                    </div>
-
-                    {itemCat && (
+                    <div>
+                      {/* Large Square Image Stage (1:1 Ratio) */}
                       <div
                         style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          color: 'var(--text-muted, #94a3b8)',
-                          textTransform: 'uppercase',
+                          width: '100%',
+                          height: '155px',
+                          backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '10px',
+                          border: '1px solid var(--border-subtle, #f1f5f9)',
+                          position: 'relative',
+                        }}
+                      >
+                        {firstImg ? (
+                          <img
+                            src={getImageUrl(firstImg)}
+                            alt={item.name}
+                            loading="lazy"
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }}
+                          />
+                        ) : (
+                          <Package size={36} color="#94a3b8" style={{ opacity: 0.35 }} />
+                        )}
+                      </div>
+
+                      {/* Product Name */}
+                      <div
+                        style={{
+                          fontSize: '0.84rem',
+                          fontWeight: 800,
+                          color: 'var(--text-primary, #0f172a)',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          minHeight: '2.5em',
+                          lineHeight: 1.25,
+                          marginBottom: '6px',
+                        }}
+                        title={item.name}
+                      >
+                        {item.name}
+                      </div>
+                    </div>
+
+                    <div>
+                      {/* Price */}
+                      <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary, #0f172a)', marginBottom: '4px' }}>
+                        ₹{itemPrice.toFixed(0)}
+                      </div>
+
+                      {/* Distance & Shop Location */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          color: 'var(--text-secondary, #64748b)',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          marginBottom: '2px',
                         }}
                       >
-                        {itemCat}
+                        <MapPin size={11} color="var(--color-primary, #2563eb)" style={{ flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {distKm !== null
+                            ? `${distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)} km`} away`
+                            : sName}
+                        </span>
                       </div>
-                    )}
-
-                    <div
-                      style={{
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        color: 'var(--text-primary, #0f172a)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        height: '2.3em',
-                        lineHeight: 1.15,
-                        marginBottom: '4px',
-                      }}
-                      title={item.name}
-                    >
-                      {item.name}
-                    </div>
-
-                    <div style={{ fontSize: '0.84rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
-                      ₹{itemPrice.toFixed(0)}
                     </div>
                   </div>
                 );

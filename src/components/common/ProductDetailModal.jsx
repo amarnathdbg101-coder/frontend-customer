@@ -726,6 +726,32 @@ export const ProductDetailModal = ({
                       );
                     })()}
                   </div>
+
+                  {/* Safe & Risk-Free Reserve Reassurance Micro-Card */}
+                  {onReserve && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        backgroundColor: '#f0fdf4',
+                        border: '1.5px solid #a7f3d0',
+                        borderRadius: '12px',
+                        marginTop: '2px',
+                      }}
+                    >
+                      <ShieldCheck size={18} color="#059669" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div style={{ fontSize: '0.78rem', color: '#065f46', lineHeight: 1.45 }}>
+                        <div style={{ fontWeight: 800, color: '#047857' }}>
+                          {isHindi ? 'कोई अग्रिम ऑनलाइन भुगतान की आवश्यकता नहीं है' : 'No advance payment required.'}
+                        </div>
+                        <div style={{ fontWeight: 600, color: '#065f46' }}>
+                          {isHindi ? 'दुकान काउंटर पर सामान देखकर सीधा भुगतान करें।' : 'Pickup and pay directly at store counter.'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
