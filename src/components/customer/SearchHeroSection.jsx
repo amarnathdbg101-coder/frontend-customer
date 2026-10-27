@@ -57,66 +57,30 @@ export const SearchHeroSection = ({
     }
   };
 
-  const popularSearches = [
-    { id: 'rice', label: isHindi ? '🌾 चावल' : '🌾 Rice', term: isHindi ? 'चावल' : 'Rice' },
-    { id: 'atta', label: isHindi ? '🌾 आटा' : '🌾 Atta', term: isHindi ? 'आटा' : 'Atta' },
-    { id: 'milk', label: isHindi ? '🥛 दूध' : '🥛 Milk', term: isHindi ? 'दूध' : 'Milk' },
-    { id: 'hairoil', label: isHindi ? '🧴 हेयर ऑयल' : '🧴 Hair Oil', term: isHindi ? 'हेयर ऑयल' : 'Hair Oil' },
-    { id: 'saree', label: isHindi ? '🥻 साड़ी' : '🥻 Saree', term: isHindi ? 'साड़ी' : 'Saree' },
-    { id: 'cooker', label: isHindi ? '🍲 कुकर' : '🍲 Pressure Cooker', term: isHindi ? 'कुकर' : 'Pressure Cooker' },
-    { id: 'soap', label: isHindi ? '🧼 साबुन' : '🧼 Soap', term: isHindi ? 'साबुन' : 'Soap' },
-    { id: 'snacks', label: isHindi ? '🍪 स्नैक्स' : '🍪 Snacks', term: isHindi ? 'स्नैक्स' : 'Snacks' },
-  ];
-
-  const trustBadges = [
-    {
-      id: 'verified_shops',
-      title: isHindi ? 'सत्यापित स्थानीय दुकानें' : 'Verified Local Shops',
-      emoji: '✅',
-    },
-    {
-      id: 'live_inventory',
-      title: isHindi ? 'लाइव इन्वेंटरी' : 'Live Inventory',
-      emoji: '⚡',
-    },
-    {
-      id: 'compare_prices',
-      title: isHindi ? 'दामों की तुलना' : 'Compare Prices',
-      emoji: '💰',
-    },
-    {
-      id: 'reserve_pickup',
-      title: isHindi ? 'रिज़र्व एवं पिकअप' : 'Reserve & Pickup',
-      emoji: '🏪',
-    },
-  ];
-
   return (
-    <section className="search-hero-section" aria-label="Product Search Hero">
+    <section className="search-hero-section" aria-label="Product Search Hero" style={{ padding: '6px 0 2px 0' }}>
       <div className="search-hero-inner">
-        {/* 1. Hero Heading & Subtitle */}
-        <div className="hero-typography">
-          <h1 className="hero-main-heading">
-            {isHindi ? 'पास की दुकानों में सामान खोजें' : 'Find Products in Nearby Shops'}
-          </h1>
-          <p className="hero-subtitle">
-            {isHindi
-              ? 'कीमतों की तुलना करें, उपलब्धता जांचें और पास से रिज़र्व करें।'
-              : 'Compare prices, check availability and reserve nearby.'}
-          </p>
-        </div>
-
-        {/* 2. Large Search Box as Primary Focus */}
-        <div className="hero-search-wrapper" role="search">
+        {/* Large Search Box as Primary App Focus (Placed Right At Top - Blinkit PWA Style) */}
+        <div className="hero-search-wrapper" role="search" style={{ width: '100%', position: 'relative' }}>
           <div
             className={`hero-search-box ${isSuggestionsOpen ? 'is-focused' : ''}`}
             onClick={() => inputRef.current?.focus()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 8px 6px 12px',
+              backgroundColor: 'var(--bg-surface, #ffffff)',
+              border: '2px solid var(--border-subtle, #e2e8f0)',
+              borderRadius: '16px',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+            }}
           >
-            <div className="search-icon-slot">
+            <div className="search-icon-slot" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               {isSearchingServer ? (
-                <Loader2 size={22} className="animate-spin text-primary" />
+                <Loader2 size={20} className="animate-spin text-primary" color="var(--color-primary, #4f46e5)" />
               ) : (
-                <Search size={22} className="hero-search-icon" />
+                <Search size={20} color="var(--color-primary, #4f46e5)" />
               )}
             </div>
 
@@ -126,8 +90,8 @@ export const SearchHeroSection = ({
               aria-label={isHindi ? 'दुकानों या सामान में खोजें' : 'Search for products or nearby shops'}
               placeholder={
                 isHindi
-                  ? 'सामान, दुकान या ब्रांड खोजें (उदा. दूध, दवा, इलेक्ट्रॉनिक्स)...'
-                  : 'Search for products, brands, or nearby shops...'
+                  ? 'सामान, दुकान या ब्रांड खोजें...'
+                  : 'Search products, brands, shops...'
               }
               value={searchTerm}
               onFocus={() => onOpenSuggestions?.()}
@@ -136,7 +100,16 @@ export const SearchHeroSection = ({
                 onOpenSuggestions?.();
               }}
               onKeyDown={handleKeyDown}
-              className="hero-search-input"
+              style={{
+                flex: 1,
+                minWidth: '70px',
+                border: 'none',
+                outline: 'none',
+                backgroundColor: 'transparent',
+                fontSize: '0.86rem',
+                fontWeight: 600,
+                color: 'var(--text-primary, #0f172a)',
+              }}
             />
 
             {/* Clear Input Button */}
@@ -147,11 +120,19 @@ export const SearchHeroSection = ({
                   e.stopPropagation();
                   onClearSearch?.();
                 }}
-                className="hero-search-clear-btn"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted, #94a3b8)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                }}
                 title={isHindi ? 'साफ़ करें' : 'Clear search'}
-                aria-label={isHindi ? 'साफ़ करें' : 'Clear search'}
               >
-                <X size={17} />
+                <X size={16} />
               </button>
             )}
 
@@ -162,22 +143,24 @@ export const SearchHeroSection = ({
                 e.stopPropagation();
                 onToggleVoiceSearch?.();
               }}
-              className={`hero-voice-btn ${isVoiceListening ? 'is-listening' : ''}`}
-              title={
-                isVoiceListening
-                  ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop')
-                  : (isHindi ? 'बोलकर खोजें' : 'Voice search')
-              }
-              aria-label={isHindi ? 'बोलकर खोजें' : 'Voice search'}
+              style={{
+                background: isVoiceListening ? '#fee2e2' : 'var(--bg-surface-subtle, #f8fafc)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '10px',
+                padding: '6px',
+                cursor: 'pointer',
+                color: isVoiceListening ? '#dc2626' : 'var(--text-secondary, #64748b)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              title={isHindi ? 'बोलकर खोजें' : 'Voice search'}
             >
-              {isVoiceListening ? (
-                <MicOff size={18} className="animate-pulse" />
-              ) : (
-                <Mic size={18} />
-              )}
+              {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
 
-            {/* Compare / Smart Search Helper Pill */}
+            {/* Compare / Smart Search Helper Pill (ALWAYS VISIBLE ON MOBILE) */}
             {onOpenSmartSearch && (
               <button
                 type="button"
@@ -185,10 +168,25 @@ export const SearchHeroSection = ({
                   e.stopPropagation();
                   onOpenSmartSearch();
                 }}
-                className="hero-compare-pill-btn"
-                title={isHindi ? 'मल्टी-शॉप तुलना' : 'Compare Nearby Stores'}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 10px',
+                  backgroundColor: '#f0fdf4',
+                  border: '1.5px solid #a7f3d0',
+                  borderRadius: '12px',
+                  color: '#059669',
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  boxShadow: '0 1px 3px rgba(16, 185, 129, 0.15)',
+                  whiteSpace: 'nowrap',
+                }}
+                title={isHindi ? 'मल्टी-शॉप लाइव तुलना' : 'Compare Nearby Stores'}
               >
-                <Sparkles size={14} />
+                <Sparkles size={14} color="#059669" />
                 <span>{isHindi ? 'तुलना' : 'Compare'}</span>
               </button>
             )}
@@ -201,7 +199,21 @@ export const SearchHeroSection = ({
                 onCloseSuggestions?.();
                 onSearchSubmit?.(searchTerm);
               }}
-              className="hero-search-action-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '7px 12px',
+                backgroundColor: 'var(--color-primary, #4f46e5)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '0.80rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                flexShrink: 0,
+                boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)',
+              }}
               title={isHindi ? 'खोजें' : 'Search'}
             >
               <span>{isHindi ? 'सर्च' : 'Search'}</span>
@@ -222,108 +234,6 @@ export const SearchHeroSection = ({
             onClearAllRecent={onClearAllRecent}
             isHindi={isHindi}
           />
-        </div>
-
-        {/* 2.5 POPULAR SEARCHES CHIPS (Immediate 1-Tap Search Trigger) */}
-        <div
-          style={{
-            marginTop: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            flexWrap: 'wrap',
-          }}
-          role="region"
-          aria-label="Popular Searches"
-        >
-          <span
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              color: 'var(--text-muted, #94a3b8)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              marginRight: '2px',
-            }}
-          >
-            {isHindi ? '🔥 लोकप्रिय खोजें:' : '🔥 Popular:'}
-          </span>
-
-          {popularSearches.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                onSearchChange?.(item.term);
-                onSelectSuggestion?.(item.term);
-                onSearchSubmit?.(item.term);
-                onCloseSuggestions?.();
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '5px 12px',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
-                border: '1px solid var(--border-subtle, #e2e8f0)',
-                borderRadius: '20px',
-                fontSize: '0.76rem',
-                fontWeight: 600,
-                color: 'var(--text-primary, #0f172a)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #eff6ff)';
-                e.currentTarget.style.borderColor = 'var(--color-primary, #2563eb)';
-                e.currentTarget.style.color = 'var(--color-primary, #2563eb)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-surface, #ffffff)';
-                e.currentTarget.style.borderColor = 'var(--border-subtle, #e2e8f0)';
-                e.currentTarget.style.color = 'var(--text-primary, #0f172a)';
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* 3. Small Rounded Trust Badge Cards in One Row (Credibility Focus) */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            flexWrap: 'wrap',
-            marginTop: '16px',
-          }}
-          role="region"
-          aria-label="Trust and Credibility Badges"
-        >
-          {trustBadges.map((badge) => (
-            <div
-              key={badge.id}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                backgroundColor: 'var(--bg-surface, #ffffff)',
-                border: '1px solid var(--border-subtle, #e2e8f0)',
-                borderRadius: '20px',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                color: 'var(--text-primary, #0f172a)',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
-              }}
-            >
-              <span style={{ fontSize: '0.85rem' }}>{badge.emoji}</span>
-              <span>{badge.title}</span>
-            </div>
-          ))}
         </div>
       </div>
     </section>

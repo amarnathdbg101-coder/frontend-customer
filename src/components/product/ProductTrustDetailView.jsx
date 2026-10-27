@@ -443,293 +443,106 @@ export const ProductTrustDetailView = ({
             </div>
           </div>
 
-          {/* ================= 🏆 COMPACT BEST VALUE SHOP PREVIEW CARD ================= */}
-          {(() => {
-            const storeLogo = bestOffer.logo || initialShop?.logo_url || initialShop?.logoUrl || '';
-            const storePhoto = bestOffer.photo || bestOffer.banner || initialShop?.banner || (Array.isArray(initialShop?.banners) && initialShop.banners[0]) || initialShop?.logo_url || '';
-            const storeIsOpen = bestOffer.isOpen !== false && (initialShop?.is_open !== false);
-
-            return (
-              <div
-                style={{
-                  position: 'relative',
-                  backgroundColor: '#f0fdf4',
-                  border: '1.5px solid #10b981',
-                  borderRadius: '16px',
-                  padding: '12px 14px',
-                  marginBottom: '14px',
-                  boxShadow: '0 3px 14px rgba(16, 185, 129, 0.12)',
-                }}
-              >
-                {/* Top Floating Badges */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      backgroundColor: '#10b981',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      fontWeight: 900,
-                      padding: '3px 9px',
-                      borderRadius: '20px',
-                      letterSpacing: '0.3px',
-                    }}
-                  >
-                    🏆 {isHindi ? 'पास में सर्वोत्तम मूल्य (Best Price Nearby)' : 'Best Price Nearby'}
-                  </span>
-
-                  {savingsAmount > 0 && (
-                    <span
-                      style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        color: '#15803d',
-                        backgroundColor: '#dcfce7',
-                        border: '1px solid #86efac',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                      }}
-                    >
-                      {isHindi ? `आप बचाते हैं ₹${savingsAmount.toFixed(0)}` : `You Save ₹${savingsAmount.toFixed(0)}`}
-                    </span>
-                  )}
-                </div>
-
-                {/* Store Header Row: Logo + Store Name + Verified Badge + Open/Closed Status */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                  {/* Store Logo */}
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
-                      backgroundColor: '#ffffff',
-                      border: '1.5px solid #a7f3d0',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {storeLogo ? (
-                      <img src={getImageUrl(storeLogo)} alt={bestOffer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <Store size={20} color="#10b981" />
-                    )}
-                  </div>
-
-                  {/* Store Name & Verification & Status */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <h3 style={{ fontSize: '1.02rem', fontWeight: 800, margin: 0, color: '#064e3b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {bestOffer.name}
-                      </h3>
-                      <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', marginTop: '2px' }}>
-                      <span style={{ fontWeight: 700, color: storeIsOpen ? '#15803d' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: storeIsOpen ? '#10b981' : '#dc2626' }} />
-                        {storeIsOpen ? (isHindi ? 'खुली है (Open Now)' : 'Open Now') : (isHindi ? 'बंद है' : 'Closed')}
-                      </span>
-                      <span style={{ color: '#047857' }}>•</span>
-                      <span style={{ color: '#047857', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <MapPin size={11} color="#10b981" />
-                        {bestOffer.distanceStr}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Store Cover Photo (Compact 140px Height) */}
-                {storePhoto && (
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '140px',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      marginBottom: '10px',
-                      border: '1px solid #a7f3d0',
-                      position: 'relative',
-                    }}
-                  >
-                    <img
-                      src={getImageUrl(storePhoto)}
-                      alt={bestOffer.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'linear-gradient(to top, rgba(6, 78, 59, 0.70) 0%, transparent 60%)',
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: '8px',
-                        left: '10px',
-                        right: '10px',
-                        color: '#ffffff',
-                        fontSize: '0.72rem',
-                        fontWeight: 800,
-                        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                      }}
-                    >
-                      <Store size={13} color="#ffffff" />
-                      <span>📍 Verified Counter Inventory • 100% Real Store</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Price & View Profile Link Bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
-                  <div>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      {isHindi ? 'बेस्ट काउंटर प्राइस' : 'BEST COUNTER PRICE'}
-                    </span>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#047857', lineHeight: 1 }}>
-                      ₹{bestOffer.price.toFixed(0)}
-                    </div>
-                  </div>
-
-                  {bestOffer.slug && (
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/shop/${bestOffer.slug}`)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#047857',
-                        fontWeight: 800,
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 0',
-                        textDecoration: 'underline',
-                      }}
-                    >
-                      <span>{isHindi ? 'दुकान प्रोफाइल देखें' : 'View Store Profile'}</span>
-                      <span>→</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Primary Action Button: Reserve Now */}
-                <button
-                  type="button"
-                  onClick={() => openReservationForShop(bestOffer)}
+          {/* SLEEK & COMPACT SHOP LINK CARD (Clicking navigates to shop profile) */}
+          {bestOffer && (
+            <div
+              onClick={() => {
+                if (bestOffer.slug) navigate(`/shop/${bestOffer.slug}`);
+              }}
+              style={{
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1.5px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '14px',
+                padding: '12px 14px',
+                marginBottom: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                transition: 'all 0.15s ease-in-out',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                <div
                   style={{
-                    width: '100%',
-                    backgroundColor: '#10b981',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '12px 18px',
-                    fontSize: '0.92rem',
-                    fontWeight: 900,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--color-primary-light, #f0f4ff)',
+                    color: 'var(--color-primary, #4f46e5)',
+                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
-                    transition: 'all 0.15s ease',
+                    flexShrink: 0,
                   }}
                 >
-                  <span>⚡ {isHindi ? 'अभी रिज़र्व करें' : 'Reserve Now'}</span>
-                </button>
+                  <Store size={18} />
+                </div>
 
-                {/* Footnote Guarantee */}
-                <div style={{ fontSize: '0.72rem', color: '#065f46', marginTop: '8px', textAlign: 'center', fontWeight: 600 }}>
-                  🛡️ No advance payment required. Pickup directly from store.
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ fontSize: '0.90rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {bestOffer.name}
+                    </span>
+                    <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
+                  </div>
+
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                    <span style={{ color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                      {isHindi ? 'खुली है' : 'Open Now'}
+                    </span>
+                    <span>•</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <MapPin size={11} color="var(--color-primary, #4f46e5)" />
+                      {bestOffer.distanceStr}
+                    </span>
+                  </div>
                 </div>
               </div>
-            );
-          })()}
 
-          {/* 4. COMPARE NEARBY SHOPS (3 to 5 Stores) */}
-          <div
-            id="compare-shops-section"
-            ref={compareSectionRef}
-            className="compare-nearby-shops-card"
-          >
-            <div className="compare-card-header">
-              <div className="compare-title-group">
-                <Store size={18} className="compare-header-icon" />
-                <h2 className="compare-card-title">
-                  {isHindi ? 'पास की दुकानों की तुलना करें' : 'Compare Nearby Shops'}
-                </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', fontWeight: 800, color: 'var(--color-primary, #4f46e5)', flexShrink: 0 }}>
+                <span>{isHindi ? 'दुकान देखें' : 'View Store'}</span>
+                <ChevronRight size={15} />
               </div>
-              <span className="compare-count-pill">
-                {nearbyOffers.length} {isHindi ? 'दुकानें' : 'Shops'}
-              </span>
             </div>
+          )}
 
-            <p className="compare-subheading">
-              {isHindi
-                ? 'कीमत, दूरी और अपडेट समय देखकर मनपसंद दुकान से सामान रिज़र्व करें।'
-                : 'Check live prices and distances from verified local stores.'}
-            </p>
+          {/* Primary Action Button: Reserve Now */}
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              type="button"
+              onClick={() => openReservationForShop(bestOffer)}
+              style={{
+                width: '100%',
+                backgroundColor: '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '12px 18px',
+                fontSize: '0.92rem',
+                fontWeight: 900,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>⚡ {isHindi ? 'अभी रिज़र्व करें' : 'Reserve Now'}</span>
+            </button>
 
-            <div className="compare-shops-list">
-              {nearbyOffers.map((storeOffer, index) => (
-                <div
-                  key={storeOffer.id}
-                  className={`compare-shop-row ${index === 0 ? 'is-best-row' : ''}`}
-                >
-                  {/* Shop Info */}
-                  <div className="compare-shop-info">
-                    <div className="compare-shop-name-row">
-                      <span className="compare-shop-name">{storeOffer.name}</span>
-                      <CheckCircle2 size={14} className="verified-tiny-check" />
-                      {index === 0 && (
-                        <span className="best-price-tiny-tag">
-                          {isHindi ? 'सर्वोत्तम' : 'BEST'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="compare-shop-submeta">
-                      <span className="compare-dist-pill">
-                        <MapPin size={12} />
-                        {storeOffer.distanceStr}
-                      </span>
-                      <span className="compare-meta-dot">•</span>
-                      <span className="compare-updated-text">
-                        <Clock size={12} />
-                        {storeOffer.updatedTime}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Price & Action */}
-                  <div className="compare-shop-right-action">
-                    <span className="compare-shop-price">₹{storeOffer.price.toFixed(0)}</span>
-                    <button
-                      type="button"
-                      onClick={() => openReservationForShop(storeOffer)}
-                      className="compare-row-reserve-btn"
-                    >
-                      {isHindi ? 'रिज़र्व' : 'Reserve'}
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div style={{ fontSize: '0.72rem', color: '#065f46', marginTop: '8px', textAlign: 'center', fontWeight: 600 }}>
+              🛡️ No advance payment required. Pickup directly from store.
             </div>
           </div>
 
-          {/* 5. WHY TRUST THIS LISTING (Positioned Below Compare Shops to Support Decision) */}
-          <div className="why-trust-listing-card" style={{ marginTop: '16px' }}>
+          {/* WHY TRUST THIS LISTING (Positioned Below Reserve CTA to Support Decision) */}
+          <div className="why-trust-listing-card" style={{ marginTop: '8px' }}>
             <div className="why-trust-header">
               <ShieldCheck size={20} className="trust-shield-icon" />
               <h3 className="why-trust-title">

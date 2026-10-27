@@ -22,6 +22,7 @@ export const AppFooter = () => {
 
   return (
     <footer
+      className="app-footer-container"
       style={{
         backgroundColor: 'var(--bg-surface, #ffffff)',
         borderTop: '1px solid var(--border-subtle, #e2e8f0)',

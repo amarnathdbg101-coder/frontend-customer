@@ -67,6 +67,11 @@ export const SearchResultHeader = ({
 
   const isSearching = Boolean(searchTerm?.trim());
 
+  // HIDE FILTER PILLS BAR ON HOMEPAGE DEFAULT VIEW (Only show when searching)
+  if (!isSearching) {
+    return null;
+  }
+
   return (
     <div style={{ marginBottom: '16px' }}>
       {/* ================= 1. HIGH-IMPACT COMPARISON BANNER ================= */}
