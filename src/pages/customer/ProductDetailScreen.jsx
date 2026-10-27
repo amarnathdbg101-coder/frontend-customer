@@ -21,9 +21,21 @@ import { productApi } from '../../api/product.api';
 import { shopApi } from '../../api/shop.api';
 import { reservationApi } from '../../api/reservation.api';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
+import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductStudioView } from '../../components/product/ProductStudioView';
+
+// Safe helper to extract an array from varied API response shapes
+const extractArray = (res, key) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res[key])) return res[key];
+  if (res.data && Array.isArray(res.data[key])) return res.data[key];
+  if (res.data && Array.isArray(res.data)) return res.data;
+  if (res.data && res.data.data && Array.isArray(res.data.data[key])) return res.data.data[key];
+  return [];
+};
 
 export const ProductDetailScreen = () => {
   const { productId, slug } = useParams();
@@ -34,6 +46,7 @@ export const ProductDetailScreen = () => {
   // Optimistic initial product from navigation state if available
   const [product, setProduct] = useState(location.state?.product || null);
   const [shop, setShop] = useState(location.state?.shop || null);
+  const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
 
@@ -126,6 +139,35 @@ export const ProductDetailScreen = () => {
       isMounted = false;
     };
   }, [productId, slug]);
+
+  // Fetch similar products from the same store / catalog
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSimilar() {
+      if (!product) return;
+      try {
+        const targetSlug = slug || product.shop_slug || shop?.slug;
+        let rawList = [];
+        if (targetSlug && targetSlug !== 'store') {
+          const res = await productApi.listByShopSlug(targetSlug, { limit: 12 });
+          rawList = extractArray(res, 'products');
+        } else {
+          const res = await productApi.listProducts({ limit: 12 });
+          rawList = extractArray(res, 'products');
+        }
+
+        const filtered = rawList.filter((item) => String(item.id || item.product_id) !== String(product.id));
+        if (isMounted) {
+          setSimilarProducts(filtered.slice(0, 10));
+        }
+      } catch (err) {
+        console.warn('Failed to load similar products:', err);
+      }
+    }
+
+    loadSimilar();
+    return () => { isMounted = false; };
+  }, [product?.id, slug, shop?.slug]);
 
   const handleReserve = async ({ product: p, quantity, hold_hours, notes }) => {
     const res = await reservationApi.createReservation({
@@ -222,6 +264,124 @@ export const ProductDetailScreen = () => {
           onReserve={handleReserve}
           isMerchant={false}
         />
+
+        {/* Clean Horizontal Row of Similar Products */}
+        {similarProducts.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
+                {isHindi ? 'मिलते-जुलते सामान (Similar Products)' : 'Similar Products'}
+              </h3>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted, #64748b)' }}>
+                {similarProducts.length} {isHindi ? 'सामान' : 'Items'}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                overflowX: 'auto',
+                paddingBottom: '8px',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+            >
+              {similarProducts.map((item) => {
+                const itemId = item.id || item.product_id;
+                const itemPrice = Number(item.price || item.selling_price || 0);
+                const firstImg = extractFirstImage(item.images || item.image || item.image_url);
+                const itemCat = typeof item.category === 'object' ? (item.category?.name || '') : String(item.category || '');
+
+                return (
+                  <div
+                    key={itemId}
+                    onClick={() => {
+                      navigate(`/shop/${storeSlug || 'store'}/product/${itemId}`, {
+                        state: { product: item, shop },
+                      });
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      flex: '0 0 145px',
+                      width: '145px',
+                      backgroundColor: 'var(--bg-surface, #ffffff)',
+                      border: '1.5px solid var(--border-subtle, #e2e8f0)',
+                      borderRadius: '12px',
+                      padding: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease-in-out',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '129px',
+                        height: '105px',
+                        backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      {firstImg ? (
+                        <img
+                          src={getImageUrl(firstImg)}
+                          alt={item.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                        />
+                      ) : (
+                        <Package size={28} color="#94a3b8" style={{ opacity: 0.35 }} />
+                      )}
+                    </div>
+
+                    {itemCat && (
+                      <div
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          color: 'var(--text-muted, #94a3b8)',
+                          textTransform: 'uppercase',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          marginBottom: '2px',
+                        }}
+                      >
+                        {itemCat}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: 'var(--text-primary, #0f172a)',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        height: '2.3em',
+                        lineHeight: 1.15,
+                        marginBottom: '4px',
+                      }}
+                      title={item.name}
+                    >
+                      {item.name}
+                    </div>
+
+                    <div style={{ fontSize: '0.84rem', fontWeight: 900, color: 'var(--color-primary, #2563eb)' }}>
+                      ₹{itemPrice.toFixed(0)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
