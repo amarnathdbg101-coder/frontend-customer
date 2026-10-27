@@ -57,26 +57,37 @@ export const SearchHeroSection = ({
     }
   };
 
+  const popularSearches = [
+    { id: 'rice', label: isHindi ? '🌾 चावल' : '🌾 Rice', term: isHindi ? 'चावल' : 'Rice' },
+    { id: 'atta', label: isHindi ? '🌾 आटा' : '🌾 Atta', term: isHindi ? 'आटा' : 'Atta' },
+    { id: 'milk', label: isHindi ? '🥛 दूध' : '🥛 Milk', term: isHindi ? 'दूध' : 'Milk' },
+    { id: 'hairoil', label: isHindi ? '🧴 हेयर ऑयल' : '🧴 Hair Oil', term: isHindi ? 'हेयर ऑयल' : 'Hair Oil' },
+    { id: 'saree', label: isHindi ? '🥻 साड़ी' : '🥻 Saree', term: isHindi ? 'साड़ी' : 'Saree' },
+    { id: 'cooker', label: isHindi ? '🍲 कुकर' : '🍲 Pressure Cooker', term: isHindi ? 'कुकर' : 'Pressure Cooker' },
+    { id: 'soap', label: isHindi ? '🧼 साबुन' : '🧼 Soap', term: isHindi ? 'साबुन' : 'Soap' },
+    { id: 'snacks', label: isHindi ? '🍪 स्नैक्स' : '🍪 Snacks', term: isHindi ? 'स्नैक्स' : 'Snacks' },
+  ];
+
   const trustBadges = [
     {
       id: 'verified_shops',
-      title: isHindi ? 'वेरीफाइड दुकानें' : 'Verified Shops',
-      icon: <ShieldCheck size={16} className="trust-icon verified" />,
+      title: isHindi ? 'सत्यापित स्थानीय दुकानें' : 'Verified Local Shops',
+      emoji: '✅',
     },
     {
       id: 'live_inventory',
-      title: isHindi ? 'लाइव स्टॉक' : 'Live Inventory',
-      icon: <Radio size={15} className="trust-icon live" />,
+      title: isHindi ? 'लाइव इन्वेंटरी' : 'Live Inventory',
+      emoji: '⚡',
     },
     {
       id: 'compare_prices',
-      title: isHindi ? 'कीमत तुलना' : 'Compare Prices',
-      icon: <Scale size={16} className="trust-icon compare" />,
+      title: isHindi ? 'दामों की तुलना' : 'Compare Prices',
+      emoji: '💰',
     },
     {
       id: 'reserve_pickup',
-      title: isHindi ? 'रिज़र्व व पिकअप' : 'Reserve & Pickup',
-      icon: <ShoppingBag size={15} className="trust-icon reserve" />,
+      title: isHindi ? 'रिज़र्व एवं पिकअप' : 'Reserve & Pickup',
+      emoji: '🏪',
     },
   ];
 
@@ -213,12 +224,104 @@ export const SearchHeroSection = ({
           />
         </div>
 
-        {/* 3. Four Trust Badges in One Row */}
-        <div className="trust-badges-row" role="region" aria-label="Trust and Reliability Badges">
+        {/* 2.5 POPULAR SEARCHES CHIPS (Immediate 1-Tap Search Trigger) */}
+        <div
+          style={{
+            marginTop: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            flexWrap: 'wrap',
+          }}
+          role="region"
+          aria-label="Popular Searches"
+        >
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              color: 'var(--text-muted, #94a3b8)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginRight: '2px',
+            }}
+          >
+            {isHindi ? '🔥 लोकप्रिय खोजें:' : '🔥 Popular:'}
+          </span>
+
+          {popularSearches.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                onSearchChange?.(item.term);
+                onSelectSuggestion?.(item.term);
+                onSearchSubmit?.(item.term);
+                onCloseSuggestions?.();
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '5px 12px',
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '20px',
+                fontSize: '0.76rem',
+                fontWeight: 600,
+                color: 'var(--text-primary, #0f172a)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-light, #eff6ff)';
+                e.currentTarget.style.borderColor = 'var(--color-primary, #2563eb)';
+                e.currentTarget.style.color = 'var(--color-primary, #2563eb)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-surface, #ffffff)';
+                e.currentTarget.style.borderColor = 'var(--border-subtle, #e2e8f0)';
+                e.currentTarget.style.color = 'var(--text-primary, #0f172a)';
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 3. Small Rounded Trust Badge Cards in One Row (Credibility Focus) */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            flexWrap: 'wrap',
+            marginTop: '16px',
+          }}
+          role="region"
+          aria-label="Trust and Credibility Badges"
+        >
           {trustBadges.map((badge) => (
-            <div key={badge.id} className="trust-badge-item">
-              <span className="trust-badge-icon">{badge.icon}</span>
-              <span className="trust-badge-title">{badge.title}</span>
+            <div
+              key={badge.id}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '20px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: 'var(--text-primary, #0f172a)',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+              }}
+            >
+              <span style={{ fontSize: '0.85rem' }}>{badge.emoji}</span>
+              <span>{badge.title}</span>
             </div>
           ))}
         </div>

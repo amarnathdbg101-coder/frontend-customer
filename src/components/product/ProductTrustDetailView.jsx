@@ -334,73 +334,6 @@ export const ProductTrustDetailView = ({
               </div>
             )}
           </div>
-
-          {/* 5. WHY TRUST THIS LISTING (Desktop Anchor & Info Confidence) */}
-          <div className="why-trust-listing-card">
-            <div className="why-trust-header">
-              <ShieldCheck size={20} className="trust-shield-icon" />
-              <h3 className="why-trust-title">
-                {isHindi ? 'इस लिस्टिंग पर भरोसा क्यों करें' : 'Why Trust This Listing'}
-              </h3>
-            </div>
-            <div className="why-trust-list">
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'वेरीफाइड लोकल दुकान' : 'Verified Local Shop'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? 'शॉपसिलो टीम द्वारा भौतिक रूप से सत्यापित स्टोर'
-                      : 'Physical storefront verified with real counter presence'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'हाल ही में अपडेटेड इन्वेंटरी' : 'Inventory Recently Updated'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? 'दुकानदार के काउंटर स्टॉक से सीधे सिंक'
-                      : 'Stock availability verified directly with merchant'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'पिकअप तुरंत उपलब्ध' : 'Pickup Available'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? '15 मिनट में काउंटर से सुरक्षित रूप से सामान लें'
-                      : 'Collect from counter in under 15 minutes with OTP pass'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'कोई ऑनलाइन भुगतान ज़रूरी नहीं' : 'No Online Payment Required'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? 'सामान देखकर दुकान पर ही कैश या UPI से पे करें'
-                      : 'Zero advance risk — inspect in person and pay at pickup'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* ==================================================================
@@ -559,15 +492,15 @@ export const ProductTrustDetailView = ({
                   </div>
                 </div>
 
-                {/* Store Cover Photo (Gives Real Store Business Presence) */}
+                {/* Store Cover Photo (Gives Real Store Business Presence - Height Increased 40%) */}
                 {storePhoto && (
                   <div
                     style={{
                       width: '100%',
-                      height: '110px',
-                      borderRadius: '12px',
+                      height: '155px',
+                      borderRadius: '14px',
                       overflow: 'hidden',
-                      marginBottom: '12px',
+                      marginBottom: '14px',
                       border: '1px solid #a7f3d0',
                       position: 'relative',
                     }}
@@ -581,21 +514,25 @@ export const ProductTrustDetailView = ({
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        background: 'linear-gradient(to top, rgba(6, 78, 59, 0.45) 0%, transparent 60%)',
+                        background: 'linear-gradient(to top, rgba(6, 78, 59, 0.65) 0%, transparent 60%)',
                       }}
                     />
                     <div
                       style={{
                         position: 'absolute',
-                        bottom: '8px',
-                        left: '10px',
+                        bottom: '10px',
+                        left: '12px',
                         color: '#ffffff',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                        fontSize: '0.76rem',
+                        fontWeight: 800,
+                        textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
                       }}
                     >
-                      📍 Verified Counter Inventory • 100% Real Local Business
+                      <Store size={14} color="#ffffff" />
+                      <span>📍 Verified Counter Inventory • 100% Real Local Business</span>
                     </div>
                   </div>
                 )}
@@ -735,6 +672,73 @@ export const ProductTrustDetailView = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* 5. WHY TRUST THIS LISTING (Positioned Below Compare Shops to Support Decision) */}
+          <div className="why-trust-listing-card" style={{ marginTop: '16px' }}>
+            <div className="why-trust-header">
+              <ShieldCheck size={20} className="trust-shield-icon" />
+              <h3 className="why-trust-title">
+                {isHindi ? 'इस लिस्टिंग पर भरोसा क्यों करें' : 'Why Trust This Listing'}
+              </h3>
+            </div>
+            <div className="why-trust-list">
+              <div className="trust-signal-item">
+                <CheckCircle2 size={18} className="trust-green-check" />
+                <div className="trust-signal-text-group">
+                  <span className="trust-signal-headline">
+                    {isHindi ? 'वेरीफाइड लोकल दुकान' : 'Verified Local Shop'}
+                  </span>
+                  <span className="trust-signal-subtext">
+                    {isHindi
+                      ? 'शॉपसिलो टीम द्वारा भौतिक रूप से सत्यापित स्टोर'
+                      : 'Physical storefront verified with real counter presence'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="trust-signal-item">
+                <CheckCircle2 size={18} className="trust-green-check" />
+                <div className="trust-signal-text-group">
+                  <span className="trust-signal-headline">
+                    {isHindi ? 'हाल ही में अपडेटेड इन्वेंटरी' : 'Inventory Recently Updated'}
+                  </span>
+                  <span className="trust-signal-subtext">
+                    {isHindi
+                      ? 'दुकानदार के काउंटर स्टॉक से सीधे सिंक'
+                      : 'Stock availability verified directly with merchant'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="trust-signal-item">
+                <CheckCircle2 size={18} className="trust-green-check" />
+                <div className="trust-signal-text-group">
+                  <span className="trust-signal-headline">
+                    {isHindi ? 'पिकअप तुरंत उपलब्ध' : 'Pickup Available'}
+                  </span>
+                  <span className="trust-signal-subtext">
+                    {isHindi
+                      ? '15 मिनट में काउंटर से सुरक्षित रूप से सामान लें'
+                      : 'Collect from counter in under 15 minutes with OTP pass'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="trust-signal-item">
+                <CheckCircle2 size={18} className="trust-green-check" />
+                <div className="trust-signal-text-group">
+                  <span className="trust-signal-headline">
+                    {isHindi ? 'कोई ऑनलाइन भुगतान ज़रूरी नहीं' : 'No Online Payment Required'}
+                  </span>
+                  <span className="trust-signal-subtext">
+                    {isHindi
+                      ? 'सामान देखकर दुकान पर ही कैश या UPI से पे करें'
+                      : 'Zero advance risk — inspect in person and pay at pickup'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -192,17 +192,22 @@
   line-height: 1.2;
 }
 
-/* 5. Local Store Information */
+/* 5. Local Store Information (High Prominence) */
 .product-card-store-box {
   background-color: var(--bg-surface-subtle, #f8fafc);
-  border: 1px solid var(--border-subtle, #f1f5f9);
-  border-radius: 8px;
-  padding: 6px 8px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 9px;
+  padding: 7px 9px;
   margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
+}
+
+.product-card:hover .product-card-store-box {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
 }
 
 .product-card-store-name-row {
@@ -213,15 +218,15 @@
 }
 
 .product-card-store-icon {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   line-height: 1;
   flex-shrink: 0;
 }
 
 .product-card-store-name {
-  font-size: 0.74rem;
-  font-weight: 650;
-  color: var(--text-primary, #1e293b);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -229,8 +234,8 @@
 }
 
 .product-card-verified-badge {
-  color: #0284c7;
-  font-size: 0.72rem;
+  color: #10b981;
+  font-size: 0.78rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
@@ -244,14 +249,14 @@
 }
 
 .product-card-distance-icon {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   line-height: 1;
   flex-shrink: 0;
 }
 
 .product-card-distance-text {
-  font-size: 0.70rem;
-  font-weight: 500;
+  font-size: 0.74rem;
+  font-weight: 600;
   color: var(--text-secondary, #64748b);
   line-height: 1;
 }

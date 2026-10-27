@@ -31,6 +31,7 @@ import { reservationApi } from '../../api/reservation.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { HomeHeader } from '../../components/layout/HomeHeader';
 import { SearchHeroSection } from '../../components/customer/SearchHeroSection';
+import { HowShopSiloWorksSection } from '../../components/customer/HowShopSiloWorksSection';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -858,6 +859,9 @@ export const ExploreShopsScreen = () => {
         onOpenSmartSearch={() => setIsSmartSearchOpen(true)}
         isHindi={isHindi}
       />
+
+      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE */}
+      <HowShopSiloWorksSection />
 
       {/* 2. BELOW-THE-FOLD: CLEAN FEED HEADER & SORT CONTROLS */}
       <div id="marketplace-feed" style={{ marginTop: '24px' }}>
