@@ -278,6 +278,52 @@ export const NearbyShopsComparison = ({
           </div>
         </div>
 
+        {/* Store Cover Photo (Gives Real Store Business Presence - Height Increased 40%) */}
+        {(bestShop.photo || bestShop.banner || (Array.isArray(bestShop.banners) && bestShop.banners[0]) || bestShop.logo_url) && (
+          <div
+            style={{
+              width: '100%',
+              height: '155px',
+              borderRadius: '14px',
+              overflow: 'hidden',
+              marginTop: '12px',
+              marginBottom: '4px',
+              border: '1px solid #a7f3d0',
+              position: 'relative',
+            }}
+          >
+            <img
+              src={getImageUrl(bestShop.photo || bestShop.banner || (Array.isArray(bestShop.banners) && bestShop.banners[0]) || bestShop.logo_url)}
+              alt={bestShop.shopName}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to top, rgba(6, 78, 59, 0.65) 0%, transparent 60%)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '10px',
+                left: '12px',
+                color: '#ffffff',
+                fontSize: '0.76rem',
+                fontWeight: 800,
+                textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Store size={14} color="#ffffff" />
+              <span>📍 Verified Counter Inventory • 100% Real Local Business</span>
+            </div>
+          </div>
+        )}
+
         {/* Action Button & Risk-Free Reassurance */}
         <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #a7f3d0' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
