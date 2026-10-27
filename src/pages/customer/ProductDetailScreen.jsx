@@ -25,6 +25,7 @@ import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductStudioView } from '../../components/product/ProductStudioView';
+import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
 
 // Safe helper to extract an array from varied API response shapes
 const extractArray = (res, key) => {
@@ -256,13 +257,11 @@ export const ProductDetailScreen = () => {
           <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{product.name}</span>
         </div>
 
-        {/* Clean Product Studio Showcase */}
-        <ProductStudioView
+        {/* Product Trust, Comparison and Reservation Experience */}
+        <ProductTrustDetailView
           product={product}
           shop={shop}
-          isModal={false}
           onReserve={handleReserve}
-          isMerchant={false}
         />
 
         {/* Clean Horizontal Row of Similar Products */}

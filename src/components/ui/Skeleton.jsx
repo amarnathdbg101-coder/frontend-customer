@@ -41,45 +41,60 @@ export const SkeletonImage = ({ height = '160px' }) => (
   <Skeleton width="100%" height={height} borderRadius="var(--radius-sm)" />
 );
 
-/** Skeleton for a product card matching exact ProductCard square layout */
+/** Skeleton for a product card matching exact ProductCard layout */
 export const SkeletonProductCard = () => (
   <div
     style={{
       backgroundColor: 'var(--bg-surface, #ffffff)',
-      borderRadius: '14px',
+      borderRadius: '16px',
       border: '1px solid var(--border-subtle, #e2e8f0)',
+      padding: '12px',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
       height: '100%',
-      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
     }}
   >
     <div>
-      {/* Square Image Placeholder (1:1 Ratio) */}
-      <div style={{ width: '100%', aspectRatio: '1 / 1', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', padding: '6px' }}>
+      {/* 1. Square Image Placeholder (1:1 Ratio) */}
+      <div style={{ width: '100%', aspectRatio: '1 / 1', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', borderRadius: '12px', padding: '10px' }}>
         <Skeleton width="100%" height="100%" borderRadius="10px" />
       </div>
 
-      {/* 1-Line Title Placeholder */}
-      <div style={{ padding: '8px 10px 4px 10px' }}>
-        <Skeleton height="14px" width="80%" borderRadius="4px" />
+      {/* 2. Availability Placeholder */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', marginBottom: '4px' }}>
+        <Skeleton width="8px" height="8px" borderRadius="50%" />
+        <Skeleton width="75px" height="12px" borderRadius="4px" />
+      </div>
+
+      {/* 3. Product Title Placeholder (2 Lines) */}
+      <div style={{ margin: '4px 0 6px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <Skeleton height="14px" width="90%" borderRadius="4px" />
+        <Skeleton height="14px" width="60%" borderRadius="4px" />
+      </div>
+
+      {/* 4. Price & Savings Placeholder */}
+      <div style={{ marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <Skeleton height="18px" width="55px" borderRadius="4px" />
+          <Skeleton height="12px" width="35px" borderRadius="4px" />
+        </div>
+        <Skeleton height="12px" width="60px" borderRadius="4px" />
+      </div>
+
+      {/* 5. Store Information Chip Placeholder */}
+      <div style={{ backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', border: '1px solid var(--border-subtle, #f1f5f9)', borderRadius: '8px', padding: '6px 8px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <Skeleton height="12px" width="85%" borderRadius="4px" />
+        <Skeleton height="10px" width="50%" borderRadius="4px" />
       </div>
     </div>
 
-    {/* Price & Button Placeholder Row */}
-    <div
-      style={{
-        padding: '0 10px 10px 10px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '4px',
-      }}
-    >
-      <Skeleton height="18px" width="48px" borderRadius="4px" />
-      <Skeleton height="26px" width="54px" borderRadius="6px" />
+    {/* 6. Dual Action Buttons Placeholder */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: 'auto' }}>
+      <Skeleton height="30px" width="100%" borderRadius="8px" />
+      <Skeleton height="30px" width="100%" borderRadius="8px" />
     </div>
   </div>
 );

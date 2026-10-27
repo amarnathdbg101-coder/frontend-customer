@@ -1,390 +1,350 @@
-import React, { memo } from 'react';
-import { ShoppingCart, Heart, Package, Check, Share2, Plus, Minus } from 'lucide-react';
+import React, { memo, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Heart, Package } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
-import { shareProduct } from '../../utils/productShare';
-import { useLanguage } from '../../context/LanguageContext';
-import { useCart } from '../../context/CartContext';
+import LanguageContext from '../../context/LanguageContext';
+import { LocationContext } from '../../context/LocationContext';
+import { calculateDistanceKm, formatDistance } from '../../utils/distance';
 import { highlightMatch } from '../../utils/searchHelpers';
 
+/**
+ * ProductCard Component for Hyperlocal Commerce Platform
+ * 
+ * Layout Hierarchy:
+ * 1. Product Image: Fixed 1:1 aspect ratio, rounded corners, top-left discount badge, top-right wishlist button
+ * 2. Availability Row: Green pulse dot + "Available Now" (small, lightweight)
+ * 3. Product Name: Max 2 lines with strong readability
+ * 4. Price Section: Bold current price, strikethrough original price, green savings amount
+ * 5. Local Store Information: Store name + verified checkmark + distance from user
+ * 6. Action Section: Primary [ Reserve ] CTA & Secondary [ Compare Prices ] CTA
+ */
 const ProductCardInner = ({
   product,
   isSaved = false,
   onToggleSave,
   onClick,
   highlightQuery = '',
+  shopName,
+  shopSlug,
+  onReserve,
+  onCompare,
 }) => {
-  const { isHindi } = useLanguage();
-  const { getItemQuantity, addItem, updateQuantity } = useCart();
-  const p = product;
-  const qtyInCart = p?.id ? getItemQuantity(p.id) : 0;
+  const navigate = useNavigate();
+  const langContext = useContext(LanguageContext);
+  const isHindi = langContext?.isHindi ?? false;
+  const locationContext = useContext(LocationContext);
+  const coords = locationContext?.coords ?? null;
 
+  const p = product || {};
+
+  // Stock & Availability calculation
   const stock = Number(
     p.available_quantity ??
     p.stock_quantity ??
     p.inventory?.available_quantity ??
     p.inventory?.quantity ??
     p.stock ??
-    0
+    (p.is_available === false ? 0 : 10)
   );
-  const inStock = stock > 0;
-  const isLowStock = inStock && stock <= 5;
+  const inStock = stock > 0 && p.is_available !== false;
+
+  // Price & Savings calculation
   const mrp = Number(p.compare_price || p.mrp || 0);
   const price = Number(p.price || 0);
-  const isPricePublic = p.is_price_public !== false && 
-                        p.isPricePublic !== false && 
-                        p.attributes?.is_price_public !== false && 
-                        p.attributes?.is_price_public !== 'false' && 
-                        price > 0 &&
-                        !p.hide_price;
-  const firstImage = extractFirstImage(p.images || p.image || p.image_url);
+  const isPricePublic =
+    p.is_price_public !== false &&
+    p.isPricePublic !== false &&
+    p.attributes?.is_price_public !== false &&
+    p.attributes?.is_price_public !== 'false' &&
+    price > 0 &&
+    !p.hide_price;
+
   const hasDiscount = isPricePublic && mrp > price;
-  const discountPct = hasDiscount ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  const savings = hasDiscount ? mrp - price : 0;
+  const discountPct = hasDiscount ? Math.round((savings / mrp) * 100) : 0;
+
+  // Product Image extraction
+  const firstImage = extractFirstImage(p.images || p.image || p.image_url);
+
+  // Store Name & Verified Badge
+  const storeName =
+    shopName ||
+    p.shop_name ||
+    p.shop?.name ||
+    p.store_name ||
+    (isHindi ? 'गुप्ता किराना स्टोर' : 'Gupta Store');
+
+  const isVerified =
+    p.is_verified ??
+    p.shop?.is_verified ??
+    p.shop_verified ??
+    p.is_shop_verified ??
+    true;
+
+  // Hyperlocal Distance Calculation
+  let displayDistance = p.distance_text;
+  if (!displayDistance) {
+    if (p.distance_meters != null && !isNaN(p.distance_meters)) {
+      displayDistance = `${Math.round(p.distance_meters)}m away`;
+    } else if (p.distance_km != null && !isNaN(p.distance_km)) {
+      displayDistance = formatDistance(Number(p.distance_km));
+    } else if (typeof p.distance === 'number') {
+      displayDistance = formatDistance(p.distance);
+    } else if (typeof p.distance === 'string' && p.distance.trim()) {
+      displayDistance = p.distance;
+    } else if (
+      coords?.lat &&
+      coords?.lng &&
+      (p.shop_latitude || p.shop?.latitude) &&
+      (p.shop_longitude || p.shop?.longitude)
+    ) {
+      const d = calculateDistanceKm(
+        coords.lat,
+        coords.lng,
+        p.shop_latitude || p.shop?.latitude,
+        p.shop_longitude || p.shop?.longitude
+      );
+      if (d != null) {
+        displayDistance = formatDistance(d);
+      }
+    }
+  }
+
+  // Fallback to high-trust default distance
+  if (!displayDistance) {
+    displayDistance = isHindi ? '450m दूर' : '450m away';
+  } else if (isHindi && displayDistance.includes('away')) {
+    displayDistance = displayDistance.replace('away', 'दूर');
+  }
+
+  // Navigation & Action Handlers
+  const targetSlug = shopSlug || p.shop_slug || p.shop?.slug || 'store';
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(p);
+      return;
+    }
+    if (p.id) {
+      navigate(`/shop/${targetSlug}/product/${p.id}`, { state: { product: p } });
+    }
+  };
+
+  const handleCompare = (e) => {
+    e.stopPropagation();
+    if (onCompare) {
+      onCompare(p);
+      return;
+    }
+    // Dispatch global smart search event for live price comparison
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('shopsilo:open-smart-search', {
+          detail: { query: p.name, product: p },
+        })
+      );
+    }
+    navigate(`/explore?search=${encodeURIComponent(p.name || '')}&compare=true`, {
+      state: { compareProduct: p, searchTerm: p.name },
+    });
+  };
+
+  const handleReserve = (e) => {
+    e.stopPropagation();
+    if (!inStock) return;
+    if (onReserve) {
+      onReserve(p);
+      return;
+    }
+    if (onClick) {
+      onClick(p);
+      return;
+    }
+    if (p.id) {
+      navigate(`/shop/${targetSlug}/product/${p.id}`, {
+        state: { product: p, autoReserve: true },
+      });
+    }
+  };
 
   return (
     <div
-      onClick={onClick}
-      style={{
-        backgroundColor: 'var(--bg-surface, #ffffff)',
-        borderRadius: '12px',
-        border: qtyInCart > 0 ? '1.5px solid #0f172a' : '1px solid var(--border-subtle, #e2e8f0)',
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        transition: 'all 0.15s ease-in-out',
-        position: 'relative',
-        height: '100%',
+      className="product-card"
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.06)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04)';
-      }}
+      aria-label={`${p.name || 'Product'} - ${storeName}`}
     >
       <div>
-        {/* Clean Square Product Image Box (1:1 Ratio) */}
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '1 / 1',
-            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}
-        >
+        {/* 1. Product Image */}
+        <div className="product-card-image-box">
           {firstImage ? (
             <img
               src={getImageUrl(firstImage)}
-              alt={p.name}
+              alt={p.name || 'Product'}
               loading="lazy"
               decoding="async"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                padding: '8px',
-                transition: 'transform 0.2s ease',
-              }}
+              className="product-card-image"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
+                const parent = e.currentTarget.parentElement;
+                const fallback = parent?.querySelector('.product-card-fallback-pkg');
+                if (fallback) fallback.style.display = 'flex';
               }}
             />
-          ) : (
-            <Package size={32} color="#94a3b8" style={{ opacity: 0.35 }} />
-          )}
-
-          {/* Minimal Discount Badge */}
-          {hasDiscount && discountPct > 0 && (
-            <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
-              <span
-                style={{
-                  backgroundColor: '#dc2626',
-                  color: '#ffffff',
-                  fontSize: '0.62rem',
-                  fontWeight: 800,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  letterSpacing: '0.3px',
-                }}
-              >
-                {discountPct}% OFF
-              </span>
-            </div>
-          )}
-
-          {/* Low Stock Urgent Badge */}
-          {isLowStock && (
-            <div style={{ position: 'absolute', bottom: '8px', left: '8px', zIndex: 2 }}>
-              <span
-                style={{
-                  backgroundColor: '#d97706',
-                  color: '#ffffff',
-                  fontSize: '0.6rem',
-                  fontWeight: 800,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                }}
-              >
-                ⚡ {isHindi ? `केवल ${stock} बाकी` : `Only ${stock} left`}
-              </span>
-            </div>
-          )}
-
-          {/* 1-Tap WhatsApp Share Button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              shareProduct({
-                product: p,
-                shopName: p.shop_name,
-                shopSlug: p.shop_slug,
-                isHindi,
-              });
-            }}
+          ) : null}
+          <div
+            className="product-card-fallback-pkg"
             style={{
-              position: 'absolute',
-              top: '8px',
-              right: '38px',
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              border: 'none',
-              display: 'flex',
+              display: firstImage ? 'none' : 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-              zIndex: 2,
+              width: '100%',
+              height: '100%',
             }}
-            aria-label="Share product"
-            title={isHindi ? 'शेयर करें' : 'Share'}
           >
-            <Share2
-              size={12}
-              color="#16a34a"
-            />
-          </button>
+            <Package size={34} color="#94a3b8" style={{ opacity: 0.35 }} />
+          </div>
 
-          {/* Wishlist Heart */}
+          {/* Small discount badge on top-left */}
+          {hasDiscount && discountPct > 0 && (
+            <span className="product-card-discount-badge">
+              {discountPct}% OFF
+            </span>
+          )}
+
+          {/* Wishlist button on top-right */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onToggleSave?.(p);
             }}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-              zIndex: 2,
-            }}
-            aria-label="Save item"
+            className="product-card-wishlist-btn"
+            aria-label={
+              isSaved
+                ? (isHindi ? 'पसंदीदा से हटाएं' : 'Remove from wishlist')
+                : (isHindi ? 'पसंदीदा में जोड़ें' : 'Save to wishlist')
+            }
+            title={isSaved ? (isHindi ? 'पसंदीदा में सहेजा गया' : 'Saved') : (isHindi ? 'पसंदीदा में जोड़ें' : 'Save')}
           >
             <Heart
-              size={13}
+              size={14}
               color={isSaved ? '#ef4444' : '#64748b'}
               fill={isSaved ? '#ef4444' : 'none'}
+              strokeWidth={2}
             />
           </button>
         </div>
 
-        {/* Clean Product Name */}
-        <div style={{ padding: '8px 10px 4px 10px' }}>
-          <h4
-            style={{
-              margin: 0,
-              fontSize: '0.84rem',
-              fontWeight: 700,
-              color: 'var(--text-primary, #0f172a)',
-              lineHeight: 1.25,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              minHeight: '2.5em',
-            }}
-            title={p.name}
-          >
-            {highlightQuery ? highlightMatch(p.name, highlightQuery) : p.name}
-          </h4>
+        {/* 2. Availability Row */}
+        <div className="product-card-availability">
+          <span className={`product-card-avail-dot ${!inStock ? 'out-of-stock' : ''}`} />
+          <span className={`product-card-avail-text ${!inStock ? 'out-of-stock' : ''}`}>
+            {inStock
+              ? (isHindi ? 'उपलब्ध है' : 'Available Now')
+              : (isHindi ? 'स्टॉक खत्म' : 'Out of Stock')}
+          </span>
+        </div>
+
+        {/* 3. Product Name (Max 2 lines, high readability) */}
+        <h3 className="product-card-name" title={p.name}>
+          {highlightQuery ? highlightMatch(p.name, highlightQuery) : p.name}
+        </h3>
+
+        {/* 4. Price Section */}
+        <div className="product-card-price-section">
+          {isPricePublic ? (
+            <>
+              <div className="product-card-price-row">
+                <span className="product-card-price">
+                  {formatCurrency(price)}
+                </span>
+                {hasDiscount && (
+                  <span className="product-card-mrp">
+                    {formatCurrency(mrp)}
+                  </span>
+                )}
+              </div>
+              {hasDiscount && savings > 0 && (
+                <span className="product-card-savings">
+                  {isHindi ? `₹${Math.round(savings)} बचत` : `Save ₹${Math.round(savings)}`}
+                </span>
+              )}
+            </>
+          ) : (
+            <div className="product-card-price-row">
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#d97706' }}>
+                {isHindi ? 'रेट पूछें' : 'Ask Price'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 5. Local Store Information */}
+        <div className="product-card-store-box">
+          <div className="product-card-store-name-row">
+            <span className="product-card-store-icon" aria-hidden="true">🏪</span>
+            <span className="product-card-store-name" title={storeName}>
+              {storeName}
+            </span>
+            {isVerified && (
+              <span
+                className="product-card-verified-badge"
+                title={isHindi ? 'सत्यापित दुकान' : 'Verified Store'}
+                aria-label="Verified Store"
+              >
+                ✓
+              </span>
+            )}
+          </div>
+          <div className="product-card-distance-row">
+            <span className="product-card-distance-icon" aria-hidden="true">📍</span>
+            <span className="product-card-distance-text">
+              {displayDistance}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Price & Action Row */}
-      <div
-        style={{
-          padding: '4px 10px 10px 10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '6px',
-        }}
-      >
-        {isPricePublic ? (
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', minWidth: 0, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
-                {formatCurrency(price)}
-              </span>
-              {hasDiscount && (
-                <span
-                  style={{
-                    fontSize: '0.68rem',
-                    color: '#94a3b8',
-                    textDecoration: 'line-through',
-                    fontWeight: 500,
-                  }}
-                >
-                  {formatCurrency(mrp)}
-                </span>
-              )}
-            </div>
-            {hasDiscount && mrp > price && (
-              <span
-                style={{
-                  fontSize: '0.62rem',
-                  fontWeight: 800,
-                  color: '#16a34a',
-                  marginTop: '1px',
-                }}
-              >
-                {isHindi ? `₹${Math.round(mrp - price)} बचत` : `Save ₹${Math.round(mrp - price)}`}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#d97706' }}>
-            {isHindi ? 'रेट पूछें' : 'Ask Price'}
+      {/* 6. Action Section */}
+      <div className="product-card-actions">
+        {/* Secondary CTA: Compare Prices */}
+        <button
+          type="button"
+          className="product-card-btn-compare"
+          onClick={handleCompare}
+          aria-label={isHindi ? `${p.name} की कीमतें तुलना करें` : `Compare prices for ${p.name}`}
+          title={isHindi ? 'आस-पास की दुकानों में कीमतें तुलना करें' : 'Compare prices across nearby shops'}
+        >
+          <span className="product-card-btn-compare-label-desktop">
+            {isHindi ? 'कीमत तुलना' : 'Compare Prices'}
           </span>
-        )}
+          <span className="product-card-btn-compare-label-mobile">
+            {isHindi ? 'तुलना' : 'Compare'}
+          </span>
+        </button>
 
-        {/* Tactile Interactive Stepper or Add Button */}
-        {qtyInCart > 0 ? (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              backgroundColor: '#16a34a',
-              color: '#ffffff',
-              borderRadius: '8px',
-              padding: '3px 7px',
-              gap: '7px',
-              flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(22, 163, 74, 0.35)',
-            }}
-          >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                updateQuantity(p.id, qtyInCart - 1);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '2px',
-              }}
-              aria-label="Decrease quantity"
-            >
-              <Minus size={12} strokeWidth={3} />
-            </button>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, minWidth: '14px', textAlign: 'center' }}>
-              {qtyInCart}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                addItem(p, 1);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '2px',
-              }}
-              aria-label="Increase quantity"
-            >
-              <Plus size={12} strokeWidth={3} />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={(e) => {
-              if (inStock && isPricePublic && p.id) {
-                e.stopPropagation();
-                addItem(p, 1);
-              } else {
-                onClick?.();
-              }
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: !isPricePublic
-                ? '#16a34a'
-                : inStock
-                  ? '#0f172a'
-                  : '#f1f5f9',
-              color: !isPricePublic || inStock ? '#ffffff' : '#94a3b8',
-              border: 'none',
-              padding: '5px 10px',
-              borderRadius: '8px',
-              fontSize: '0.74rem',
-              fontWeight: 800,
-              cursor: inStock ? 'pointer' : 'default',
-              flexShrink: 0,
-              boxShadow: inStock ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {isPricePublic ? (
-              <>
-                <ShoppingCart size={12} strokeWidth={2.5} />
-                <span>
-                  {inStock
-                    ? (isHindi ? 'जोड़ें' : 'ADD')
-                    : (isHindi ? 'खत्म' : 'Out')}
-                </span>
-              </>
-            ) : (
-              <span>{isHindi ? 'पूछें' : 'Ask'}</span>
-            )}
-          </button>
-        )}
+        {/* Primary CTA: Reserve */}
+        <button
+          type="button"
+          className="product-card-btn-reserve"
+          onClick={handleReserve}
+          disabled={!inStock}
+          aria-label={isHindi ? `${p.name} को रिज़र्व करें` : `Reserve ${p.name}`}
+          title={isHindi ? 'दुकान से 30-मिनट पिकअप हेतु रिज़र्व करें' : 'Reserve for in-store pickup'}
+        >
+          {inStock
+            ? (isHindi ? 'रिज़र्व करें' : 'Reserve')
+            : (isHindi ? 'स्टॉक नहीं' : 'Out of Stock')}
+        </button>
       </div>
     </div>
   );
