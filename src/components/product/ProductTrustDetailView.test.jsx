@@ -67,7 +67,7 @@ describe('ProductTrustDetailView Component Tests', () => {
     // 2. Product Information
     expect(screen.getByText('Tata Salt Vacuum Evaporated 1kg')).toBeDefined();
     expect(screen.getAllByText('₹28').length).toBeGreaterThan(0);
-    expect(screen.getByText('₹32')).toBeDefined();
+    expect(screen.getAllByText('₹32').length).toBeGreaterThan(0);
     expect(screen.getByText(/(Save ₹4|बचत ₹4)/i)).toBeDefined();
 
     // 3. Best Nearby Offer
