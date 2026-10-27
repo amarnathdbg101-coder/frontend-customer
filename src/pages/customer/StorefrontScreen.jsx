@@ -30,6 +30,7 @@ import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useLocation } from '../../context/LocationContext';
 import { ProductCard } from '../../components/cards/ProductCard';
+import { ShopProfileHeader } from '../../components/shop/ShopProfileHeader';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
@@ -778,101 +779,18 @@ export const StorefrontScreen = () => {
         ) : null
       }
     >
-      {/* 1. Sleek Shop Header Card */}
+      {/* 1. Premium Google Maps Inspired Shop Profile & Trust Architecture */}
       {shop && (
-        <div
-          onClick={() => setShowShopDetailModal(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 14px',
-            backgroundColor: 'var(--bg-card, #ffffff)',
-            borderRadius: '16px',
-            border: '1.5px solid var(--border-subtle, #e2e8f0)',
-            marginBottom: '12px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            transition: 'all 0.2s ease',
+        <ShopProfileHeader
+          shop={shop}
+          productsCount={totalProductCount || products.length}
+          coords={coords}
+          onBrowseProducts={() => {
+            const el = document.getElementById('shop-products-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: 'var(--color-primary-light, #eff6ff)',
-                color: 'var(--color-primary, #2563eb)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Store size={22} />
-            </div>
-
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <h2
-                  style={{
-                    fontSize: '1rem',
-                    fontWeight: 800,
-                    margin: 0,
-                    color: 'var(--text-primary, #1e293b)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {shop.name}
-                </h2>
-                <ShieldCheck size={16} color="var(--color-primary, #2563eb)" />
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '0.74rem',
-                  color: 'var(--text-secondary, #64748b)',
-                  marginTop: '2px',
-                }}
-              >
-                <span
-                  style={{
-                    color: isShopOpen ? '#16a34a' : '#dc2626',
-                    fontWeight: 700,
-                  }}
-                >
-                  {isShopOpen
-                    ? (isHindi ? '● खुली है' : '● Open Now')
-                    : (isHindi ? '● बंद है' : '● Closed')}
-                </span>
-                {shop.city && <span>• {shop.city}</span>}
-                {travelInfo?.full && <span>• {travelInfo.full}</span>}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <span
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: 'var(--color-primary, #2563eb)',
-                backgroundColor: 'var(--color-primary-light, #eff6ff)',
-                padding: '4px 8px',
-                borderRadius: '8px',
-              }}
-            >
-              {totalProductCount || products.length} {isHindi ? 'सामान' : 'Items'}
-            </span>
-            <ChevronRight size={18} color="var(--text-secondary, #94a3b8)" />
-          </div>
-        </div>
+          onShare={() => setShowShopDetailModal(true)}
+        />
       )}
 
       {/* 1b. Live Day-Wise Offers & Deals Banner Carousel (<15ms Real-Time Push) */}
@@ -1199,7 +1117,7 @@ export const StorefrontScreen = () => {
       ) : (
         <>
           {/* 2. In-Store Search & Sorting Bar */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+          <div id="shop-products-section" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <SearchInput
             placeholder={isHindi ? `${shop?.name || 'दुकान'} में सामान खोजें...` : `Search inside ${shop?.name || 'store'}...`}

@@ -29,6 +29,8 @@ import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
 import { reservationApi } from '../../api/reservation.api';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { HomeHeader } from '../../components/layout/HomeHeader';
+import { SearchHeroSection } from '../../components/customer/SearchHeroSection';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -799,478 +801,155 @@ export const ExploreShopsScreen = () => {
 
   return (
     <AppLayout
-      rightAction={
-        <OverflowMenu
-          items={exploreMenuItems}
-          ariaLabel={isHindi ? 'मार्केटप्लेस विकल्प' : 'Marketplace options'}
+      hideDesktopNav={true}
+      customHeader={
+        <HomeHeader
+          locationName={locationName}
+          isDetecting={isDetecting}
+          onOpenLocationModal={() => setShowLocationModal(true)}
+          rightAction={
+            <OverflowMenu
+              items={exploreMenuItems}
+              ariaLabel={isHindi ? 'मार्केटप्लेस विकल्प' : 'Marketplace options'}
+            />
+          }
         />
       }
     >
-      {/* 1. COMPACT 1-LINE GPS LOCATION & RADIUS CONTROL BAR */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '8px 0',
-          gap: '8px',
+      {/* 1. ABOVE-THE-FOLD SEARCH-FIRST HERO SECTION */}
+      <SearchHeroSection
+        searchTerm={searchTerm}
+        onSearchChange={(term) => {
+          setSearchTerm(term);
+          setIsSuggestionsOpen(true);
         }}
-      >
-        <button
-          type="button"
-          onClick={() => setShowLocationModal(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            borderRadius: '20px',
-            padding: '5px 12px',
-            cursor: 'pointer',
-            color: 'var(--text-primary, #0f172a)',
-            fontSize: '0.8rem',
-            fontWeight: 800,
-            maxWidth: '240px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-          }}
-          title={isHindi ? 'GPS लोकेशन अपडेट करें' : 'Update GPS Location'}
-        >
-          <MapPin size={14} color="#2563eb" style={{ flexShrink: 0 }} />
-          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {isDetecting ? (isHindi ? 'लोकेशन...' : 'Detecting...') : (locationName || 'Local Area')}
-          </span>
-          <ChevronDown size={12} color="#64748b" style={{ flexShrink: 0 }} />
-        </button>
+        onSearchSubmit={(term) => {
+          setIsSuggestionsOpen(false);
+          if (term?.trim()) {
+            setRecentSearches(persistRecentSearch(term.trim()));
+          }
+        }}
+        onClearSearch={() => {
+          setSearchTerm('');
+          setServerSearchResults(null);
+          setServerShopResults(null);
+          setSearchSuggestions([]);
+        }}
+        isSearchingServer={isSearchingServer}
+        isSuggestionsOpen={isSuggestionsOpen}
+        onOpenSuggestions={() => setIsSuggestionsOpen(true)}
+        onCloseSuggestions={() => setIsSuggestionsOpen(false)}
+        searchSuggestions={searchSuggestions}
+        isLoadingSuggestions={isLoadingSuggestions}
+        onSelectSuggestion={(term) => {
+          setSearchTerm(term);
+          setIsSuggestionsOpen(false);
+          setRecentSearches(persistRecentSearch(term));
+        }}
+        recentSearches={recentSearches}
+        onSelectRecent={(term) => {
+          setSearchTerm(term);
+          setIsSuggestionsOpen(false);
+        }}
+        onRemoveRecent={(term) => setRecentSearches(removeRecentSearch(term))}
+        onClearAllRecent={() => setRecentSearches(clearAllRecentSearches())}
+        isVoiceListening={isVoiceListening}
+        onToggleVoiceSearch={handleVoiceSearch}
+        onOpenSmartSearch={() => setIsSmartSearchOpen(true)}
+        isHindi={isHindi}
+      />
 
-        {/* Compact Radius Dropdown & Open Stores Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-              border: '1px solid var(--border-subtle, #e2e8f0)',
-              borderRadius: '12px',
-              padding: '3px 8px',
-            }}
-          >
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted, #94a3b8)' }}>
-              {isHindi ? 'दूरी:' : 'Radius:'}
+      {/* 2. BELOW-THE-FOLD: CLEAN FEED HEADER & SORT CONTROLS */}
+      <div id="marketplace-feed" style={{ marginTop: '24px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px',
+            gap: '8px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Package size={18} color="var(--color-primary, #4f46e5)" />
+            <h2
+              style={{
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                margin: 0,
+                color: 'var(--text-primary, #0f172a)',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {searchTerm ? (isHindi ? 'खोज परिणाम' : 'Search Results') : (isHindi ? 'पास में उपलब्ध सामान' : 'Nearby Products')}
+            </h2>
+            <span
+              style={{
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
+                color: 'var(--text-secondary, #64748b)',
+                padding: '2px 8px',
+                borderRadius: '12px',
+              }}
+            >
+              {filteredProducts.length} {isHindi ? 'सामान' : 'items'}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
+              {isHindi ? 'क्रमबद्ध:' : 'Sort:'}
             </span>
             <select
-              value={radiusKm}
-              onChange={(e) => setRadiusKm(Number(e.target.value))}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
               style={{
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: 'var(--text-primary, #0f172a)',
-                fontSize: '0.74rem',
+                fontSize: '0.76rem',
                 fontWeight: 800,
+                padding: '5px 10px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                color: 'var(--text-primary, #0f172a)',
                 cursor: 'pointer',
                 outline: 'none',
               }}
             >
-              {RADIUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
+              <option value="relevant">{isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
+              <option value="nearest">{isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
+              <option value="price_low">{isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
+              <option value="price_high">{isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
+              <option value="discount">{isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Discount (% OFF)'}</option>
             </select>
           </div>
-
-          {/* Open Stores Only Pill Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowOpenOnly((prev) => !prev)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '12px',
-              border: showOpenOnly ? '1.5px solid #16a34a' : '1px solid var(--border-subtle, #e2e8f0)',
-              backgroundColor: showOpenOnly ? '#dcfce7' : 'var(--bg-surface-subtle, #f8fafc)',
-              color: showOpenOnly ? '#15803d' : 'var(--text-secondary, #475569)',
-              fontSize: '0.74rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: showOpenOnly ? '#16a34a' : '#94a3b8' }} />
-            <span>{isHindi ? 'खुली दुकानें' : 'Open Stores'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. SLEEK SEARCH INPUT BAR WITH LIVE AUTOCOMPLETE & VOICE */}
-      <div style={{ margin: '6px 0 12px 0', position: 'relative' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '14px',
-            border: isSuggestionsOpen
-              ? '1.5px solid var(--color-primary, #4f46e5)'
-              : '1px solid var(--border-subtle, #cbd5e1)',
-            padding: '8px 12px',
-            boxShadow: isSuggestionsOpen
-              ? '0 0 0 3px rgba(79, 70, 229, 0.12)'
-              : '0 2px 6px rgba(0, 0, 0, 0.03)',
-            gap: '8px',
-            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-          }}
-        >
-          {isSearchingServer ? (
-            <Loader2 size={16} className="animate-spin" color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
-          ) : (
-            <Search size={16} color="var(--color-primary, #4f46e5)" style={{ flexShrink: 0 }} />
-          )}
-          <input
-            type="search"
-            placeholder={isHindi ? 'दुकानें, सामान या ब्रांड खोजें...' : 'Search local shops, products, brands...'}
-            value={searchTerm}
-            onFocus={() => setIsSuggestionsOpen(true)}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setIsSuggestionsOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setIsSuggestionsOpen(false);
-                if (searchTerm.trim()) {
-                  setRecentSearches(persistRecentSearch(searchTerm.trim()));
-                }
-              }
-            }}
-            style={{
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              fontSize: '0.84rem',
-              color: 'var(--text-primary, #0f172a)',
-              width: '100%',
-              fontWeight: 500,
-            }}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm('');
-                setServerSearchResults(null);
-                setServerShopResults(null);
-                setSearchSuggestions([]);
-              }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-muted)' }}
-              title={isHindi ? 'साफ़ करें' : 'Clear'}
-            >
-              <X size={15} />
-            </button>
-          )}
-
-          {/* 1-Tap Voice Search */}
-          <button
-            type="button"
-            onClick={handleVoiceSearch}
-            title={isVoiceListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice Search')}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '2px 4px',
-              color: isVoiceListening ? '#ef4444' : 'var(--text-secondary, #64748b)',
-              display: 'flex',
-              alignItems: 'center',
-              flexShrink: 0,
-            }}
-          >
-            {isVoiceListening ? <MicOff size={16} className="animate-pulse" /> : <Mic size={16} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsSmartSearchOpen(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              background: '#0f172a',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '6px 12px',
-              fontSize: '0.74rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
-              whiteSpace: 'nowrap',
-            }}
-            title={isHindi ? 'सामान कहाँ मिलेगा? मल्टी-शॉप तुलना' : 'Where is it available? Multi-Shop Search'}
-          >
-            <span>✨</span>
-            <span>{isHindi ? 'सामान कहाँ मिलेगा?' : 'Compare Shops'}</span>
-          </button>
         </div>
 
-        {/* Live Autocomplete Suggestions Dropdown */}
-        <SearchSuggestionsDropdown
-          isOpen={isSuggestionsOpen}
-          onClose={() => setIsSuggestionsOpen(false)}
-          query={searchTerm}
-          suggestions={searchSuggestions}
-          isLoading={isLoadingSuggestions}
-          onSelectSuggestion={(term) => {
-            setSearchTerm(term);
-            setIsSuggestionsOpen(false);
-            setRecentSearches(persistRecentSearch(term));
-          }}
-          recentSearches={recentSearches}
-          onSelectRecent={(term) => {
-            setSearchTerm(term);
-            setIsSuggestionsOpen(false);
-          }}
-          onRemoveRecent={(term) => setRecentSearches(removeRecentSearch(term))}
-          onClearAllRecent={() => setRecentSearches(clearAllRecentSearches())}
-          isHindi={isHindi}
-        />
-      </div>
-
-      {/* 3. SLEEK MINIMAL PROMO CAROUSEL */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '10px',
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          paddingBottom: '4px',
-          marginBottom: '14px',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-        }}
-      >
-        {/* Card 1: Direct Bargain */}
-        <div
-          style={{
-            minWidth: '75%',
-            maxWidth: '280px',
-            scrollSnapAlign: 'start',
-            borderRadius: '12px',
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            color: 'var(--text-primary, #0f172a)',
-            padding: '12px 14px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', lineHeight: 1.2 }}>
-              {isHindi ? 'स्मार्ट बार्गेन' : 'Direct Negotiation'}
+        {/* If user searched and shops were found, show shop matches cleanly */}
+        {searchTerm && filteredShops.length > 0 && (
+          <div style={{ marginBottom: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+              <Store size={16} color="var(--color-primary, #4f46e5)" />
+              <h3 style={{ fontSize: '0.92rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
+                {isHindi ? 'मिलती-जुलती दुकानें' : 'Matching Stores'} ({filteredShops.length})
+              </h3>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px' }}>
-              {isHindi ? 'दुकानदार को सीधे ऑफर भेजें' : 'Send bulk pricing offers directly'}
+            <div className="customer-shop-grid">
+              {filteredShops.slice(0, 4).map((s) => (
+                <ShopCard
+                  key={s.id}
+                  shop={s}
+                  coords={coords}
+                  isSaved={isShopSaved(s.id)}
+                  onToggleSave={toggleSaveShop}
+                  onClick={() => setInspectedShop(s)}
+                  onNavigate={navigate}
+                />
+              ))}
             </div>
           </div>
-          <span
-            style={{
-              backgroundColor: '#fef3c7',
-              border: '1px solid #fcd34d',
-              color: '#92400e',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              padding: '3px 8px',
-              borderRadius: '6px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            ✨ BARGAIN
-          </span>
-        </div>
-
-        {/* Card 2: Instant Pickup */}
-        <div
-          style={{
-            minWidth: '75%',
-            maxWidth: '280px',
-            scrollSnapAlign: 'start',
-            borderRadius: '12px',
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            color: 'var(--text-primary, #0f172a)',
-            padding: '12px 14px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', lineHeight: 1.2 }}>
-              {isHindi ? '15-मिनट पिकअप' : '15-Min Pickup'}
-            </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px' }}>
-              {isHindi ? 'सामान रिज़र्व करें व OTP से लें' : 'Reserve & collect with OTP'}
-            </div>
-          </div>
-          <span
-            style={{
-              backgroundColor: '#dcfce7',
-              border: '1px solid #86efac',
-              color: '#15803d',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              padding: '3px 8px',
-              borderRadius: '6px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            ⚡ OTP PASS
-          </span>
-        </div>
-      </div>
-
-      {/* 4. VISUAL CATEGORY RAIL & DEPARTMENTS */}
-      <CategoryBar
-        selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
-        onSelectCategory={(catId) => setSelectedCategory(catId || 'All')}
-      />
-
-      {/* 5. TAB SELECTOR: PRODUCTS vs LOCAL SHOPS */}
-      <div
-        id="marketplace-feed-header"
-        style={{
-          display: 'flex',
-          gap: '6px',
-          marginBottom: '16px',
-          backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-          padding: '4px',
-          borderRadius: '14px',
-          border: '1px solid var(--border-subtle, #e2e8f0)',
-        }}
-      >
-        <button
-          type="button"
-          onClick={handleSelectProductsTab}
-          style={{
-            flex: 1,
-            padding: '9px 12px',
-            borderRadius: '10px',
-            border: 'none',
-            backgroundColor: activeTab === 'products' ? 'var(--bg-surface, #ffffff)' : 'transparent',
-            color: activeTab === 'products' ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)',
-            fontWeight: 800,
-            fontSize: '0.84rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            boxShadow: activeTab === 'products' ? '0 2px 6px rgba(0, 0, 0, 0.05)' : 'none',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Package size={15} />
-          <span>{isHindi ? 'ट्रेंडिंग सामान' : 'Products'}</span>
-          <span
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              backgroundColor: activeTab === 'products' ? '#f1f5f9' : 'rgba(0,0,0,0.04)',
-              color: activeTab === 'products' ? '#0f172a' : '#64748b',
-              padding: '1px 6px',
-              borderRadius: '6px',
-            }}
-          >
-            {filteredProducts.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSelectShopTab}
-          style={{
-            flex: 1,
-            padding: '9px 12px',
-            borderRadius: '10px',
-            border: 'none',
-            backgroundColor: activeTab === 'shops' ? 'var(--bg-surface, #ffffff)' : 'transparent',
-            color: activeTab === 'shops' ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)',
-            fontWeight: 800,
-            fontSize: '0.84rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            boxShadow: activeTab === 'shops' ? '0 2px 6px rgba(0, 0, 0, 0.05)' : 'none',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Store size={15} />
-          <span>{isHindi ? 'लोकल दुकानें' : 'Local Shops'}</span>
-          <span
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              backgroundColor: activeTab === 'shops' ? '#f1f5f9' : 'rgba(0,0,0,0.04)',
-              color: activeTab === 'shops' ? '#0f172a' : '#64748b',
-              padding: '1px 6px',
-              borderRadius: '6px',
-            }}
-          >
-            {filteredShops.length}
-          </span>
-        </button>
-      </div>
-
-      {/* 6. SMART SORTING CONTROL BAR */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 0 12px 0', gap: '8px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary, #64748b)' }}>
-          {activeTab === 'products'
-            ? `${filteredProducts.length} ${isHindi ? 'सामान पास में उपलब्ध' : 'Products Nearby'}`
-            : `${filteredShops.length} ${isHindi ? 'दुकानें पास में उपलब्ध' : 'Shops Nearby'}`}
-        </span>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
-            {isHindi ? 'क्रमबद्ध:' : 'Sort:'}
-          </span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              padding: '4px 10px',
-              borderRadius: '8px',
-              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-              border: '1px solid var(--border-subtle, #e2e8f0)',
-              color: 'var(--text-primary, #0f172a)',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            <option value="relevant">{isHindi ? 'लोकप्रिय (Relevant)' : 'Relevant'}</option>
-            <option value="nearest">{isHindi ? 'समीप (Nearest First)' : 'Nearest First'}</option>
-            {activeTab === 'products' && (
-              <>
-                <option value="price_low">{isHindi ? 'कीमत: कम से अधिक' : 'Price: Low to High'}</option>
-                <option value="price_high">{isHindi ? 'कीमत: अधिक से कम' : 'Price: High to Low'}</option>
-                <option value="discount">{isHindi ? 'अधिकतम छूट (% OFF)' : 'Highest Discount (% OFF)'}</option>
-              </>
-            )}
-          </select>
-        </div>
-      </div>
+        )}
 
       {/* 7. RESPONSIVE FEED CONTENT */}
       <div style={{ marginBottom: '40px' }}>
@@ -1351,60 +1030,7 @@ export const ExploreShopsScreen = () => {
               />
             ) : (
               <>
-                {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
-                  <CuratedStoreAisles
-                    products={products}
-                    onOpenShelf={(shelfData) => setActiveShelf(shelfData)}
-                    onSelectCategory={(cat) => setSelectedCategory(cat)}
-                    onSelectQuickFilter={() => {}}
-                    onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
-                    isProductSaved={isProductSaved}
-                    onToggleSave={toggleSaveProduct}
-                    isHindi={isHindi}
-                  />
-                )}
-
-            {activeTab === 'products' && (!searchTerm || searchTerm.trim() === '') && (selectedCategory === 'All' || !selectedCategory) && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  margin: '18px 0 12px 0',
-                  paddingBottom: '8px',
-                  borderBottom: '1.5px solid var(--border-subtle, #e2e8f0)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Package size={18} color="var(--color-primary, #4f46e5)" />
-                  <h3
-                    style={{
-                      fontSize: '0.98rem',
-                      fontWeight: 800,
-                      margin: 0,
-                      color: 'var(--text-primary, #0f172a)',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {isHindi ? 'सभी उपलब्ध सामान' : 'All Nearby Products'}
-                  </h3>
-                </div>
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
-                    color: 'var(--text-secondary, #64748b)',
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                  }}
-                >
-                  {filteredProducts.length} {isHindi ? 'सामान' : 'items'}
-                </span>
-              </div>
-            )}
-
-            <div className="customer-product-grid">
+                <div className="customer-product-grid">
               {filteredProducts.map((p) => (
                 <ProductCard
                   key={p.id}
@@ -1475,6 +1101,7 @@ export const ExploreShopsScreen = () => {
       </>
     )}
   </div>
+</div>
 
       {/* PRODUCT DETAIL MODAL */}
       {inspectedProduct && (

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
-const LocationContext = createContext(null);
+export const LocationContext = createContext(null);
 
 const DEFAULT_COORDS = { lat: 26.1542, lng: 85.8918 }; // Default city coordinates
 
