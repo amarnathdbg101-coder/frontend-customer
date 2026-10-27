@@ -80,6 +80,27 @@ export const ProductTrustDetailView = ({
   const savingsAmount = hasDiscount ? originalPrice - currentPrice : 0;
   const discountPercent = hasDiscount ? Math.round((savingsAmount / originalPrice) * 100) : 0;
 
+  // Product Specifications & Metadata Extraction
+  const specItems = useMemo(() => {
+    if (!product) return [];
+    const items = [];
+    if (product.brand) items.push({ label: 'Brand', value: product.brand });
+    if (product.category) items.push({ label: 'Category', value: typeof product.category === 'object' ? (product.category?.name || '') : String(product.category) });
+    if (product.unit) items.push({ label: 'Unit', value: product.unit });
+    if (product.weight > 0) items.push({ label: 'Weight', value: `${product.weight} kg` });
+
+    if (product.attributes && typeof product.attributes === 'object') {
+      Object.entries(product.attributes).forEach(([k, v]) => {
+        const kLow = k.toLowerCase().trim();
+        if (kLow !== 'brand' && kLow !== 'category' && kLow !== 'category_name' && kLow !== 'unit' && kLow !== 'weight' && v && String(v).trim()) {
+          const formattedKey = k.replaceAll('_', ' ').replaceAll('-', ' ');
+          items.push({ label: formattedKey, value: String(v) });
+        }
+      });
+    }
+    return items;
+  }, [product]);
+
   // Real or synthesized Nearby Comparison Shops (3 to 5 stores)
   const nearbyOffers = useMemo(() => {
     const baseStoreName = initialShop?.name || product?.shop_name || 'Gupta General Store';
@@ -376,7 +397,7 @@ export const ProductTrustDetailView = ({
             </div>
 
             {/* Availability Status Highlight */}
-            <div className="product-availability-banner">
+            <div className="product-availability-banner" style={{ marginBottom: '12px' }}>
               <span className="available-dot-indicator" />
               <span className="available-text">
                 {isHindi
@@ -385,13 +406,44 @@ export const ProductTrustDetailView = ({
               </span>
             </div>
 
-            {/* Product Description snippet if present */}
-            {product.description && (
-              <p className="product-description-snippet">{product.description}</p>
-            )}
+            {/* PRODUCT SPECIFICATIONS & ABOUT THIS ITEM (Customer Reads Product Details First) */}
+            <div
+              style={{
+                padding: '12px 14px',
+                backgroundColor: 'var(--bg-surface, #ffffff)',
+                border: '1.5px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '14px',
+                marginTop: '10px',
+              }}
+            >
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                {isHindi ? 'उत्पाद विवरण एवं विशेषताएं' : 'Product Details & Specifications'}
+              </div>
+
+              {specItems.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '6px', marginBottom: product.description ? '10px' : '0' }}>
+                  {specItems.map((spec) => (
+                    <div key={spec.label} style={{ padding: '6px 10px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', borderRadius: '8px', border: '1px solid var(--border-subtle, #f1f5f9)' }}>
+                      <div style={{ fontSize: '0.64rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700, textTransform: 'uppercase' }}>
+                        {spec.label}
+                      </div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', marginTop: '1px' }}>
+                        {spec.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {product.description && (
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-primary, #0f172a)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-line' }}>
+                  {product.description}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* ================= 🏆 REDESIGNED BEST VALUE SHOP PREVIEW CARD ================= */}
+          {/* ================= 🏆 COMPACT BEST VALUE SHOP PREVIEW CARD ================= */}
           {(() => {
             const storeLogo = bestOffer.logo || initialShop?.logo_url || initialShop?.logoUrl || '';
             const storePhoto = bestOffer.photo || bestOffer.banner || initialShop?.banner || (Array.isArray(initialShop?.banners) && initialShop.banners[0]) || initialShop?.logo_url || '';
@@ -402,15 +454,15 @@ export const ProductTrustDetailView = ({
                 style={{
                   position: 'relative',
                   backgroundColor: '#f0fdf4',
-                  border: '2px solid #10b981',
-                  borderRadius: '18px',
-                  padding: '16px',
-                  marginBottom: '16px',
-                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15)',
+                  border: '1.5px solid #10b981',
+                  borderRadius: '16px',
+                  padding: '12px 14px',
+                  marginBottom: '14px',
+                  boxShadow: '0 3px 14px rgba(16, 185, 129, 0.12)',
                 }}
               >
                 {/* Top Floating Badges */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
                   <span
                     style={{
                       display: 'inline-flex',
@@ -418,9 +470,9 @@ export const ProductTrustDetailView = ({
                       gap: '5px',
                       backgroundColor: '#10b981',
                       color: '#ffffff',
-                      fontSize: '0.74rem',
+                      fontSize: '0.72rem',
                       fontWeight: 900,
-                      padding: '4px 10px',
+                      padding: '3px 9px',
                       borderRadius: '20px',
                       letterSpacing: '0.3px',
                     }}
@@ -431,13 +483,13 @@ export const ProductTrustDetailView = ({
                   {savingsAmount > 0 && (
                     <span
                       style={{
-                        fontSize: '0.74rem',
+                        fontSize: '0.72rem',
                         fontWeight: 800,
                         color: '#15803d',
                         backgroundColor: '#dcfce7',
                         border: '1px solid #86efac',
-                        padding: '3px 9px',
-                        borderRadius: '8px',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
                       }}
                     >
                       {isHindi ? `आप बचाते हैं ₹${savingsAmount.toFixed(0)}` : `You Save ₹${savingsAmount.toFixed(0)}`}
@@ -446,13 +498,13 @@ export const ProductTrustDetailView = ({
                 </div>
 
                 {/* Store Header Row: Logo + Store Name + Verified Badge + Open/Closed Status */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                   {/* Store Logo */}
                   <div
                     style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '12px',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
                       backgroundColor: '#ffffff',
                       border: '1.5px solid #a7f3d0',
                       overflow: 'hidden',
@@ -465,20 +517,20 @@ export const ProductTrustDetailView = ({
                     {storeLogo ? (
                       <img src={getImageUrl(storeLogo)} alt={bestOffer.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <Store size={22} color="#10b981" />
+                      <Store size={20} color="#10b981" />
                     )}
                   </div>
 
                   {/* Store Name & Verification & Status */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: '#064e3b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <h3 style={{ fontSize: '1.02rem', fontWeight: 800, margin: 0, color: '#064e3b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {bestOffer.name}
                       </h3>
-                      <ShieldCheck size={18} color="#10b981" style={{ flexShrink: 0 }} />
+                      <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.74rem', marginTop: '3px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', marginTop: '2px' }}>
                       <span style={{ fontWeight: 700, color: storeIsOpen ? '#15803d' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: storeIsOpen ? '#10b981' : '#dc2626' }} />
                         {storeIsOpen ? (isHindi ? 'खुली है (Open Now)' : 'Open Now') : (isHindi ? 'बंद है' : 'Closed')}
@@ -492,15 +544,15 @@ export const ProductTrustDetailView = ({
                   </div>
                 </div>
 
-                {/* Store Cover Photo (Gives Real Store Business Presence - Height Increased 40%) */}
+                {/* Store Cover Photo (Compact 140px Height) */}
                 {storePhoto && (
                   <div
                     style={{
                       width: '100%',
-                      height: '155px',
-                      borderRadius: '14px',
+                      height: '140px',
+                      borderRadius: '12px',
                       overflow: 'hidden',
-                      marginBottom: '14px',
+                      marginBottom: '10px',
                       border: '1px solid #a7f3d0',
                       position: 'relative',
                     }}
@@ -514,25 +566,26 @@ export const ProductTrustDetailView = ({
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        background: 'linear-gradient(to top, rgba(6, 78, 59, 0.65) 0%, transparent 60%)',
+                        background: 'linear-gradient(to top, rgba(6, 78, 59, 0.70) 0%, transparent 60%)',
                       }}
                     />
                     <div
                       style={{
                         position: 'absolute',
-                        bottom: '10px',
-                        left: '12px',
+                        bottom: '8px',
+                        left: '10px',
+                        right: '10px',
                         color: '#ffffff',
-                        fontSize: '0.76rem',
+                        fontSize: '0.72rem',
                         fontWeight: 800,
-                        textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '5px',
                       }}
                     >
-                      <Store size={14} color="#ffffff" />
-                      <span>📍 Verified Counter Inventory • 100% Real Local Business</span>
+                      <Store size={13} color="#ffffff" />
+                      <span>📍 Verified Counter Inventory • 100% Real Store</span>
                     </div>
                   </div>
                 )}

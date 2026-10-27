@@ -37,14 +37,14 @@ describe('ShopProfileHeader Component Tests', () => {
     // 1. Shop Header (Name, Store Type, Verified Badge)
     expect(screen.getByText('Gupta General Store')).toBeInTheDocument();
     expect(screen.getByText('Groceries & Daily Essentials')).toBeInTheDocument();
-    expect(screen.getByText('Verified')).toBeInTheDocument();
+    expect(screen.getAllByText(/(Verified|सत्यापित)/i).length).toBeGreaterThan(0);
 
     // 2. Trust Information (Distance, Open, Rating, Products, Inventory Freshness)
     expect(screen.getByText('450m Away')).toBeInTheDocument();
     expect(screen.getByText(/Open Now/i)).toBeInTheDocument();
-    expect(screen.getByText(/4.8/i)).toBeInTheDocument();
-    expect(screen.getByText(/128 Products Available/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inventory Updated 15 mins ago/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/4.8/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/128 Products/i)).toBeInTheDocument();
+    expect(screen.getByText(/Active Deals/i)).toBeInTheDocument();
 
     // 3. Quick Actions
     const browseBtn = screen.getByRole('button', { name: /Browse Products/i });

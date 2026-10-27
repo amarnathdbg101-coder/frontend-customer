@@ -793,6 +793,60 @@ export const StorefrontScreen = () => {
         />
       )}
 
+      {/* 1.2. USP COMPARISON CTA CARD (Reinforces ShopSilo's Unique Value Proposition) */}
+      {shop && (
+        <div
+          style={{
+            margin: '14px 0',
+            padding: '14px 16px',
+            backgroundColor: 'var(--bg-surface, #ffffff)',
+            border: '1.5px solid var(--border-subtle, #e2e8f0)',
+            borderRadius: '16px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <div style={{ fontSize: '0.90rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', lineHeight: 1.3 }}>
+              {isHindi ? 'इस दुकान के दामों की तुलना अन्य पास की दुकानों से करें' : 'Compare this shop\'s prices with other nearby stores'}
+            </div>
+            <div style={{ fontSize: '0.76rem', color: 'var(--color-success-text, #15803d)', fontWeight: 700, marginTop: '3px' }}>
+              💰 {isHindi ? 'रिज़र्व करने से पहले अपनी बचत सुनिश्चित करें' : 'Save money before reserving'}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              navigate(`/explore?search=${encodeURIComponent(shop.category || shop.name || '')}&compare=true`);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: 'var(--color-primary, #4f46e5)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 3px 10px rgba(79, 70, 229, 0.25)',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Sparkles size={15} />
+            <span>{isHindi ? 'पास की दुकानों से तुलना करें' : 'Compare Nearby Shops'}</span>
+          </button>
+        </div>
+      )}
+
       {/* 1b. Live Day-Wise Offers & Deals Banner Carousel (<15ms Real-Time Push) */}
       {offers && offers.length > 0 && (
         <div style={{ marginBottom: '14px' }}>

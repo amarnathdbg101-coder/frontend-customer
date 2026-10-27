@@ -4,14 +4,18 @@
    ========================================================================== */
 
 :root {
-  /* Psychological Color Palette */
-  --color-primary: #0f172a;           /* Deep Slate Navy - Authority & Trust */
-  --color-primary-hover: #1e293b;
-  --color-primary-light: #f1f5f9;
-  --color-accent: #2563eb;            /* Action Blue - Primary CTAs */
-  --color-accent-hover: #1d4ed8;
+  /* ShopSilo Unified Brand Color System */
+  --color-primary: #4f46e5;           /* Deep Purple / Royal Indigo - ShopSilo Brand Identity */
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #f0f4ff;
+  --color-primary-dark: #3730a3;
 
-  --color-success: #10b981;           /* Emerald Green - Savings & In-Stock */
+  --color-accent: #10b981;            /* Fresh Green - Reserve, Verified & Savings */
+  --color-accent-hover: #059669;
+  --color-accent-light: #dcfce7;
+  --color-accent-text: #15803d;
+
+  --color-success: #10b981;           /* Fresh Green - In-Stock, Verified & Savings */
   --color-success-hover: #059669;
   --color-success-light: #dcfce7;
   --color-success-text: #15803d;
