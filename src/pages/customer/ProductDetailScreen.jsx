@@ -318,11 +318,11 @@ export const ProductDetailScreen = () => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     style={{
-                      flex: '0 0 195px',
-                      width: '195px',
+                      flex: '0 0 205px',
+                      width: '205px',
                       backgroundColor: 'var(--bg-surface, #ffffff)',
                       border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                      borderRadius: '16px',
+                      borderRadius: '18px',
                       padding: '10px',
                       cursor: 'pointer',
                       transition: 'all 0.18s ease-in-out',
@@ -333,20 +333,19 @@ export const ProductDetailScreen = () => {
                     }}
                   >
                     <div>
-                      {/* Large Square Image Stage (1:1 Ratio) */}
+                      {/* 1. Large Crisp Image Stage (175px Height for Visual Discovery) */}
                       <div
                         style={{
                           width: '100%',
-                          height: '155px',
+                          height: '175px',
                           backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                          borderRadius: '12px',
+                          borderRadius: '14px',
                           overflow: 'hidden',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           marginBottom: '10px',
                           border: '1px solid var(--border-subtle, #f1f5f9)',
-                          position: 'relative',
                         }}
                       >
                         {firstImg ? (
@@ -357,14 +356,14 @@ export const ProductDetailScreen = () => {
                             style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '6px' }}
                           />
                         ) : (
-                          <Package size={36} color="#94a3b8" style={{ opacity: 0.35 }} />
+                          <Package size={40} color="#94a3b8" style={{ opacity: 0.35 }} />
                         )}
                       </div>
 
-                      {/* Product Name */}
+                      {/* 2. Product Name */}
                       <div
                         style={{
-                          fontSize: '0.84rem',
+                          fontSize: '0.86rem',
                           fontWeight: 800,
                           color: 'var(--text-primary, #0f172a)',
                           display: '-webkit-box',
@@ -373,7 +372,7 @@ export const ProductDetailScreen = () => {
                           overflow: 'hidden',
                           minHeight: '2.5em',
                           lineHeight: 1.25,
-                          marginBottom: '6px',
+                          marginBottom: '8px',
                         }}
                         title={item.name}
                       >
@@ -382,18 +381,18 @@ export const ProductDetailScreen = () => {
                     </div>
 
                     <div>
-                      {/* Price */}
-                      <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary, #0f172a)', marginBottom: '4px' }}>
+                      {/* 3. Price */}
+                      <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-primary, #0f172a)', marginBottom: '4px' }}>
                         ₹{itemPrice.toFixed(0)}
                       </div>
 
-                      {/* Distance & Shop Location */}
+                      {/* 4. Distance */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '4px',
-                          fontSize: '0.72rem',
+                          fontSize: '0.74rem',
                           fontWeight: 600,
                           color: 'var(--text-secondary, #64748b)',
                           whiteSpace: 'nowrap',
@@ -401,7 +400,7 @@ export const ProductDetailScreen = () => {
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        <MapPin size={11} color="var(--color-primary, #2563eb)" style={{ flexShrink: 0 }} />
+                        <MapPin size={12} color="var(--color-primary, #2563eb)" style={{ flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {distKm !== null
                             ? `${distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)} km`} away`

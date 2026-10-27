@@ -114,17 +114,17 @@
   }
 }
 
-/* Overlapping Logo Avatar */
+/* Circular Overlapping Logo Avatar (Google Business Profile Style) */
 .shop-profile-logo-wrap {
   position: relative;
   margin-top: -42px;
   margin-bottom: 12px;
   width: 76px;
   height: 76px;
-  border-radius: 18px;
+  border-radius: 50%; /* CIRCULAR OVERLAPPING AVATAR */
   background-color: var(--bg-card, #ffffff);
   border: 3.5px solid var(--bg-card, #ffffff);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,7 +137,7 @@
     width: 86px;
     height: 86px;
     margin-top: -48px;
-    border-radius: 20px;
+    border-radius: 50%;
   }
 }
 

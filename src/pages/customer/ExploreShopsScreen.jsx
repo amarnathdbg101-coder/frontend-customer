@@ -32,6 +32,7 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { HomeHeader } from '../../components/layout/HomeHeader';
 import { SearchHeroSection } from '../../components/customer/SearchHeroSection';
 import { HowShopSiloWorksSection } from '../../components/customer/HowShopSiloWorksSection';
+import { SearchResultHeader } from '../../components/customer/SearchResultHeader';
 import { useLocation } from '../../context/LocationContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -107,6 +108,8 @@ export const ExploreShopsScreen = () => {
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
   const [activeShelf, setActiveShelf] = useState(null); // When user clicks View All / See More on any shelf
   const [sortBy, setSortBy] = useState('relevant');
+  const [quickFilter, setQuickFilter] = useState('ALL');
+  const [minRating, setMinRating] = useState(0);
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -607,6 +610,11 @@ export const ExploreShopsScreen = () => {
         if (hasCategoryMatches && !isProductInCategory(p, selectedCategory)) return false;
       }
 
+      // Quick Filter (Budget)
+      const price = Number(p.price || 0);
+      if (quickFilter === 'UNDER_99' && price > 99) return false;
+      if (quickFilter === 'UNDER_499' && price > 499) return false;
+
       return true;
     });
 
@@ -862,6 +870,25 @@ export const ExploreShopsScreen = () => {
 
       {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE */}
       <HowShopSiloWorksSection />
+
+      {/* 1.8. REDESIGNED SEARCH RESULTS HEADER & FILTER PILLS BAR */}
+      <div style={{ padding: '0 16px' }}>
+        <SearchResultHeader
+          searchTerm={searchTerm}
+          filteredProducts={filteredProducts}
+          filteredShops={filteredShops}
+          radiusKm={radiusKm}
+          setRadiusKm={setRadiusKm}
+          quickFilter={quickFilter}
+          setQuickFilter={setQuickFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          showOpenOnly={showOpenOnly}
+          setShowOpenOnly={setShowOpenOnly}
+          onOpenCompare={() => setIsSmartSearchOpen(true)}
+          isHindi={isHindi}
+        />
+      </div>
 
       {/* 2. BELOW-THE-FOLD: CLEAN FEED HEADER & SORT CONTROLS */}
       <div id="marketplace-feed" style={{ marginTop: '24px' }}>

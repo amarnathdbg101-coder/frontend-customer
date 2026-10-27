@@ -1,13 +1,13 @@
 /**
  * NearbyShopsComparison Component
  *
- * High-converting, instant decision-making Price Comparison Showcase.
- * Highlights the Best Value Local Store (#1 Lowest Price) with a Hero Card,
- * "🏆 Best Price" badge, "You Save ₹XX" calculations, distance, and 1-tap Reserve.
- * Renders other nearby stores below in lower visual priority.
+ * Dedicated Winner Card Showcase for Best Value Local Store (#1 Lowest Price & Shortest Distance).
+ * Displays "🏆 Best Value", "Lowest Price", "Shortest Distance", "You Save ₹XX",
+ * 210px Store Cover Photo, and 1-tap Reserve CTA.
+ * Other stores appear below in lower visual priority.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Trophy,
@@ -18,12 +18,12 @@ import {
   Store,
   ChevronRight,
   Sparkles,
-  ArrowRight,
+  Zap,
 } from 'lucide-react';
 import { productApi } from '../../api/product.api';
 import { useLanguage } from '../../context/LanguageContext';
 import { calculateDistanceKm, formatTravelTime } from '../../utils/distance';
-import { formatCurrency } from '../../utils/format';
+import { getImageUrl } from '../../utils/imageUrl';
 
 // Helper to extract product array safely from API responses
 const extractArray = (res, key) => {
@@ -67,7 +67,6 @@ export const NearbyShopsComparison = ({
         if (raw.length <= 1 && name) {
           const res2 = await productApi.listProducts({ q: name, limit: 10 });
           const raw2 = extractArray(res2, 'products');
-          // Deduplicate by shop ID
           const existingShopIds = new Set(raw.map((p) => p.shop_id || p.shopId || p.shop?.id));
           for (const item of raw2) {
             const sId = item.shop_id || item.shopId || item.shop?.id;
@@ -107,7 +106,7 @@ export const NearbyShopsComparison = ({
           };
         });
 
-        // Filter valid price items & sort by price ascending (Lowest price first)
+        // Filter valid price items & sort by price ascending
         const validListings = processed.filter((item) => item.price > 0);
         validListings.sort((a, b) => a.price - b.price);
 
@@ -130,7 +129,7 @@ export const NearbyShopsComparison = ({
     return null; // Only render when 2 or more shops offer this product
   }
 
-  // Rank #1: Best Price Shop
+  // Rank #1: Winner Store (Best Value)
   const bestShop = nearbyListings[0];
   const otherShops = nearbyListings.slice(1);
 
@@ -140,6 +139,10 @@ export const NearbyShopsComparison = ({
     bestShop.comparePrice || bestShop.price
   );
   const savingsAmount = Math.max(0, highestPrice - bestShop.price);
+
+  const storeLogo = bestShop.photo || bestShop.banner || (Array.isArray(bestShop.banners) && bestShop.banners[0]) || bestShop.logo_url || '';
+  const storePhoto = bestShop.photo || bestShop.banner || (Array.isArray(bestShop.banners) && bestShop.banners[0]) || bestShop.logo_url || '';
+  const storeIsOpen = bestShop.is_open !== false && bestShop.isCurrentlyOpen !== false;
 
   return (
     <div
@@ -152,7 +155,7 @@ export const NearbyShopsComparison = ({
         marginTop: '16px',
       }}
     >
-      {/* Header */}
+      {/* Section Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div
@@ -192,47 +195,108 @@ export const NearbyShopsComparison = ({
         </span>
       </div>
 
-      {/* ================= 🏆 RANK #1 BEST PRICE HERO CARD ================= */}
+      {/* ================= 🏆 DEDICATED WINNER CARD (BEST VALUE STORE) ================= */}
       <div
         style={{
           position: 'relative',
           backgroundColor: '#f0fdf4',
           border: '2px solid #10b981',
-          borderRadius: '16px',
+          borderRadius: '18px',
           padding: '16px',
-          marginBottom: otherShops.length > 0 ? '14px' : '0',
-          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.15)',
+          marginBottom: otherShops.length > 0 ? '16px' : '0',
+          boxShadow: '0 4px 20px rgba(16, 185, 129, 0.18)',
           overflow: 'hidden',
         }}
       >
-        {/* Top Floating Badge */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-            backgroundColor: '#10b981',
-            color: '#ffffff',
-            fontSize: '0.72rem',
-            fontWeight: 900,
-            padding: '4px 10px',
-            borderRadius: '20px',
-            letterSpacing: '0.3px',
-            marginBottom: '10px',
-            boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)',
-          }}
-        >
-          <span>🏆 {isHindi ? 'सबसे कम दाम (Best Price)' : 'Best Price'}</span>
+        {/* Floating Winner Badges Row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                backgroundColor: '#10b981',
+                color: '#ffffff',
+                fontSize: '0.76rem',
+                fontWeight: 900,
+                padding: '4px 11px',
+                borderRadius: '20px',
+                letterSpacing: '0.3px',
+                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)',
+              }}
+            >
+              🏆 {isHindi ? 'सर्वोत्तम विकल्प (Best Value)' : 'Best Value'}
+            </span>
+
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                backgroundColor: '#bbf7d0',
+                color: '#065f46',
+                fontSize: '0.70rem',
+                fontWeight: 800,
+                padding: '3px 8px',
+                borderRadius: '12px',
+              }}
+            >
+              <Zap size={11} fill="#059669" color="#059669" />
+              <span>{isHindi ? 'सबसे कम दाम' : 'Lowest Price'}</span>
+            </span>
+          </div>
+
+          {/* You Save ₹XX Highlight Badge */}
+          {savingsAmount > 0 && (
+            <span
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 900,
+                color: '#15803d',
+                backgroundColor: '#dcfce7',
+                border: '1.5px solid #86efac',
+                padding: '4px 10px',
+                borderRadius: '10px',
+                boxShadow: '0 1px 4px rgba(21, 128, 61, 0.12)',
+              }}
+            >
+              {isHindi ? `आप बचाते हैं ₹${savingsAmount.toFixed(0)}` : `You Save ₹${savingsAmount.toFixed(0)}`}
+            </span>
+          )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-          <div>
-            {/* Store Name & Verification */}
+        {/* Store Header Row: Logo + Store Name + Verified Badge + Open/Closed Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+          {/* Store Logo Avatar */}
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              backgroundColor: '#ffffff',
+              border: '1.5px solid #a7f3d0',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {storeLogo ? (
+              <img src={getImageUrl(storeLogo)} alt={bestShop.shopName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <Store size={22} color="#10b981" />
+            )}
+          </div>
+
+          {/* Store Name & Verification & Distance */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <h4 style={{ fontSize: '1.08rem', fontWeight: 800, margin: 0, color: '#064e3b' }}>
+              <h4 style={{ fontSize: '1.08rem', fontWeight: 800, margin: 0, color: '#064e3b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {bestShop.shopName}
               </h4>
-              <ShieldCheck size={17} color="#10b981" />
+              <ShieldCheck size={18} color="#10b981" style={{ flexShrink: 0 }} />
               {bestShop.isCurrent && (
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, backgroundColor: '#bbf7d0', color: '#166534', padding: '2px 6px', borderRadius: '4px' }}>
                   {isHindi ? 'यह दुकान' : 'Current'}
@@ -240,60 +304,39 @@ export const NearbyShopsComparison = ({
               )}
             </div>
 
-            {/* Distance & Travel Time */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', color: '#047857', marginTop: '4px', fontWeight: 600 }}>
-              <MapPin size={12} color="#10b981" />
-              <span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', marginTop: '3px' }}>
+              <span style={{ fontWeight: 700, color: storeIsOpen ? '#15803d' : '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: storeIsOpen ? '#10b981' : '#dc2626' }} />
+                {storeIsOpen ? (isHindi ? 'खुली है (Open Now)' : 'Open Now') : (isHindi ? 'बंद है' : 'Closed')}
+              </span>
+              <span style={{ color: '#047857' }}>•</span>
+              <span style={{ color: '#047857', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                <MapPin size={12} color="#10b981" />
                 {bestShop.distKm !== null
-                  ? `${bestShop.distKm < 1 ? `${Math.round(bestShop.distKm * 1000)}m` : `${bestShop.distKm.toFixed(1)} km`} away`
+                  ? `${bestShop.distKm < 1 ? `${Math.round(bestShop.distKm * 1000)}m` : `${bestShop.distKm.toFixed(1)} km`} away (${isHindi ? 'सबसे नजदीक' : 'Shortest Distance'})`
                   : (isHindi ? 'आस-पास' : 'Nearby')}
-                {bestShop.travel?.timeStr ? ` (${bestShop.travel.timeStr})` : ''}
               </span>
             </div>
           </div>
-
-          {/* Big Bold Best Price & Savings Pill */}
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#047857', lineHeight: 1 }}>
-              ₹{bestShop.price.toFixed(0)}
-            </div>
-
-            {savingsAmount > 0 && (
-              <div
-                style={{
-                  display: 'inline-block',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  color: '#15803d',
-                  backgroundColor: '#dcfce7',
-                  border: '1px solid #86efac',
-                  padding: '2px 7px',
-                  borderRadius: '6px',
-                  marginTop: '4px',
-                }}
-              >
-                {isHindi ? `आप बचाते हैं ₹${savingsAmount.toFixed(0)}` : `You Save ₹${savingsAmount.toFixed(0)}`}
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Store Cover Photo (Gives Real Store Business Presence - Height Increased 40%) */}
-        {(bestShop.photo || bestShop.banner || (Array.isArray(bestShop.banners) && bestShop.banners[0]) || bestShop.logo_url) && (
+        {/* Store Cover Photo (Strongest Proof of Real Business - 210px Height) */}
+        {storePhoto && (
           <div
             style={{
               width: '100%',
-              height: '155px',
-              borderRadius: '14px',
+              height: '210px',
+              borderRadius: '16px',
               overflow: 'hidden',
               marginTop: '12px',
-              marginBottom: '4px',
-              border: '1px solid #a7f3d0',
+              marginBottom: '12px',
+              border: '1.5px solid #a7f3d0',
               position: 'relative',
+              boxShadow: '0 4px 14px rgba(6, 78, 59, 0.12)',
             }}
           >
             <img
-              src={getImageUrl(bestShop.photo || bestShop.banner || (Array.isArray(bestShop.banners) && bestShop.banners[0]) || bestShop.logo_url)}
+              src={getImageUrl(storePhoto)}
               alt={bestShop.shopName}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
@@ -301,31 +344,76 @@ export const NearbyShopsComparison = ({
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(to top, rgba(6, 78, 59, 0.65) 0%, transparent 60%)',
+                background: 'linear-gradient(to top, rgba(6, 78, 59, 0.75) 0%, rgba(6, 78, 59, 0.2) 50%, transparent 80%)',
               }}
             />
             <div
               style={{
                 position: 'absolute',
-                bottom: '10px',
-                left: '12px',
+                bottom: '12px',
+                left: '14px',
+                right: '14px',
                 color: '#ffffff',
-                fontSize: '0.76rem',
-                fontWeight: 800,
                 textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
               }}
             >
-              <Store size={14} color="#ffffff" />
-              <span>📍 Verified Counter Inventory • 100% Real Local Business</span>
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  fontWeight: 900,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  letterSpacing: '0.2px',
+                }}
+              >
+                <Store size={16} color="#34d399" />
+                <span>📍 Verified Counter Inventory • 100% Real Local Store</span>
+              </div>
+              <div style={{ fontSize: '0.72rem', opacity: 0.9, marginTop: '2px', fontWeight: 600 }}>
+                {isHindi ? '🏬 शॉपसिलो फील्ड टीम द्वारा भौतिक रूप से सत्यापित काउंटर' : '🏬 Physical storefront verified with real counter presence'}
+              </div>
             </div>
           </div>
         )}
 
+        {/* Price & View Profile Link Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+          <div>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              {isHindi ? 'बेस्ट काउंटर प्राइस' : 'BEST COUNTER PRICE'}
+            </span>
+            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#047857', lineHeight: 1 }}>
+              ₹{bestShop.price.toFixed(0)}
+            </div>
+          </div>
+
+          {bestShop.shopSlug && (
+            <button
+              type="button"
+              onClick={() => navigate(`/shop/${bestShop.shopSlug}`)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#047857',
+                fontWeight: 800,
+                fontSize: '0.78rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 0',
+                textDecoration: 'underline',
+              }}
+            >
+              <span>{isHindi ? 'दुकान प्रोफाइल देखें' : 'View Store Profile'}</span>
+              <span>→</span>
+            </button>
+          )}
+        </div>
+
         {/* Action Button & Risk-Free Reassurance */}
-        <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed #a7f3d0' }}>
+        <div style={{ paddingTop: '12px', borderTop: '1px dashed #a7f3d0' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               type="button"
@@ -348,9 +436,9 @@ export const NearbyShopsComparison = ({
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '12px',
-                padding: '11px 16px',
-                fontSize: '0.88rem',
-                fontWeight: 800,
+                padding: '12px 16px',
+                fontSize: '0.90rem',
+                fontWeight: 900,
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -368,7 +456,7 @@ export const NearbyShopsComparison = ({
                 type="button"
                 onClick={() => navigate(`/shop/${bestShop.shopSlug}`)}
                 style={{
-                  padding: '11px 14px',
+                  padding: '12px 14px',
                   borderRadius: '12px',
                   border: '1.5px solid #a7f3d0',
                   backgroundColor: '#ffffff',
@@ -387,9 +475,8 @@ export const NearbyShopsComparison = ({
             )}
           </div>
 
-          <div style={{ fontSize: '0.72rem', color: '#065f46', marginTop: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-            <ShieldCheck size={13} color="#10b981" />
-            <span>{isHindi ? 'कोई अग्रिम भुगतान नहीं • दुकान काउंटर पर सामान देखकर सीधा भुगतान करें' : 'No advance payment • Pay directly at store counter'}</span>
+          <div style={{ fontSize: '0.72rem', color: '#065f46', marginTop: '8px', textAlign: 'center', fontWeight: 600 }}>
+            🛡️ No advance payment required. Pickup directly from store.
           </div>
         </div>
       </div>
@@ -407,7 +494,7 @@ export const NearbyShopsComparison = ({
               marginBottom: '8px',
             }}
           >
-            {isHindi ? 'अन्य आस-पास की दुकानें' : 'Other Nearby Stores'}
+            {isHindi ? 'अन्य आस-पास की दुकानें (Other Stores)' : 'Other Nearby Stores'}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

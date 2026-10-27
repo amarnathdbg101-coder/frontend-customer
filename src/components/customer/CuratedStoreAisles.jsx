@@ -1,14 +1,12 @@
 /**
  * CuratedStoreAisles Component
- * Dynamically computes thematic aisles (shelves) from a store's catalog:
- * 1. ⚡ Super Saver Deals (Discounts >= 10%)
- * 2. 🏷️ Budget Corner (Under ₹99 / Under ₹49)
- * 3. ☕ Chai, Snacks & Refreshments
- * 4. 🧼 Home Hygiene, Soap & Care
- * 5. 🔥 Bestsellers & Top Daily Picks
- * 
- * Clicking "View All" or "See More" opens a dedicated collection page view
- * with the full list of products for that shelf.
+ *
+ * Groups products into thematic horizontal carousels creating visual variety
+ * and replacing endless vertical grids:
+ * 1. 🔥 Best Deals
+ * 2. 🆕 Recently Added
+ * 3. ⭐ Popular Products
+ * 4. 🎉 Festival Collection
  */
 
 import React, { useMemo } from 'react';
@@ -26,7 +24,7 @@ export const CuratedStoreAisles = ({
   shopSlug,
   isHindi = false,
 }) => {
-  // 1. All Deals & Offers Products (Discounts >= 10%)
+  // 1. 🔥 Best Deals (Discounts mrp > price)
   const allDeals = useMemo(() => {
     return products
       .filter((p) => {
@@ -41,52 +39,30 @@ export const CuratedStoreAisles = ({
       });
   }, [products]);
 
-  // 2. All Budget Corner Products (Under ₹99)
-  const allBudget = useMemo(() => {
-    return products
-      .filter((p) => {
-        const price = Number(p.price || 0);
-        return price > 0 && price <= 99;
-      })
-      .sort((a, b) => Number(a.price) - Number(b.price));
+  // 2. 🆕 Recently Added (Latest catalog entries)
+  const allRecentlyAdded = useMemo(() => {
+    return [...products].reverse();
   }, [products]);
 
-  // 3. All Snacks & Beverages Products (Chai, Biscuits, Refreshments)
-  const allSnacks = useMemo(() => {
-    const keywords = [
-      'snack', 'biscuit', 'cookie', 'namkeen', 'chips', 'wafer', 'toast', 'rusk',
-      'chai', 'tea', 'coffee', 'juice', 'beverage', 'drink', 'water', 'soda', 'cola',
-      'energy', 'munchies', 'sweet', 'chikki', 'mixture', 'bhujia', 'crisp'
-    ];
-
-    return products.filter((p) => {
-      const name = (p.name || '').toLowerCase();
-      const cat = (p.category_name || p.category || '').toLowerCase();
-      return keywords.some((kw) => name.includes(kw) || cat.includes(kw));
-    });
-  }, [products]);
-
-  // 4. All Household, Hygiene & Personal Care Products
-  const allHygiene = useMemo(() => {
-    const keywords = [
-      'soap', 'sabun', 'detergent', 'surf', 'rin', 'tide', 'shampoo', 'paste',
-      'toothpaste', 'brush', 'cleaner', 'wash', 'harpic', 'dettol', 'lifebuoy',
-      'sanitizer', 'disinfectant', 'cream', 'lotion', 'oil', 'hair', 'grooming',
-      'face', 'hand', 'clean', 'bath', 'sponge', 'agarbatti', 'dhoop'
-    ];
-
-    return products.filter((p) => {
-      const name = (p.name || '').toLowerCase();
-      const cat = (p.category_name || p.category || '').toLowerCase();
-      return keywords.some((kw) => name.includes(kw) || cat.includes(kw));
-    });
-  }, [products]);
-
-  // 5. All Popular Bestsellers (Top in-stock items)
+  // 3. ⭐ Popular Products (Bestsellers & high-stock items)
   const allPopular = useMemo(() => {
     return products.filter((p) => {
       const stock = Number(p.available_quantity ?? p.stock_quantity ?? p.stock ?? 1);
       return stock > 0;
+    });
+  }, [products]);
+
+  // 4. 🎉 Festival & Daily Collection (Gifts, Sweets, Apparel, Appliances)
+  const allFestivalCollection = useMemo(() => {
+    const keywords = [
+      'sweet', 'mithai', 'snack', 'dry fruit', 'gift', 'saree', 'cloth', 'apparel',
+      'cooker', 'pot', 'pan', 'appliances', 'utensil', 'decor', 'lamp', 'diya',
+      'tea', 'chai', 'coffee', 'festive', 'celebration', 'fashion'
+    ];
+    return products.filter((p) => {
+      const name = (p.name || '').toLowerCase();
+      const cat = (p.category_name || p.category || '').toLowerCase();
+      return keywords.some((kw) => name.includes(kw) || cat.includes(kw));
     });
   }, [products]);
 
@@ -101,25 +77,25 @@ export const CuratedStoreAisles = ({
   };
 
   return (
-    <div className="curated-store-aisles" style={{ marginBottom: '16px' }}>
-      {/* 1. Deals Shelf */}
+    <div className="curated-store-aisles" style={{ marginBottom: '20px' }}>
+      {/* 1. 🔥 Best Deals Carousel */}
       {allDeals.length >= 2 && (
         <CuratedProductShelf
-          title={isHindi ? 'सुपर सेवर डील्स' : 'Super Saver Deals'}
-          subtitle={isHindi ? 'दुकान की सबसे बड़ी छूट और बचत' : 'Biggest savings & discounts in store'}
-          icon="⚡"
-          badgeText={isHindi ? 'छूट' : 'Deals'}
-          badgeBg="#fef2f2"
+          title={isHindi ? 'बेस्ट डील्स (Best Deals)' : 'Best Deals'}
+          subtitle={isHindi ? 'दुकान की सबसे बड़ी छूट और बचत' : 'Biggest savings & discounts nearby'}
+          icon="🔥"
+          badgeText={isHindi ? 'डील्स' : 'Deals'}
+          badgeBg="#fee2e2"
           badgeColor="#dc2626"
           products={allDeals.slice(0, 10)}
           onViewAll={() =>
             handleOpenShelf({
-              id: 'deals',
+              id: 'best_deals',
               filterKey: 'DEALS_20',
-              title: isHindi ? 'सुपर सेवर डील्स' : 'Super Saver Deals',
-              subtitle: isHindi ? 'दुकान की सबसे बड़ी छूट और बचत' : 'Biggest savings & discounts in store',
-              icon: '⚡',
-              badgeBg: '#fef2f2',
+              title: isHindi ? 'बेस्ट डील्स' : 'Best Deals',
+              subtitle: isHindi ? 'दुकान की सबसे बड़ी छूट और बचत' : 'Biggest savings & discounts nearby',
+              icon: '🔥',
+              badgeBg: '#fee2e2',
               badgeColor: '#dc2626',
               products: allDeals,
             })
@@ -133,119 +109,86 @@ export const CuratedStoreAisles = ({
         />
       )}
 
-      {/* 2. Budget Under ₹99 Shelf */}
-      {allBudget.length >= 2 && (
+      {/* 2. 🆕 Recently Added Carousel */}
+      {allRecentlyAdded.length >= 2 && (
         <CuratedProductShelf
-          title={isHindi ? 'बजट स्टोर (₹99 से कम)' : 'Budget Store (Under ₹99)'}
-          subtitle={isHindi ? 'किफायती और रोजाना काम आने वाले सामान' : 'Affordable daily necessities'}
-          icon="🏷️"
-          badgeText="< ₹99"
-          badgeBg="#ecfdf5"
-          badgeColor="#059669"
-          products={allBudget.slice(0, 10)}
-          onViewAll={() =>
-            handleOpenShelf({
-              id: 'budget_under_99',
-              filterKey: 'UNDER_99',
-              title: isHindi ? 'बजट स्टोर (₹99 से कम)' : 'Budget Store (Under ₹99)',
-              subtitle: isHindi ? 'किफायती और रोजाना काम आने वाले सामान' : 'Affordable daily necessities',
-              icon: '🏷️',
-              badgeBg: '#ecfdf5',
-              badgeColor: '#059669',
-              products: allBudget,
-            })
-          }
-          onProductClick={onProductClick}
-          isProductSaved={isProductSaved}
-          onToggleSave={onToggleSave}
-          shopName={shopName}
-          shopSlug={shopSlug}
-          isHindi={isHindi}
-        />
-      )}
-
-      {/* 3. Snacks & Tea Time Shelf */}
-      {allSnacks.length >= 2 && (
-        <CuratedProductShelf
-          title={isHindi ? 'चाय, नाश्ता व रिफ्रेशमेंट' : 'Tea Time & Snacks'}
-          subtitle={isHindi ? 'बिस्कुट, नमकीन, चाय और ड्रिंक्स' : 'Biscuits, namkeen, tea & refreshments'}
-          icon="☕"
-          badgeText={isHindi ? 'नाश्ता' : 'Snacks'}
-          badgeBg="#fffbeb"
-          badgeColor="#d97706"
-          products={allSnacks.slice(0, 10)}
-          onViewAll={() =>
-            handleOpenShelf({
-              id: 'tea_snacks',
-              category: 'Snacks',
-              title: isHindi ? 'चाय, नाश्ता व रिफ्रेशमेंट' : 'Tea Time & Snacks',
-              subtitle: isHindi ? 'बिस्कुट, नमकीन, चाय और ड्रिंक्स' : 'Biscuits, namkeen, tea & refreshments',
-              icon: '☕',
-              badgeBg: '#fffbeb',
-              badgeColor: '#d97706',
-              products: allSnacks,
-            })
-          }
-          onProductClick={onProductClick}
-          isProductSaved={isProductSaved}
-          onToggleSave={onToggleSave}
-          shopName={shopName}
-          shopSlug={shopSlug}
-          isHindi={isHindi}
-        />
-      )}
-
-      {/* 4. Hygiene & Household Care Shelf */}
-      {allHygiene.length >= 2 && (
-        <CuratedProductShelf
-          title={isHindi ? 'घर की सफाई व पर्सनल केयर' : 'Home Hygiene & Personal Care'}
-          subtitle={isHindi ? 'साबुन, डिटर्जेंट, शैम्पू व साफ-सफाई' : 'Soaps, detergents, cleaners & grooming'}
-          icon="🧼"
-          badgeText={isHindi ? 'केयर' : 'Care'}
-          badgeBg="#f0fdf4"
-          badgeColor="#16a34a"
-          products={allHygiene.slice(0, 10)}
-          onViewAll={() =>
-            handleOpenShelf({
-              id: 'home_hygiene',
-              category: 'Cleaning',
-              title: isHindi ? 'घर की सफाई व पर्सनल केयर' : 'Home Hygiene & Personal Care',
-              subtitle: isHindi ? 'साबुन, डिटर्जेंट, शैम्पू व साफ-सफाई' : 'Soaps, detergents, cleaners & grooming',
-              icon: '🧼',
-              badgeBg: '#f0fdf4',
-              badgeColor: '#16a34a',
-              products: allHygiene,
-            })
-          }
-          onProductClick={onProductClick}
-          isProductSaved={isProductSaved}
-          onToggleSave={onToggleSave}
-          shopName={shopName}
-          shopSlug={shopSlug}
-          isHindi={isHindi}
-        />
-      )}
-
-      {/* 5. Popular Bestsellers Shelf */}
-      {allPopular.length >= 3 && allDeals.length < 2 && allBudget.length < 2 && (
-        <CuratedProductShelf
-          title={isHindi ? 'दुकान के लोकप्रिय सामान' : 'Store Bestsellers'}
-          subtitle={isHindi ? 'ग्राहकों द्वारा सबसे ज्यादा पसंद किए जाने वाले' : 'Most preferred daily items'}
-          icon="🔥"
-          badgeText={isHindi ? 'पॉपुलर' : 'Popular'}
+          title={isHindi ? 'हाल ही में जोड़े गए (Recently Added)' : 'Recently Added'}
+          subtitle={isHindi ? 'आस-पास की दुकानों में आए नए सामान' : 'Fresh new arrivals in nearby stores'}
+          icon="🆕"
+          badgeText={isHindi ? 'नए' : 'New'}
           badgeBg="#eff6ff"
           badgeColor="#2563eb"
+          products={allRecentlyAdded.slice(0, 10)}
+          onViewAll={() =>
+            handleOpenShelf({
+              id: 'recently_added',
+              title: isHindi ? 'हाल ही में जोड़े गए' : 'Recently Added',
+              subtitle: isHindi ? 'आस-पास की दुकानों में आए नए सामान' : 'Fresh new arrivals in nearby stores',
+              icon: '🆕',
+              badgeBg: '#eff6ff',
+              badgeColor: '#2563eb',
+              products: allRecentlyAdded,
+            })
+          }
+          onProductClick={onProductClick}
+          isProductSaved={isProductSaved}
+          onToggleSave={onToggleSave}
+          shopName={shopName}
+          shopSlug={shopSlug}
+          isHindi={isHindi}
+        />
+      )}
+
+      {/* 3. ⭐ Popular Products Carousel */}
+      {allPopular.length >= 2 && (
+        <CuratedProductShelf
+          title={isHindi ? 'लोकप्रिय उत्पाद (Popular Products)' : 'Popular Products'}
+          subtitle={isHindi ? 'ग्राहकों द्वारा सबसे ज्यादा पसंद किए जाने वाले' : 'Most in-demand local preferences'}
+          icon="⭐"
+          badgeText={isHindi ? 'पॉपुलर' : 'Popular'}
+          badgeBg="#fefce8"
+          badgeColor="#854d0e"
           products={allPopular.slice(0, 10)}
           onViewAll={() =>
             handleOpenShelf({
-              id: 'popular_items',
+              id: 'popular_products',
               filterKey: 'ALL',
-              title: isHindi ? 'दुकान के लोकप्रिय सामान' : 'Store Bestsellers',
-              subtitle: isHindi ? 'ग्राहकों द्वारा सबसे ज्यादा पसंद किए जाने वाले' : 'Most preferred daily items',
-              icon: '🔥',
-              badgeBg: '#eff6ff',
-              badgeColor: '#2563eb',
+              title: isHindi ? 'लोकप्रिय उत्पाद' : 'Popular Products',
+              subtitle: isHindi ? 'ग्राहकों द्वारा सबसे ज्यादा पसंद किए जाने वाले' : 'Most in-demand local preferences',
+              icon: '⭐',
+              badgeBg: '#fefce8',
+              badgeColor: '#854d0e',
               products: allPopular,
+            })
+          }
+          onProductClick={onProductClick}
+          isProductSaved={isProductSaved}
+          onToggleSave={onToggleSave}
+          shopName={shopName}
+          shopSlug={shopSlug}
+          isHindi={isHindi}
+        />
+      )}
+
+      {/* 4. 🎉 Festival & Daily Collection Carousel */}
+      {allFestivalCollection.length >= 2 && (
+        <CuratedProductShelf
+          title={isHindi ? 'फेस्टिवल कलेक्शन (Festival Collection)' : 'Festival Collection'}
+          subtitle={isHindi ? 'त्योहारों के उपहार, कपड़े व खास सामान' : 'Festive gifts, apparel, sweets & home decor'}
+          icon="🎉"
+          badgeText={isHindi ? 'उत्सव' : 'Festive'}
+          badgeBg="#fdf4ff"
+          badgeColor="#c026d3"
+          products={allFestivalCollection.slice(0, 10)}
+          onViewAll={() =>
+            handleOpenShelf({
+              id: 'festival_collection',
+              title: isHindi ? 'फेस्टिवल कलेक्शन' : 'Festival Collection',
+              subtitle: isHindi ? 'त्योहारों के उपहार, कपड़े व खास सामान' : 'Festive gifts, apparel, sweets & home decor',
+              icon: '🎉',
+              badgeBg: '#fdf4ff',
+              badgeColor: '#c026d3',
+              products: allFestivalCollection,
             })
           }
           onProductClick={onProductClick}
@@ -259,3 +202,5 @@ export const CuratedStoreAisles = ({
     </div>
   );
 };
+
+export default CuratedStoreAisles;
