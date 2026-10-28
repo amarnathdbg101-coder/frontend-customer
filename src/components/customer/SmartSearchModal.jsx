@@ -284,6 +284,14 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
     return Math.min(...validDists);
   }, [processedResults]);
 
+  const handleProductClick = (item) => {
+    onClose();
+    const targetSlug = item.shop_slug || item.shop?.slug || 'store';
+    navigate(`/shop/${targetSlug}/product/${item.id}`, {
+      state: { product: item, shop: item.shop },
+    });
+  };
+
   const handleReserve = async (item) => {
     try {
       setReservingId(item.id);
@@ -529,6 +537,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                   return (
                     <div
                       key={`${item.id}_${item.shop_slug}`}
+                      onClick={() => handleProductClick(item)}
                       style={{
                         padding: '12px 14px',
                         borderRadius: '12px',
@@ -539,54 +548,56 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                         justifyContent: 'space-between',
                         gap: '12px',
                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease-in-out',
                       }}
                     >
                       {/* Left Details */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
-                          {extractFirstImage(item.images || item.image_url || item.image) ? (
-                            <img
-                              src={getImageUrl(extractFirstImage(item.images || item.image_url || item.image))}
-                              alt={item.name}
-                              style={{ width: '58px', height: '58px', flex: '0 0 58px', objectFit: 'contain', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)' }}
-                            />
-                          ) : (
-                            <div style={{ width: '58px', height: '58px', flex: '0 0 58px', display: 'grid', placeItems: 'center', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', color: 'var(--text-muted, #94a3b8)' }}>
-                              <Package size={22} />
-                            </div>
-                          )}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+                        {extractFirstImage(item.images || item.image_url || item.image) ? (
+                          <img
+                            src={getImageUrl(extractFirstImage(item.images || item.image_url || item.image))}
+                            alt={item.name}
+                            style={{ width: '58px', height: '58px', flex: '0 0 58px', objectFit: 'contain', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)' }}
+                          />
+                        ) : (
+                          <div style={{ width: '58px', height: '58px', flex: '0 0 58px', display: 'grid', placeItems: 'center', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', color: 'var(--text-muted, #94a3b8)' }}>
+                            <Package size={22} />
+                          </div>
+                        )}
 
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                              <span style={{ fontWeight: 800, fontSize: '0.96rem', lineHeight: 1.3, color: 'var(--text-primary, #0f172a)' }}>
-                                {item.name}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: 800, fontSize: '0.96rem', lineHeight: 1.3, color: 'var(--text-primary, #0f172a)' }}>
+                              {item.name}
+                            </span>
+
+                            {isLowest && (
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
+                                ✓ {isHindi ? 'सबसे सस्ता' : 'Cheapest'}
                               </span>
+                            )}
 
-                              {isLowest && (
-                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
-                                  ✓ {isHindi ? 'सबसे सस्ता' : 'Cheapest'}
-                                </span>
-                              )}
-
-                              {isNearest && (
-                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
-                                  📍 {isHindi ? 'सबसे पास' : 'Nearest'}
-                                </span>
-                              )}
-                            </div>
-
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 700 }}>
-                              {item.shop_name}
-                            </div>
-
-                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              {travel && <span>{travel.full}</span>}
-                              {travel && <span>•</span>}
-                              <span style={{ color: item.inStock ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
-                                {item.inStock ? (isHindi ? 'स्टॉक में उपलब्ध' : 'In Stock') : (isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock')}
+                            {isNearest && (
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
+                                📍 {isHindi ? 'सबसे पास' : 'Nearest'}
                               </span>
-                            </div>
+                            )}
+                          </div>
+
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 700 }}>
+                            {item.shop_name}
+                          </div>
+
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            {travel && <span>{travel.full}</span>}
+                            {travel && <span>•</span>}
+                            <span style={{ color: item.inStock ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
+                              {item.inStock ? (isHindi ? 'स्टॉक में उपलब्ध' : 'In Stock') : (isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock')}
+                            </span>
                           </div>
                         </div>
+                      </div>
 
                       {/* Right Price & Actions */}
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -597,7 +608,30 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                         <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
                           <button
                             type="button"
-                            onClick={() => handleReserve(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProductClick(item);
+                            }}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                              color: 'var(--color-primary, #4f46e5)',
+                              border: '1px solid var(--border-subtle, #e2e8f0)',
+                              fontSize: '0.74rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {isHindi ? 'विवरण' : 'Details'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReserve(item);
+                            }}
                             disabled={!item.inStock || reservingId === item.id}
                             style={{
                               padding: '6px 12px',
