@@ -76,7 +76,15 @@ export const ProductTrustDetailView = ({
   // Pricing & Savings computation
   const currentPrice = Number(product?.price || product?.selling_price || 0);
   const originalPrice = Number(product?.compare_price || product?.mrp || 0);
-  const hasDiscount = originalPrice > currentPrice && currentPrice > 0;
+  const isPricePublic =
+    product?.is_price_public !== false &&
+    product?.isPricePublic !== false &&
+    product?.attributes?.is_price_public !== false &&
+    product?.attributes?.is_price_public !== 'false' &&
+    currentPrice > 0 &&
+    !product?.hide_price;
+
+  const hasDiscount = isPricePublic && originalPrice > currentPrice;
   const savingsAmount = hasDiscount ? originalPrice - currentPrice : 0;
   const discountPercent = hasDiscount ? Math.round((savingsAmount / originalPrice) * 100) : 0;
 
@@ -380,19 +388,32 @@ export const ProductTrustDetailView = ({
             {/* Product Name */}
             <h1 className="product-title-heading">{product.name}</h1>
 
-            {/* Price Row: Current Price, Original Price, Savings Amount */}
+            {/* Price Row: Current Price / Ask Price */}
             <div className="product-price-row">
-              <span className="product-current-price">₹{currentPrice.toFixed(0)}</span>
-
-              {hasDiscount && (
+              {isPricePublic ? (
                 <>
-                  <span className="product-original-mrp">₹{originalPrice.toFixed(0)}</span>
-                  <span className="product-savings-badge">
-                    {isHindi
-                      ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
-                      : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
-                  </span>
+                  <span className="product-current-price">₹{currentPrice.toFixed(0)}</span>
+
+                  {hasDiscount && (
+                    <>
+                      <span className="product-original-mrp">₹{originalPrice.toFixed(0)}</span>
+                      <span className="product-savings-badge">
+                        {isHindi
+                          ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
+                          : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
+                      </span>
+                    </>
+                  )}
                 </>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="product-current-price" style={{ color: '#d97706', fontSize: '1.2rem', fontWeight: 900 }}>
+                    {isHindi ? '📞 रेट पूछें (Ask Price)' : '📞 Ask Price'}
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>
+                    ({isHindi ? 'दुकानदार से सीधे रेट पूछें' : 'Contact store directly for pricing'})
+                  </span>
+                </div>
               )}
             </div>
 
@@ -444,71 +465,111 @@ export const ProductTrustDetailView = ({
           </div>
 
           {/* SLEEK & COMPACT SHOP LINK CARD (Clicking navigates to shop profile) */}
-          {bestOffer && (
-            <div
-              onClick={() => {
-                if (bestOffer.slug) navigate(`/shop/${bestOffer.slug}`);
-              }}
-              style={{
-                backgroundColor: 'var(--bg-surface, #ffffff)',
-                border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                borderRadius: '14px',
-                padding: '12px 14px',
-                marginBottom: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '10px',
-                transition: 'all 0.15s ease-in-out',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                <div
+          {(() => {
+            const targetShopSlug =
+              product?.shop_slug ||
+              product?.shop?.slug ||
+              product?.shop_id ||
+              product?.shopId ||
+              initialShop?.slug ||
+              initialShop?.id ||
+              bestOffer?.slug ||
+              bestOffer?.id ||
+              '';
+
+            const handleNavigateToShop = (e) => {
+              if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+              }
+              const slugToUse = targetShopSlug || 'store';
+              navigate(`/shop/${slugToUse}`, {
+                state: { shop: initialShop || product?.shop || bestOffer },
+              });
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            return (
+              <div
+                onClick={handleNavigateToShop}
+                style={{
+                  backgroundColor: 'var(--bg-surface, #ffffff)',
+                  border: '1.5px solid var(--border-subtle, #e2e8f0)',
+                  borderRadius: '14px',
+                  padding: '12px 14px',
+                  marginBottom: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                  transition: 'all 0.15s ease-in-out',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-primary-light, #f0f4ff)',
+                      color: 'var(--color-primary, #4f46e5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Store size={18} />
+                  </div>
+
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ fontSize: '0.90rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {initialShop?.name || product?.shop_name || product?.shop?.name || bestOffer?.name || 'Gupta General Store'}
+                      </span>
+                      <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
+                    </div>
+
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                      <span style={{ color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                        {isHindi ? 'खुली है' : 'Open Now'}
+                      </span>
+                      <span>•</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                        <MapPin size={11} color="var(--color-primary, #4f46e5)" />
+                        {bestOffer?.distanceStr || '450m away'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNavigateToShop}
                   style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 12px',
+                    borderRadius: '10px',
                     backgroundColor: 'var(--color-primary-light, #f0f4ff)',
                     color: 'var(--color-primary, #4f46e5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    border: '1px solid var(--border-subtle, #e2e8f0)',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
                     flexShrink: 0,
                   }}
                 >
-                  <Store size={18} />
-                </div>
-
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontSize: '0.90rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {bestOffer.name}
-                    </span>
-                    <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
-                  </div>
-
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                    <span style={{ color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                      {isHindi ? 'खुली है' : 'Open Now'}
-                    </span>
-                    <span>•</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                      <MapPin size={11} color="var(--color-primary, #4f46e5)" />
-                      {bestOffer.distanceStr}
-                    </span>
-                  </div>
-                </div>
+                  <span>{isHindi ? 'दुकान देखें' : 'View Store'}</span>
+                  <ChevronRight size={15} />
+                </button>
               </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', fontWeight: 800, color: 'var(--color-primary, #4f46e5)', flexShrink: 0 }}>
-                <span>{isHindi ? 'दुकान देखें' : 'View Store'}</span>
-                <ChevronRight size={15} />
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Primary Action Button: Reserve Now */}
           <div style={{ marginBottom: '16px' }}>
