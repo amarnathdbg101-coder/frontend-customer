@@ -41,7 +41,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { formatCurrency } from '../../utils/format';
-import { getImageUrl } from '../../utils/imageUrl';
+import { extractFirstImage, getImageUrl } from '../../utils/imageUrl';
 import { BaseModal, ModalHeader, ModalBody, Button } from '../ui';
 import {
   getStoredRecentSearches,
@@ -234,8 +234,8 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
 
     const normalized = results.map((item) => {
       const pid = item.product_id || item.id;
-      const pName = item.name || 'Product';
-      const sName = item.shop_name || item.shop?.name || (isHindi ? 'स्थानीय दुकान' : 'Local Store');
+      const pName = item.product_name || item.name || item.product?.name || item.item_name || 'Product';
+      const sName = item.shop_name || item.shop?.name || item.store_name || (isHindi ? 'स्थानीय दुकान' : 'Local Store');
       const sSlug = item.shop_slug || item.shop?.slug || '';
       const sLat = item.shop_latitude || item.shop?.latitude || item.latitude;
       const sLng = item.shop_longitude || item.shop?.longitude || item.longitude;
@@ -542,37 +542,51 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                       }}
                     >
                       {/* Left Details */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '2px' }}>
-                          <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary, #0f172a)' }}>
-                            {item.shop_name}
-                          </span>
-
-                          {isLowest && (
-                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
-                              ✓ {isHindi ? 'सबसे सस्ता' : 'Cheapest'}
-                            </span>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+                          {extractFirstImage(item.images || item.image_url || item.image) ? (
+                            <img
+                              src={getImageUrl(extractFirstImage(item.images || item.image_url || item.image))}
+                              alt={item.name}
+                              style={{ width: '58px', height: '58px', flex: '0 0 58px', objectFit: 'contain', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)' }}
+                            />
+                          ) : (
+                            <div style={{ width: '58px', height: '58px', flex: '0 0 58px', display: 'grid', placeItems: 'center', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', color: 'var(--text-muted, #94a3b8)' }}>
+                              <Package size={22} />
+                            </div>
                           )}
 
-                          {isNearest && (
-                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
-                              📍 {isHindi ? 'सबसे पास' : 'Nearest'}
-                            </span>
-                          )}
-                        </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                              <span style={{ fontWeight: 800, fontSize: '0.96rem', lineHeight: 1.3, color: 'var(--text-primary, #0f172a)' }}>
+                                {item.name}
+                              </span>
 
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 600 }}>
-                          {item.name}
-                        </div>
+                              {isLowest && (
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
+                                  ✓ {isHindi ? 'सबसे सस्ता' : 'Cheapest'}
+                                </span>
+                              )}
 
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {travel && <span>{travel.full}</span>}
-                          <span>•</span>
-                          <span style={{ color: item.inStock ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
-                            {item.inStock ? (isHindi ? '● स्टॉक में उपलब्ध' : '● In Stock') : (isHindi ? '● आउट ऑफ स्टॉक' : '● Out of Stock')}
-                          </span>
+                              {isNearest && (
+                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
+                                  📍 {isHindi ? 'सबसे पास' : 'Nearest'}
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 700 }}>
+                              {item.shop_name}
+                            </div>
+
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              {travel && <span>{travel.full}</span>}
+                              {travel && <span>•</span>}
+                              <span style={{ color: item.inStock ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
+                                {item.inStock ? (isHindi ? 'स्टॉक में उपलब्ध' : 'In Stock') : (isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock')}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
 
                       {/* Right Price & Actions */}
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -623,28 +637,32 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                 {isHindi ? '🔥 लोकप्रिय खोजें' : 'Popular Searches'}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
-                {POPULAR_SEARCH_TERMS.map((term, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => {
-                      setQuery(term);
-                      performSearch(term);
-                    }}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '16px',
-                      backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                      border: '1px solid var(--border-subtle, #e2e8f0)',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: 'var(--text-primary, #0f172a)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {term}
-                  </button>
-                ))}
+                {POPULAR_SEARCH_TERMS.map((term, i) => {
+                  const searchTerm = typeof term === 'string' ? term : term?.[isHindi ? 'hi' : 'en'] || term?.en || '';
+
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setQuery(searchTerm);
+                        performSearch(searchTerm);
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '16px',
+                        backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+                        border: '1px solid var(--border-subtle, #e2e8f0)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: 'var(--text-primary, #0f172a)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {searchTerm}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

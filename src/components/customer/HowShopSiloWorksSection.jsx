@@ -17,9 +17,10 @@ export const HowShopSiloWorksSection = () => {
   return (
     <div
       style={{
-        margin: '10px auto 6px auto',
-        maxWidth: '1200px',
-        padding: '0 12px',
+        margin: '10px 0 6px 0',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
       }}
       aria-label="How ShopSilo Works Guide"
     >

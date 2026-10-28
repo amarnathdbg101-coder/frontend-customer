@@ -77,7 +77,7 @@ export const CuratedStoreAisles = ({
   };
 
   return (
-    <div className="curated-store-aisles" style={{ marginBottom: '20px' }}>
+    <div className="curated-store-aisles" style={{ marginBottom: '16px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       {/* 1. 🔥 Best Deals Carousel */}
       {allDeals.length >= 2 && (
         <CuratedProductShelf

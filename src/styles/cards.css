@@ -6,8 +6,8 @@
 /* ---- Hyperlocal Product Card ---- */
 .product-card {
   margin: 0 !important;
-  padding: 12px;
-  border-radius: 16px;
+  padding: 10px;
+  border-radius: 14px;
   border: 1px solid var(--border-subtle, #e2e8f0);
   background-color: var(--bg-surface, #ffffff);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -20,7 +20,7 @@
               border-color 0.18s ease;
   position: relative;
   content-visibility: auto;
-  contain-intrinsic-size: 0 350px;
+  contain-intrinsic-size: 0 320px;
   user-select: none;
 }
 
@@ -336,6 +336,47 @@
 }
 
 @media (max-width: 480px) {
+  .product-card {
+    padding: 8px !important;
+    border-radius: 12px !important;
+  }
+  .product-card-image-box {
+    border-radius: 9px !important;
+  }
+  .product-card-image {
+    padding: 6px !important;
+  }
+  .product-card-name {
+    font-size: 0.80rem !important;
+    min-height: 2.1em !important;
+    margin-bottom: 4px !important;
+  }
+  .product-card-price {
+    font-size: 0.96rem !important;
+  }
+  .product-card-mrp {
+    font-size: 0.68rem !important;
+  }
+  .product-card-store-box {
+    padding: 4px 6px !important;
+    margin-bottom: 6px !important;
+    border-radius: 7px !important;
+  }
+  .product-card-store-name {
+    font-size: 0.72rem !important;
+  }
+  .product-card-distance-text {
+    font-size: 0.68rem !important;
+  }
+  .product-card-actions {
+    gap: 4px !important;
+  }
+  .product-card-btn-compare,
+  .product-card-btn-reserve {
+    padding: 5px 3px !important;
+    font-size: 0.68rem !important;
+    border-radius: 6px !important;
+  }
   .product-card-btn-compare-label-desktop {
     display: none;
   }

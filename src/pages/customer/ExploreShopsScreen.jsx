@@ -220,7 +220,7 @@ export const ExploreShopsScreen = () => {
   }, [searchTerm]);
 
   // 1. Fetch Shops & Products (SWR 0ms Cache First)
-  const loadMarketplaceData = useCallback(async () => {
+  const loadMarketplaceData = useCallback(async (searchOverride) => {
     const isCatActive = selectedCategory && selectedCategory !== 'All';
     const cacheCoordKey = coords?.lat ? `${CACHE_KEYS.SHOPS}_${coords.lat.toFixed(2)}_${coords.lng.toFixed(2)}` : CACHE_KEYS.SHOPS;
     const cacheProdKey = isCatActive ? `${CACHE_KEYS.PRODUCTS}_${selectedCategory}` : CACHE_KEYS.PRODUCTS;
@@ -248,7 +248,7 @@ export const ExploreShopsScreen = () => {
 
     try {
       const categoryParam = isCatActive ? selectedCategory : undefined;
-      const cleanSearch = searchTerm.trim() || undefined;
+      const cleanSearch = (searchOverride ?? searchTerm).trim() || undefined;
       const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
 
       const params = {
@@ -843,6 +843,7 @@ export const ExploreShopsScreen = () => {
           setServerSearchResults(null);
           setServerShopResults(null);
           setSearchSuggestions([]);
+          loadMarketplaceData('');
         }}
         isSearchingServer={isSearchingServer}
         isSuggestionsOpen={isSuggestionsOpen}
@@ -872,23 +873,21 @@ export const ExploreShopsScreen = () => {
       <HowShopSiloWorksSection />
 
       {/* 1.8. REDESIGNED SEARCH RESULTS HEADER & FILTER PILLS BAR */}
-      <div style={{ padding: '0 16px' }}>
-        <SearchResultHeader
-          searchTerm={searchTerm}
-          filteredProducts={filteredProducts}
-          filteredShops={filteredShops}
-          radiusKm={radiusKm}
-          setRadiusKm={setRadiusKm}
-          quickFilter={quickFilter}
-          setQuickFilter={setQuickFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          showOpenOnly={showOpenOnly}
-          setShowOpenOnly={setShowOpenOnly}
-          onOpenCompare={() => setIsSmartSearchOpen(true)}
-          isHindi={isHindi}
-        />
-      </div>
+      <SearchResultHeader
+        searchTerm={searchTerm}
+        filteredProducts={filteredProducts}
+        filteredShops={filteredShops}
+        radiusKm={radiusKm}
+        setRadiusKm={setRadiusKm}
+        quickFilter={quickFilter}
+        setQuickFilter={setQuickFilter}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        showOpenOnly={showOpenOnly}
+        setShowOpenOnly={setShowOpenOnly}
+        onOpenCompare={() => setIsSmartSearchOpen(true)}
+        isHindi={isHindi}
+      />
 
       {/* 2. BELOW-THE-FOLD: CLEAN FEED HEADER & SORT CONTROLS */}
       <div id="marketplace-feed" style={{ marginTop: '24px' }}>
