@@ -28,6 +28,18 @@ import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
 
+// Safe helper to extract a single product object from varied API response shapes
+const extractProductObject = (res) => {
+  if (!res) return null;
+  if (res.id || res.product_id || res.name) return res;
+  if (res.product && (res.product.id || res.product.name)) return res.product;
+  if (res.data && (res.data.id || res.data.name)) return res.data;
+  if (res.data && res.data.product && (res.data.product.id || res.data.product.name)) return res.data.product;
+  if (res.data && res.data.data && (res.data.data.id || res.data.data.name)) return res.data.data;
+  if (res.data && res.data.data && res.data.data.product) return res.data.data.product;
+  return null;
+};
+
 // Safe helper to extract an array from varied API response shapes
 const extractArray = (res, key) => {
   if (!res) return [];
@@ -93,39 +105,59 @@ export const ProductDetailScreen = () => {
         if (!product) {
           setLoading(true);
         }
-        const prodData = await productApi.getById(productId);
+
+        let rawRes = null;
+        try {
+          rawRes = await productApi.getById(productId);
+        } catch {
+          try {
+            rawRes = await productApi.getBySlug(productId);
+          } catch {}
+        }
+
+        const prodData = extractProductObject(rawRes);
+
         if (!isMounted) return;
-        setProduct(prodData);
 
-        // Fetch shop details if shop is missing or outdated
-        const targetSlug = slug || prodData.shop_slug;
-        const targetId = prodData.shop_id || prodData.shopId;
+        if (prodData) {
+          setProduct(prodData);
+          setError(null);
 
-        if (!shop || (targetId && shop.id !== targetId)) {
-          if (targetSlug && targetSlug !== 'store') {
-            try {
-              const shopData = await shopApi.getBySlug(targetSlug);
-              if (isMounted && shopData) {
-                setShop(shopData?.data || shopData);
+          // Fetch shop details if shop is missing or outdated
+          const targetSlug = slug || prodData.shop_slug || prodData.shop?.slug;
+          const targetId = prodData.shop_id || prodData.shopId || prodData.shop?.id;
+
+          if (!shop || (targetId && shop.id !== targetId)) {
+            if (targetSlug && targetSlug !== 'store') {
+              try {
+                const shopData = await shopApi.getShopBySlug(targetSlug);
+                if (isMounted && shopData) {
+                  const extractedShop = shopData?.data?.shop || shopData?.data || shopData;
+                  setShop(extractedShop);
+                }
+              } catch {
+                if (targetId) {
+                  try {
+                    const shopData2 = await shopApi.getShopBySlug(targetId);
+                    if (isMounted && shopData2) {
+                      const extractedShop2 = shopData2?.data?.shop || shopData2?.data || shopData2;
+                      setShop(extractedShop2);
+                    }
+                  } catch {}
+                }
               }
-            } catch {
-              if (targetId) {
-                try {
-                  const shopData2 = await shopApi.getBySlug(targetId);
-                  if (isMounted && shopData2) {
-                    setShop(shopData2?.data || shopData2);
-                  }
-                } catch {}
-              }
+            } else if (targetId) {
+              try {
+                const shopData2 = await shopApi.getShopBySlug(targetId);
+                if (isMounted && shopData2) {
+                  const extractedShop2 = shopData2?.data?.shop || shopData2?.data || shopData2;
+                  setShop(extractedShop2);
+                }
+              } catch {}
             }
-          } else if (targetId) {
-            try {
-              const shopData2 = await shopApi.getBySlug(targetId);
-              if (isMounted && shopData2) {
-                setShop(shopData2?.data || shopData2);
-              }
-            } catch {}
           }
+        } else if (!product) {
+          setError(isHindi ? 'यह सामान उपलब्ध नहीं है या हटा दिया गया है' : 'Product does not exist or has been removed');
         }
       } catch (err) {
         if (isMounted && !product) {

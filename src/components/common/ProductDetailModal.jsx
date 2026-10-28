@@ -800,7 +800,7 @@ export const ProductDetailModal = ({
                     {product.weight > 0 && (
                       <div style={{ backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                         <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>{t('products.weight')}</div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{product.weight} kg</div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{product.weight} {product.unit || 'g'}</div>
                       </div>
                     )}
                     {product.unit && (
@@ -862,11 +862,43 @@ export const ProductDetailModal = ({
                           <span>Call</span>
                         </a>
                       )}
-                      {product.shop_slug && (
-                        <a href={`/shop/${product.shop_slug}`} style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#0f172a', textDecoration: 'none', fontWeight: 800, fontSize: '0.78rem' }}>
-                          {t('products.visit_storefront')} →
-                        </a>
-                      )}
+                      {(() => {
+                        const targetShopSlug =
+                          product.shop_slug ||
+                          product.shop?.slug ||
+                          product.shop_id ||
+                          product.shopId ||
+                          '';
+
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onClose();
+                              const slugToUse = targetShopSlug || 'store';
+                              window.location.href = `/shop/${slugToUse}`;
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              backgroundColor: 'var(--color-primary-light, #f0f4ff)',
+                              color: 'var(--color-primary, #4f46e5)',
+                              border: '1px solid var(--border-subtle, #e2e8f0)',
+                              fontWeight: 800,
+                              fontSize: '0.78rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <span>{isHindi ? 'दुकान देखें' : 'Visit Store'}</span>
+                            <span>→</span>
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

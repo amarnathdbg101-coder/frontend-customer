@@ -81,8 +81,7 @@ describe('ProductTrustDetailView Component Tests', () => {
     expect(screen.getByText(/(Pickup Available|पिकअप तुरंत उपलब्ध)/i)).toBeDefined();
     expect(screen.getByText(/(No Online Payment Required|कोई ऑनलाइन भुगतान ज़रूरी नहीं)/i)).toBeDefined();
 
-    // 6. Sticky Bottom CTA
-    expect(screen.getByRole('button', { name: /(Compare Prices|कीमत तुलना करें)/i })).toBeDefined();
+    // 6. Primary Reserve CTA
     expect(screen.getAllByRole('button', { name: /(Reserve Now|अभी रिज़र्व करें)/i }).length).toBeGreaterThan(0);
   });
 

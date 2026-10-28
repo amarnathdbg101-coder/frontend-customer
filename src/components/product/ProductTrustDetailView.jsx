@@ -212,11 +212,22 @@ export const ProductTrustDetailView = ({
   };
 
   const handleShare = async () => {
-    const shared = await shareProduct(product);
-    if (!shared) {
-      navigator.clipboard?.writeText(window.location.href);
+    try {
+      const res = await shareProduct({
+        product,
+        shopName: initialShop?.name || product?.shop_name || bestOffer?.name,
+        shopSlug: initialShop?.slug || product?.shop_slug || bestOffer?.slug,
+        isHindi,
+      });
+
+      if (res?.success) {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2500);
+      }
+    } catch (e) {
+      console.warn('Share error fallback:', e);
       setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
+      setTimeout(() => setCopiedLink(false), 2500);
     }
   };
 
@@ -667,36 +678,6 @@ export const ProductTrustDetailView = ({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ====================================================================
-          6. STICKY BOTTOM CTA BAR (Dual Buttons)
-          ==================================================================== */}
-      <div className="product-sticky-bottom-bar" role="region" aria-label="Purchase Actions">
-        <div className="sticky-bottom-inner">
-          <div className="sticky-price-summary">
-            <span className="sticky-price-label">{isHindi ? 'बेस्ट डील' : 'Best Deal'}</span>
-            <div className="sticky-price-val">₹{bestOffer.price.toFixed(0)}</div>
-          </div>
-
-          <div className="sticky-buttons-group">
-            <button
-              type="button"
-              onClick={scrollToCompare}
-              className="sticky-compare-btn"
-            >
-              {isHindi ? 'कीमत तुलना करें' : 'Compare Prices'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => openReservationForShop(bestOffer)}
-              className="sticky-reserve-btn"
-            >
-              {isHindi ? 'अभी रिज़र्व करें' : 'Reserve Now'}
-            </button>
           </div>
         </div>
       </div>

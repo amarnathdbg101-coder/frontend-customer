@@ -5,11 +5,28 @@
  * and eliminates duplicate link injection in native share sheets.
  */
 
-export function getProductShareUrl({ product, shopSlug = '', origin = '' } = {}) {
-  if (!product) return '';
-  const p = product;
-  const baseUrl = origin || (typeof window !== 'undefined' ? window.location.origin : 'https://shopsilo.in');
-  const targetSlug = shopSlug || p.shop_slug || p.shop?.slug || '';
+function normalizeShareOptions(options) {
+  if (!options) return { product: null };
+  if (options.id || options.name || options.price || options.product_id) {
+    return { product: options };
+  }
+  return options;
+}
+
+export function getProductShareUrl(options) {
+  const opts = normalizeShareOptions(options);
+  const p = opts?.product;
+  if (!p) return opts?.origin || 'https://shopsilo.in';
+
+  let baseUrl = opts?.origin || (typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://shopsilo.in');
+  baseUrl = baseUrl.replace(/\/+$/, '');
+
+  // If in localhost / dev / IP, prefer official production origin for clean professional links
+  if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1') || baseUrl.includes('192.168.')) {
+    baseUrl = 'https://shopsilo.in';
+  }
+
+  const targetSlug = opts?.shopSlug || p.shop_slug || p.shop?.slug || '';
   const productId = p.id || p.product_id || p._id || '';
 
   if (targetSlug && productId) {
@@ -24,9 +41,12 @@ export function getProductShareUrl({ product, shopSlug = '', origin = '' } = {})
   return baseUrl;
 }
 
-export function formatProductShareText({ product, shopName = '', shopSlug = '', isHindi = false, origin = '' }) {
-  if (!product) return '';
-  const p = product;
+export function formatProductShareText(options) {
+  const opts = normalizeShareOptions(options);
+  const p = opts?.product;
+  if (!p) return '';
+
+  const isHindi = Boolean(opts?.isHindi);
   const mrp = Number(p.compare_price || p.mrp || 0);
   const price = Number(p.price || 0);
   const isPricePublic = p.is_price_public !== false && 
@@ -48,11 +68,9 @@ export function formatProductShareText({ product, shopName = '', shopSlug = '', 
     priceStr = isHindi ? '🔒 मोलभाव करें / रेट पूछें' : '🔒 Price on Request';
   }
 
-  const store = shopName || p.shop_name || p.shop?.name || '';
-  const storeLine = store ? (isHindi ? `🏪 दुकान: ${store}
-` : `🏪 Store: ${store}
-`) : '';
-  const productUrl = getProductShareUrl({ product, shopSlug, origin });
+  const store = opts?.shopName || p.shop_name || p.shop?.name || '';
+  const storeLine = store ? (isHindi ? `🏪 दुकान: ${store}\n` : `🏪 Store: ${store}\n`) : '';
+  const productUrl = getProductShareUrl(opts);
   const urlLine = isHindi 
     ? `👉 ShopSilo पर देखें: ${productUrl}` 
     : `👉 View on ShopSilo: ${productUrl}`;
@@ -60,27 +78,27 @@ export function formatProductShareText({ product, shopName = '', shopSlug = '', 
   const titlePrefix = `🛒 *${p.name || 'Product'}*`;
   const priceLine = isHindi ? `💰 कीमत: ${priceStr}` : `💰 Price: ${priceStr}`;
 
-  return `${titlePrefix}
-${priceLine}
-${storeLine}${urlLine}`;
+  return `${titlePrefix}\n${priceLine}\n${storeLine}${urlLine}`;
 }
 
 export function getWhatsAppShareUrl(options) {
-  const text = formatProductShareText(options);
+  const opts = normalizeShareOptions(options);
+  const text = formatProductShareText(opts);
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
 export async function shareProduct(options) {
-  const text = formatProductShareText(options);
-  const productUrl = getProductShareUrl(options);
+  const opts = normalizeShareOptions(options);
+  const text = formatProductShareText(opts);
+  const productUrl = getProductShareUrl(opts);
 
+  if (!text) return { success: false, method: 'none', url: '' };
+
+  // 1. Native Web Share API (Must be called synchronously inside user gesture)
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
-      // NOTE: We only pass `text` (which already includes the rich product details and single clean link).
-      // If both `text` (containing the URL) and `url` are passed, mobile OS share sheets and WhatsApp
-      // append `url` to the end of `text`, resulting in the exact link appearing twice!
       await navigator.share({
-        title: options.product?.name || 'ShopSilo Product',
+        title: opts.product?.name || 'ShopSilo Product',
         text: text,
       });
       return { success: true, method: 'native', url: productUrl };
@@ -88,10 +106,21 @@ export async function shareProduct(options) {
       if (err?.name === 'AbortError') {
         return { success: false, method: 'cancelled', url: productUrl };
       }
-      // Fallback to WhatsApp URL below if native share encounters an error
+      // Fallback below if navigator.share fails or user gesture was lost
     }
   }
 
+  // 2. Fallback to Clipboard Copy
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return { success: true, method: 'clipboard', url: productUrl };
+    } catch {
+      // Fallback 3 below
+    }
+  }
+
+  // 3. Fallback to WhatsApp Direct Share
   if (typeof window !== 'undefined') {
     const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
