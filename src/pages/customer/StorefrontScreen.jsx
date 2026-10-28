@@ -449,22 +449,22 @@ export const StorefrontScreen = () => {
     }
   }, [loadingMore, hasMore, loading, page, slug, selectedCategory, quickFilter, sortBy, debouncedSearch]);
 
-  // Window scroll listener for automatic infinite scroll
+  // Keep pagination attached to the app's inner scrolling content area.
   useEffect(() => {
+    const scrollContainer = document.querySelector('.app-content');
+    if (!scrollContainer) return undefined;
+
     const handleScroll = () => {
       if (!hasMore || loadingMore || loading) return;
 
-      const scrollY = window.scrollY || window.pageYOffset;
-      const visibleHeight = window.innerHeight;
-      const totalHeight = document.documentElement.scrollHeight;
-
-      if (visibleHeight + scrollY >= totalHeight - 350) {
+      if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 350) {
         loadMoreProducts();
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, [hasMore, loadingMore, loading, loadMoreProducts]);
 
   // 3. Category Filter Chips (Dynamic clean extraction from products)

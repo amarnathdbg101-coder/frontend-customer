@@ -39,12 +39,16 @@ export const CuratedProductShelf = ({
   return (
     <section
       style={{
-        marginBottom: '20px',
+        marginBottom: '16px',
         backgroundColor: 'var(--bg-card, #ffffff)',
         borderRadius: '16px',
         border: '1px solid var(--border-subtle, #e2e8f0)',
-        padding: '14px 14px 12px 14px',
+        padding: '12px',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
       aria-label={title}
     >
@@ -211,10 +215,12 @@ export const CuratedProductShelf = ({
           <div
             key={p.id}
             style={{
-              flex: '0 0 min(165px, 46vw)',
-              maxWidth: '175px',
+              flex: '0 0 calc(50% - 6px)',
+              minWidth: '140px',
+              maxWidth: '220px',
               scrollSnapAlign: 'start',
-              height: '270px',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             <ProductCard
