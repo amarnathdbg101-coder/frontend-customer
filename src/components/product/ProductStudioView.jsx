@@ -162,7 +162,7 @@ export const ProductStudioView = ({
   // Shop & Storefront Information
   const shop = propShop || product?.shop || {};
   const storeName = shop?.name || product?.shop_name || (isHindi ? 'स्थानीय दुकान' : 'Local Store');
-  const storeSlug = shop?.slug || product?.shop_slug || '';
+  const storeSlug = shop?.slug || shop?.id || product?.shop_slug || product?.shop_id || product?.shop?.slug || product?.shop?.id || '';
   const storePhone = shop?.phone || product?.shop_phone || '';
   const storeAddress = shop?.address || product?.shop_address || '';
   const storeCity = shop?.city || product?.shop_city || '';
@@ -933,31 +933,32 @@ export const ProductStudioView = ({
                 </button>
               )}
 
-              {storeSlug && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onClose) onClose();
-                    navigate(`/shop/${storeSlug}`);
-                  }}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--color-primary, #4f46e5)',
-                    backgroundColor: 'rgba(79, 70, 229, 0.08)',
-                    color: 'var(--color-primary, #4f46e5)',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <ExternalLink size={12} />
-                  <span>{isHindi ? 'दुकान देखें' : 'Store'}</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onClose) onClose();
+                  const targetSlug = storeSlug || 'store';
+                  navigate(`/shop/${targetSlug}`, { state: { shop } });
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--color-primary, #4f46e5)',
+                  backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                  color: 'var(--color-primary, #4f46e5)',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <ExternalLink size={12} />
+                <span>{isHindi ? 'दुकान देखें' : 'Store'}</span>
+              </button>
             </div>
           </div>
         </div>
