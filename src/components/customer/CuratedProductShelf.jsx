@@ -202,25 +202,29 @@ export const CuratedProductShelf = ({
         ref={scrollContainerRef}
         style={{
           display: 'flex',
-          gap: '12px',
+          gap: '8px',
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
           paddingBottom: '6px',
+          paddingRight: '8px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch',
+          width: '100%',
+          boxSizing: 'border-box',
         }}
       >
         {products.map((p) => (
           <div
             key={p.id}
             style={{
-              flex: '0 0 calc(50% - 6px)',
-              minWidth: '140px',
-              maxWidth: '220px',
+              flex: '0 0 calc(50% - 4px)',
+              width: 'calc(50% - 4px)',
+              maxWidth: '180px',
               scrollSnapAlign: 'start',
               display: 'flex',
               flexDirection: 'column',
+              boxSizing: 'border-box',
             }}
           >
             <ProductCard
