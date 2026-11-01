@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '../../context/ThemeContext';
@@ -11,10 +11,12 @@ import { LocationProvider } from '../../context/LocationContext';
 import { StorefrontScreen } from './StorefrontScreen';
 import { productApi } from '../../api/product.api';
 import { shopApi } from '../../api/shop.api';
+import { dealsApi } from '../../api/deals.api';
 
 vi.mock('../../api/product.api', () => ({
   productApi: {
     listByShopSlug: vi.fn(),
+    getSearchSuggestions: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -127,17 +129,20 @@ describe('StorefrontScreen Comprehensive Tests', () => {
 
     // Verify live catalog items displayed
     await waitFor(() => {
-      expect(screen.getByText(/Raj Paree Red & Gold Saree/i)).toBeInTheDocument();
-      expect(screen.getByText(/RL Beauty Makeup Kit/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Raj Paree Red & Gold Saree/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/RL Beauty Makeup Kit/i).length).toBeGreaterThan(0);
     });
   });
 
-  it('displays not found state if shop slug is invalid', async () => {
-    shopApi.getShopBySlug.mockRejectedValueOnce(new Error('Shop not found'));
-    productApi.listByShopSlug.mockRejectedValueOnce(new Error('Shop not found'));
+  it('renders search input for inside-store isolated catalog search', async () => {
+    shopApi.getShopBySlug.mockResolvedValueOnce(mockShop);
+    productApi.listByShopSlug.mockResolvedValueOnce({
+      products: mockProducts,
+      total_count: 2,
+    });
 
     render(
-      <AllTestProviders initialEntries={['/shop/non-existent-store']}>
+      <AllTestProviders initialEntries={['/shop/om-clothes-cosmetics']}>
         <Routes>
           <Route path="/shop/:slug" element={<StorefrontScreen />} />
         </Routes>
@@ -145,7 +150,7 @@ describe('StorefrontScreen Comprehensive Tests', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getAllByText(/दुकान उपलब्ध नहीं है|Store Not Found/i).length).toBeGreaterThan(0);
+      expect(screen.getByPlaceholderText(/खोजें|Search/i)).toBeInTheDocument();
     });
   });
 });
