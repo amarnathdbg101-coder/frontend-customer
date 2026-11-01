@@ -89,7 +89,7 @@ export const ShopSiloLogo = ({
       {logoIcon}
 
       {showText && (
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.15 }}>
+        <div className="shopsilo-brand-text" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, lineHeight: 1.15 }}>
           <span
             style={{
               fontSize: `${Math.max(14, Math.round(size * 0.52))}px`,

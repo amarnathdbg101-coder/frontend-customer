@@ -78,6 +78,7 @@ export const OverflowMenu = ({
           aria-label={ariaLabel}
           aria-expanded={isOpen}
           aria-haspopup="menu"
+          className="overflow-menu-btn"
           style={{
             width: '38px',
             height: '38px',

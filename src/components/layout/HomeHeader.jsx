@@ -88,7 +88,7 @@ export const HomeHeader = ({
               title={isHindi ? 'प्रोफ़ाइल व मेनू खोलें' : 'Open Profile & Menu'}
               aria-label={isHindi ? 'प्रोफ़ाइल व मेनू खोलें' : 'Open Profile & Menu'}
             >
-              <Menu size={18} />
+              <Menu size={18} className="home-profile-menu-icon" />
               <div className="home-profile-avatar">
                 {isAuthenticated && user?.name ? (
                   <span>{user.name.trim().charAt(0).toUpperCase()}</span>
