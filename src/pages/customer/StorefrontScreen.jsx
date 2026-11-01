@@ -331,23 +331,11 @@ export const StorefrontScreen = () => {
     const hasActiveFilters = cleanSearch || isCatActive || quickFilter !== 'ALL' || sortParam;
 
     const cachedShop = localCache.get(CACHE_KEYS.STOREFRONT(slug));
-    const cachedProds = !hasActiveFilters ? localCache.get(CACHE_KEYS.STOREFRONT_PRODUCTS(slug)) : null;
 
-    let hasLocalData = false;
     if (cachedShop) {
       setShop(cachedShop);
-      hasLocalData = true;
     }
-    if (cachedProds && Array.isArray(cachedProds) && cachedProds.length > 0) {
-      setProducts(cachedProds);
-      hasLocalData = true;
-    }
-
-    if (hasLocalData) {
-      setLoading(false);
-    } else {
-      setLoading(true);
-    }
+    setLoading(true);
 
     setPage(1);
     setHasMore(true);
@@ -404,9 +392,6 @@ export const StorefrontScreen = () => {
       });
 
       setProducts(normalizedProds);
-      if (!hasActiveFilters) {
-        localCache.set(CACHE_KEYS.STOREFRONT_PRODUCTS(slug), normalizedProds, DEFAULT_TTL.PRODUCTS);
-      }
     } catch (err) {
       console.error('Failed to load shop storefront:', err);
     } finally {

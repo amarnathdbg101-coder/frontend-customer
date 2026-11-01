@@ -45,10 +45,15 @@ const extractProductObject = (res) => {
 const extractArray = (res, key) => {
   if (!res) return [];
   if (Array.isArray(res)) return res;
-  if (Array.isArray(res[key])) return res[key];
-  if (res.data && Array.isArray(res.data[key])) return res.data[key];
-  if (res.data && Array.isArray(res.data)) return res.data;
-  if (res.data && res.data.data && Array.isArray(res.data.data[key])) return res.data.data[key];
+  if (res[key] && Array.isArray(res[key])) return res[key];
+  if (res.data) {
+    if (Array.isArray(res.data)) return res.data;
+    if (res.data[key] && Array.isArray(res.data[key])) return res.data[key];
+    if (res.data.data) {
+      if (Array.isArray(res.data.data)) return res.data.data;
+      if (res.data.data[key] && Array.isArray(res.data.data[key])) return res.data.data[key];
+    }
+  }
   return [];
 };
 
@@ -219,14 +224,40 @@ export const ProductDetailScreen = () => {
         const targetSlug = slug || product.shop_slug || shop?.slug;
         let rawList = [];
         if (targetSlug && targetSlug !== 'store') {
-          const res = await productApi.listByShopSlug(targetSlug, { limit: 12 });
-          rawList = extractArray(res, 'products');
-        } else {
-          const res = await productApi.listProducts({ limit: 12 });
-          rawList = extractArray(res, 'products');
+          try {
+            const res = await productApi.listByShopSlug(targetSlug, { limit: 12 });
+            rawList = extractArray(res, 'products');
+          } catch (e) {
+            console.warn('Failed to load shop products for similar, trying catalog fallback:', e);
+          }
         }
 
-        const filtered = rawList.filter((item) => String(item.id || item.product_id) !== String(product.id));
+        // If shop products are few (< 2) or call failed, fetch from category / catalog
+        if (rawList.length <= 1) {
+          try {
+            const catId = product.category_id || product.category;
+            const res = await productApi.listProducts({
+              category_id: typeof catId === 'string' ? catId : undefined,
+              limit: 12,
+            });
+            const catList = extractArray(res, 'products');
+            if (catList.length > 0) {
+              rawList = [...rawList, ...catList];
+            }
+          } catch (e) {
+            console.warn('Catalog fallback error for similar products:', e);
+          }
+        }
+
+        const currentId = String(product.id || productId);
+        const seen = new Set();
+        const filtered = rawList.filter((item) => {
+          const itemId = String(item.id || item.product_id);
+          if (itemId === currentId || seen.has(itemId)) return false;
+          seen.add(itemId);
+          return true;
+        });
+
         if (isMounted) {
           setSimilarProducts(filtered.slice(0, 10));
         }
@@ -237,7 +268,7 @@ export const ProductDetailScreen = () => {
 
     loadSimilar();
     return () => { isMounted = false; };
-  }, [product?.id, slug, shop?.slug]);
+  }, [product?.id, slug, shop?.slug, product?.shop_slug, product?.category_id]);
 
   const handleReserve = async ({ product: p, quantity, hold_hours, notes }) => {
     const res = await reservationApi.createReservation({

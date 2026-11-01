@@ -141,6 +141,22 @@ export const DEFAULT_TTL = {
 };
 
 class LocalCacheService {
+  constructor() {
+    // Purge any stale product catalog caches on startup so customer frontend always receives fresh live inventory
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (k && (k.startsWith('shopsilo_cache_products') || k.startsWith('shopsilo_cache_storefront_products'))) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      } catch (_) {}
+    }
+  }
+
   /**
    * Synchronously retrieve cached data (even if stale) for 0ms instant UI rendering.
    */
