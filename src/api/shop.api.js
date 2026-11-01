@@ -26,6 +26,12 @@ export const shopApi = {
     return res.data || res;
   },
 
+  // Public: 1-Call Consolidated Home Feed (Categories, Nearby Shops, In-Stock Products)
+  getHomeFeed: async (params = {}) => {
+    const res = await client.get('/catalog/home-feed', { params });
+    return res.data?.data || res.data || res;
+  },
+
   listPublicShops: async (params = {}) => {
     const res = await client.get('/shops', { params });
     return res.data || res;
@@ -47,6 +53,12 @@ export const shopApi = {
 
   getBySlug: async (slug) => {
     return shopApi.getShopBySlug(slug);
+  },
+
+  // Public: Counter Standee PDF Download URL
+  getStandeePdfUrl: (slug) => {
+    const baseURL = client.defaults?.baseURL || '';
+    return `${baseURL}/shops/${slug}/standee.pdf`;
   },
 
   getShopReviews: async (slug) => {

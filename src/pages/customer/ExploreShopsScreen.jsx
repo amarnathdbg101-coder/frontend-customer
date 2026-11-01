@@ -250,6 +250,9 @@ export const ExploreShopsScreen = () => {
       const categoryParam = isCatActive ? selectedCategory : undefined;
       const cleanSearch = (searchOverride ?? searchTerm).trim() || undefined;
       const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
+      const minPrice = quickFilter === 'UNDER_99' ? 0 : quickFilter === 'UNDER_499' ? 100 : quickFilter === 'OVER_500' ? 500 : undefined;
+      const maxPrice = quickFilter === 'UNDER_99' ? 99 : quickFilter === 'UNDER_499' ? 499 : undefined;
+      const openNow = showOpenOnly ? true : undefined;
 
       const params = {
         lat: coords?.lat,
@@ -259,6 +262,9 @@ export const ExploreShopsScreen = () => {
         search: cleanSearch,
         q: cleanSearch,
         sort_by: sortParam,
+        open_now: openNow,
+        min_price: minPrice,
+        max_price: maxPrice,
       };
 
       const [shopsRes, prodsRes] = await Promise.allSettled([
@@ -272,6 +278,9 @@ export const ExploreShopsScreen = () => {
               search: cleanSearch,
               q: cleanSearch,
               sort_by: sortParam,
+        open_now: openNow,
+        min_price: minPrice,
+        max_price: maxPrice,
               page: 1,
               limit: PAGE_LIMIT,
             }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam, search: cleanSearch, q: cleanSearch, sort_by: sortParam }))
@@ -338,7 +347,7 @@ export const ExploreShopsScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [coords?.lat, coords?.lng, radiusKm, selectedCategory]);
+  }, [coords?.lat, coords?.lng, radiusKm, selectedCategory, quickFilter, showOpenOnly, sortBy]);
 
   useEffect(() => {
     loadMarketplaceData();
@@ -478,6 +487,9 @@ export const ExploreShopsScreen = () => {
       const categoryParam = (selectedCategory && selectedCategory !== 'All') ? selectedCategory : undefined;
       const cleanSearch = searchTerm.trim() || undefined;
       const sortParam = sortBy !== 'relevant' ? sortBy : undefined;
+      const minPrice = quickFilter === 'UNDER_99' ? 0 : quickFilter === 'UNDER_499' ? 100 : quickFilter === 'OVER_500' ? 500 : undefined;
+      const maxPrice = quickFilter === 'UNDER_99' ? 99 : quickFilter === 'UNDER_499' ? 499 : undefined;
+      const openNow = showOpenOnly ? true : undefined;
 
       if (coords?.lat && coords?.lng) {
         const res = await productApi.findNearbyProducts({
@@ -488,6 +500,9 @@ export const ExploreShopsScreen = () => {
           search: cleanSearch,
           q: cleanSearch,
           sort_by: sortParam,
+        open_now: openNow,
+        min_price: minPrice,
+        max_price: maxPrice,
           page: nextPage,
           limit: PAGE_LIMIT,
         });
@@ -502,6 +517,9 @@ export const ExploreShopsScreen = () => {
           search: cleanSearch,
           q: cleanSearch,
           sort_by: sortParam,
+        open_now: openNow,
+        min_price: minPrice,
+        max_price: maxPrice,
         });
         rawProdList = extractArray(res, 'products');
         totalPages = res?.total_pages || res?.data?.total_pages || 1;
@@ -549,7 +567,7 @@ export const ExploreShopsScreen = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, loading, page, coords?.lat, coords?.lng, radiusKm, selectedCategory]);
+  }, [loadingMore, hasMore, loading, page, coords?.lat, coords?.lng, radiusKm, selectedCategory, quickFilter, showOpenOnly, sortBy, debouncedSearch]);
 
   // Automatic Infinite Scroll Listener
   useEffect(() => {
@@ -613,7 +631,8 @@ export const ExploreShopsScreen = () => {
       // Quick Filter (Budget)
       const price = Number(p.price || 0);
       if (quickFilter === 'UNDER_99' && price > 99) return false;
-      if (quickFilter === 'UNDER_499' && price > 499) return false;
+      if (quickFilter === 'UNDER_499' && (price < 100 || price > 499)) return false;
+      if (quickFilter === 'OVER_500' && price < 500) return false;
 
       return true;
     });

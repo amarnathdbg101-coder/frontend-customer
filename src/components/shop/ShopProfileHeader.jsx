@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Store,
   MapPin,
@@ -14,7 +14,13 @@ import {
   Info,
   Tag,
   Award,
+  MessageCircle,
+  QrCode,
+  Download,
+  X,
+  CreditCard,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { getImageUrl } from '../../utils/imageUrl';
 import { calculateDistanceKm, formatDistance, getDirectionsUrl } from '../../utils/distance';
 import LanguageContext from '../../context/LanguageContext';
@@ -39,6 +45,19 @@ export const ShopProfileHeader = ({
   const langCtx = useContext(LanguageContext);
   const isHindi = langCtx?.isHindi ?? false;
   const s = shop || {};
+
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
+
+  // Generate Counter QR code with UTM attribution
+  useEffect(() => {
+    if (s.slug) {
+      const counterUrl = `https://shopsilo.in/shop/${s.slug}?utm_source=counter_qr&utm_medium=standee`;
+      QRCode.toDataURL(counterUrl, { width: 250, margin: 1 })
+        .then(setQrDataUrl)
+        .catch(() => {});
+    }
+  }, [s.slug]);
 
   // 1. Cover Image & Logo
   const coverImage =
@@ -65,13 +84,39 @@ export const ShopProfileHeader = ({
     distanceText = distanceText.replace('away', 'दूर');
   }
 
-  // Open / Closed Status
+  // Open / Closed Status - Real-Time State Machine with Live Timing Status
   const isOpen = Boolean(s.is_currently_open ?? s.is_open ?? s.is_active ?? true);
-  const openStatusText = isOpen
-    ? (s.closing_time
-        ? (isHindi ? `खुली है • बंद: ${s.closing_time}` : `Open Now • Closes ${s.closing_time}`)
-        : (isHindi ? 'खुली है' : 'Open Now'))
-    : (isHindi ? 'बंद है' : 'Closed');
+  const liveStatus = s.live_status || (isOpen ? 'OPEN' : 'CLOSED');
+
+  let statusBadgeColor = '#15803d';
+  let statusBadgeBg = '#dcfce7';
+  let statusDotColor = '#16a34a';
+
+  if (liveStatus === 'CLOSING_SOON') {
+    statusBadgeColor = '#b45309';
+    statusBadgeBg = '#fef3c7';
+    statusDotColor = '#f59e0b';
+  } else if (liveStatus === 'CLOSED') {
+    statusBadgeColor = '#b91c1c';
+    statusBadgeBg = '#fee2e2';
+    statusDotColor = '#ef4444';
+  } else if (liveStatus === 'WEEKLY_OFF') {
+    statusBadgeColor = '#7e22ce';
+    statusBadgeBg = '#f3e8ff';
+    statusDotColor = '#a855f7';
+  }
+
+  const openStatusText = s.status_message || (
+    isOpen
+      ? (s.closing_time
+          ? (isHindi ? `खुली है • बंद: ${s.closing_time}` : `Open Now • Closes ${s.closing_time}`)
+          : (isHindi ? 'खुली है' : 'Open Now'))
+      : (isHindi ? 'बंद है' : 'Closed')
+  );
+
+  const whatsappUrl = s.whatsapp_url || (s.phone ? `https://wa.me/91${s.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Namaste ${storeName}, I found your store on ShopSilo! I am browsing your live catalog.`)}` : null);
+  const standeePdfUrl = s.standee_pdf_url || `/shops/${s.slug || 'store'}/standee.pdf`;
+  const upiPaymentUrl = s.upi_payment_url || (s.upi_id ? `upi://pay?pa=${encodeURIComponent(s.upi_id)}&pn=${encodeURIComponent(storeName)}&mc=5411&cu=INR` : null);
 
   // Rating
   const ratingValue = s.rating || s.avg_rating || '4.8';
@@ -183,9 +228,16 @@ export const ShopProfileHeader = ({
 
           {/* 2. Trust Information Row (Google Business Profile Style) */}
           <div className="shop-trust-pills-row" role="region" aria-label="Store Trust Indicators">
-            {/* Open / Closed Status */}
-            <span className={`shop-trust-pill ${isOpen ? 'open-pill' : 'closed-pill'}`}>
-              <Clock size={13} />
+            {/* Open / Closed Status with Real-Time State Colors */}
+            <span
+              className={`shop-trust-pill ${isOpen ? 'open-pill' : 'closed-pill'}`}
+              style={{
+                backgroundColor: statusBadgeBg,
+                color: statusBadgeColor,
+                borderColor: statusBadgeColor + '33',
+              }}
+            >
+              <Clock size={13} color={statusBadgeColor} />
               <span>{openStatusText}</span>
             </span>
 
@@ -284,6 +336,41 @@ export const ShopProfileHeader = ({
               <Navigation size={15} color="#2563eb" />
               <span>{isHindi ? 'दिशा-निर्देश' : 'Get Directions'}</span>
             </a>
+
+            {/* Secondary Action: Direct WhatsApp Chat & Order */}
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shop-action-btn-secondary"
+                style={{
+                  color: '#15803d',
+                  borderColor: '#bbf7d0',
+                  backgroundColor: '#f0fdf4',
+                }}
+                aria-label={isHindi ? 'व्हाट्सएप पर ऑर्डर करें' : 'Order on WhatsApp'}
+              >
+                <MessageCircle size={15} color="#16a34a" />
+                <span>{isHindi ? 'व्हाट्सएप चैट' : 'WhatsApp'}</span>
+              </a>
+            )}
+
+            {/* Secondary Action: Store Digital Counter QR & Standee */}
+            <button
+              type="button"
+              onClick={() => setShowQRModal(true)}
+              className="shop-action-btn-secondary"
+              style={{
+                color: '#4338ca',
+                borderColor: '#c7d2fe',
+                backgroundColor: '#eef2ff',
+              }}
+              aria-label={isHindi ? 'काउंटर QR कोड देखें' : 'Counter QR'}
+            >
+              <QrCode size={15} color="#4f46e5" />
+              <span>{isHindi ? 'काउंटर QR' : 'Counter QR'}</span>
+            </button>
           </div>
         </div>
       </section>
@@ -474,6 +561,162 @@ export const ShopProfileHeader = ({
           </div>
         </div>
       </section>
+
+      {/* 6. Digital Counter QR & Acrylic Standee PDF Modal */}
+      {showQRModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Store Digital Counter QR Code"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setShowQRModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              maxWidth: '380px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              textAlign: 'center',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowQRModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                border: 'none',
+                background: '#f1f5f9',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+              aria-label="Close"
+            >
+              <X size={18} color="#64748b" />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
+              <Store size={22} color="#4f46e5" />
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+                {storeName}
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 16px 0' }}>
+              {isHindi ? 'काउंटर QR स्कैन करके सीधे स्टोर प्रोफाइल और कैटलॉग खोलें' : 'Scan counter QR for instant storefront catalog'}
+            </p>
+
+            {/* Rendered QR Image */}
+            <div
+              style={{
+                padding: '16px',
+                backgroundColor: '#ffffff',
+                border: '2px dashed #cbd5e1',
+                borderRadius: '16px',
+                display: 'inline-block',
+                marginBottom: '16px',
+              }}
+            >
+              {qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt={`${storeName} Counter QR`}
+                  style={{ width: '200px', height: '200px', display: 'block', margin: '0 auto' }}
+                />
+              ) : (
+                <div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                  Generating QR...
+                </div>
+              )}
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6366f1', marginTop: '6px' }}>
+                shopsilo.in/shop/{s.slug || 'store'}
+              </div>
+            </div>
+
+            {/* UPI ID Badge */}
+            {s.upi_id && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  marginBottom: '16px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#334155',
+                }}
+              >
+                <span>UPI: <strong>{s.upi_id}</strong></span>
+                {upiPaymentUrl && (
+                  <a
+                    href={upiPaymentUrl}
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      color: '#4f46e5',
+                      textDecoration: 'underline',
+                      marginLeft: '6px',
+                    }}
+                  >
+                    Pay App
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Standee PDF Download Button */}
+            <a
+              href={standeePdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={`${s.slug || 'store'}-standee.pdf`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#4f46e5',
+                color: '#ffffff',
+                borderRadius: '14px',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                textDecoration: 'none',
+                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+              }}
+            >
+              <Download size={16} />
+              <span>{isHindi ? 'एक्रिलिक स्टैंडी (A5 PDF) डाउनलोड करें' : 'Download Acrylic Standee (PDF)'}</span>
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

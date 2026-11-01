@@ -1,15 +1,15 @@
 /**
  * Reusable Shop Card Component
- * Clean, modern, responsive shop card with live open/closed status,
- * live GPS travel distance, and 1-tap Google Maps directions.
+ * Clean, modern, responsive shop card with live open/closed status state machine
+ * (OPEN, CLOSING_SOON, WEEKLY_OFF, CLOSED), live GPS travel distance, 
+ * WhatsApp direct chat, and 1-tap Google Maps directions.
  */
 
-import React, { memo } from 'react';
-import { Store, MapPin, Clock, Heart, Phone, ArrowRight, Navigation, ShieldCheck } from 'lucide-react';
+import React, { memo, useContext } from 'react';
+import { Store, MapPin, Clock, Heart, Phone, ArrowRight, Navigation, ShieldCheck, MessageCircle, Star } from 'lucide-react';
 import { getImageUrl } from '../../utils/imageUrl';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
-import { useLanguage } from '../../context/LanguageContext';
-import { Button } from '../ui';
+import LanguageContext from '../../context/LanguageContext';
 
 const ShopCardInner = ({
   shop,
@@ -19,13 +19,68 @@ const ShopCardInner = ({
   onClick,
   onNavigate,
 }) => {
-  const { isHindi } = useLanguage();
+  const langContext = useContext(LanguageContext);
+  const isHindi = langContext?.isHindi ?? false;
   const s = shop;
   if (!s) return null;
 
+  // Real-time Store Timing State Machine (OPEN, CLOSING_SOON, WEEKLY_OFF, CLOSED)
+  const rawStatus = (s.live_status || '').toUpperCase();
   const isShopOpen = Boolean(s.is_currently_open ?? s.is_open ?? s.is_active ?? true);
-  const distKm = calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
+  const liveStatus = rawStatus || (isShopOpen ? 'OPEN' : 'CLOSED');
+
+  const getStatusBadge = () => {
+    switch (liveStatus) {
+      case 'OPEN':
+        return {
+          bg: '#dcfce7',
+          border: '#86efac',
+          text: '#15803d',
+          dot: '#16a34a',
+          label: isHindi ? 'खुली है' : 'OPEN NOW',
+        };
+      case 'CLOSING_SOON':
+        return {
+          bg: '#fffbeb',
+          border: '#fde68a',
+          text: '#92400e',
+          dot: '#f59e0b',
+          label: isHindi ? 'जल्द बंद होगी' : 'CLOSING SOON',
+        };
+      case 'WEEKLY_OFF':
+        return {
+          bg: '#faf5ff',
+          border: '#e9d5ff',
+          text: '#6b21a8',
+          dot: '#a855f7',
+          label: isHindi ? 'साप्ताहिक छुट्टी' : 'WEEKLY OFF',
+        };
+      case 'CLOSED':
+      default:
+        return {
+          bg: '#fee2e2',
+          border: '#fca5a5',
+          text: '#991b1b',
+          dot: '#dc2626',
+          label: isHindi ? 'बंद है' : 'CLOSED',
+        };
+    }
+  };
+
+  const statusBadge = getStatusBadge();
+
+  // Distance & Travel Time Calculation
+  const distKm = s.distance_km != null && !isNaN(s.distance_km)
+    ? Number(s.distance_km)
+    : calculateDistanceKm(coords?.lat, coords?.lng, s.latitude, s.longitude);
   const travelInfo = formatTravelTime(distKm, isHindi);
+
+  // WhatsApp Chat Integration
+  const cleanPhone = (s.whatsapp_number || s.phone || '').replace(/[^0-9]/g, '');
+  const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+  const whatsappUrl = s.whatsapp_url || (formattedPhone ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(isHindi ? `नमस्ते ${s.name}, क्या आपका स्टोर अभी खुला है?` : `Hi ${s.name}, I found your shop on ShopSilo!`)}` : null);
+
+  const trustScore = Number(s.trust_score || s.rating || 0);
 
   return (
     <div
@@ -100,7 +155,7 @@ const ShopCardInner = ({
                 <ShieldCheck size={14} color="#2563eb" style={{ flexShrink: 0 }} />
               </div>
 
-              {/* Category & Verified Tag */}
+              {/* Category, Rating & Verified Tag */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', marginTop: '3px' }}>
                 <span
                   style={{
@@ -115,6 +170,26 @@ const ShopCardInner = ({
                 >
                   {s.category || (isHindi ? 'दुकान' : 'General Store')}
                 </span>
+
+                {trustScore > 0 && (
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      color: '#854d0e',
+                      backgroundColor: '#fef9c3',
+                      border: '1px solid #fef08a',
+                      padding: '2px 6px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                    }}
+                  >
+                    <Star size={11} fill="#eab308" color="#eab308" />
+                    <span>{trustScore.toFixed(1)}</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -132,7 +207,7 @@ const ShopCardInner = ({
             </button>
           </div>
 
-          {/* Status & Timings */}
+          {/* Status & Timings State Machine */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
             <span
               style={{
@@ -143,8 +218,9 @@ const ShopCardInner = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
-                backgroundColor: isShopOpen ? '#dcfce7' : '#fee2e2',
-                color: isShopOpen ? '#15803d' : '#991b1b',
+                backgroundColor: statusBadge.bg,
+                color: statusBadge.text,
+                border: `1px solid ${statusBadge.border}`,
               }}
             >
               <span
@@ -152,16 +228,22 @@ const ShopCardInner = ({
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  backgroundColor: isShopOpen ? '#16a34a' : '#dc2626',
+                  backgroundColor: statusBadge.dot,
                 }}
               />
-              {isShopOpen ? (isHindi ? 'खुली है' : 'OPEN NOW') : (isHindi ? 'बंद है' : 'CLOSED')}
+              {statusBadge.label}
             </span>
 
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Clock size={11} color="#64748b" />
-              <span>{s.opening_time || '09:00'} - {s.closing_time || '21:00'}</span>
-            </span>
+            {s.status_message ? (
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', fontWeight: 600 }}>
+                {s.status_message}
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Clock size={11} color="#64748b" />
+                <span>{s.opening_time || '09:00'} - {s.closing_time || '21:00'}</span>
+              </span>
+            )}
           </div>
 
           {/* Address & Travel Info */}
@@ -200,7 +282,7 @@ const ShopCardInner = ({
       </div>
 
       {/* Actions Row */}
-      <div style={{ display: 'flex', gap: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-subtle, #e2e8f0)' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: 'flex', gap: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-subtle, #e2e8f0)' }} onClick={(e) => e.stopPropagation()}>
         {/* GPS Directions */}
         {s.latitude && s.longitude && (
           <a
@@ -209,7 +291,7 @@ const ShopCardInner = ({
             rel="noopener noreferrer"
             style={{
               gap: '4px',
-              fontSize: '0.76rem',
+              fontSize: '0.74rem',
               fontWeight: 800,
               textDecoration: 'none',
               display: 'inline-flex',
@@ -218,7 +300,7 @@ const ShopCardInner = ({
               backgroundColor: '#f1f5f9',
               color: '#0f172a',
               border: '1px solid #cbd5e1',
-              padding: '6px 10px',
+              padding: '6px 8px',
               borderRadius: '8px',
             }}
             title={isHindi ? 'गूगल मैप्स पर रास्ता देखें' : 'Directions'}
@@ -228,13 +310,40 @@ const ShopCardInner = ({
           </a>
         )}
 
+        {/* WhatsApp Direct Chat */}
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              gap: '4px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#ecfdf5',
+              color: '#065f46',
+              border: '1px solid #a7f3d0',
+              padding: '6px 8px',
+              borderRadius: '8px',
+            }}
+            title={isHindi ? 'व्हाट्सएप चैट' : 'WhatsApp'}
+          >
+            <MessageCircle size={13} color="#10b981" />
+            <span>{isHindi ? 'चैट' : 'Chat'}</span>
+          </a>
+        )}
+
         {/* Phone Call */}
         {s.phone && (
           <a
             href={`tel:${s.phone}`}
             style={{
               gap: '4px',
-              fontSize: '0.76rem',
+              fontSize: '0.74rem',
               fontWeight: 800,
               textDecoration: 'none',
               display: 'inline-flex',
@@ -243,7 +352,7 @@ const ShopCardInner = ({
               backgroundColor: '#f1f5f9',
               color: '#0f172a',
               border: '1px solid #cbd5e1',
-              padding: '6px 10px',
+              padding: '6px 8px',
               borderRadius: '8px',
             }}
           >
@@ -266,8 +375,8 @@ const ShopCardInner = ({
             color: '#ffffff',
             border: 'none',
             borderRadius: '8px',
-            padding: '6px 12px',
-            fontSize: '0.78rem',
+            padding: '6px 10px',
+            fontSize: '0.76rem',
             fontWeight: 800,
             cursor: 'pointer',
           }}
