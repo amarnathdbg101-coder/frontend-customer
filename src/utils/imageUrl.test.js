@@ -124,3 +124,4 @@ describe('extractAllImages Helper Tests', () => {
     expect(extractAllImages('[]')).toEqual([]);
   });
 });
+
