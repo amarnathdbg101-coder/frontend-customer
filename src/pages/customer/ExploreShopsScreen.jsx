@@ -237,7 +237,7 @@ export const ExploreShopsScreen = () => {
     const cacheCoordKey = coords?.lat ? `${CACHE_KEYS.SHOPS}_${coords.lat.toFixed(2)}_${coords.lng.toFixed(2)}` : CACHE_KEYS.SHOPS;
     const cacheProdKey = isCatActive ? `${CACHE_KEYS.PRODUCTS}_${selectedCategory}` : CACHE_KEYS.PRODUCTS;
     const cachedShops = localCache.get(cacheCoordKey);
-    const cachedProds = localCache.get(cacheProdKey);
+    const cachedProds = null;
 
     let hasLocal = false;
     if (cachedShops && Array.isArray(cachedShops) && cachedShops.length > 0) {
@@ -352,7 +352,7 @@ export const ExploreShopsScreen = () => {
       }
       if (normalizedProds.length > 0) {
         setProducts(normalizedProds);
-        localCache.set(cacheProdKey, normalizedProds, DEFAULT_TTL.PRODUCTS);
+
       }
     } catch (err) {
       console.error('Failed to load marketplace data:', err);
