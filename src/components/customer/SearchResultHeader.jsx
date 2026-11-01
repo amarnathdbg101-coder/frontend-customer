@@ -235,6 +235,50 @@ export const SearchResultHeader = ({
           <span>{isHindi ? 'बजट < ₹99' : 'Under ₹99'}</span>
         </button>
 
+        {/* Price ₹100 - ₹499 Filter Pill */}
+        <button
+          type="button"
+          onClick={() => setQuickFilter?.(quickFilter === 'UNDER_499' ? 'ALL' : 'UNDER_499')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            fontSize: '0.76rem',
+            fontWeight: 700,
+            backgroundColor: quickFilter === 'UNDER_499' ? '#dcfce7' : 'var(--bg-surface, #ffffff)',
+            border: quickFilter === 'UNDER_499' ? '1.5px solid #10b981' : '1px solid var(--border-subtle, #e2e8f0)',
+            color: quickFilter === 'UNDER_499' ? '#15803d' : 'var(--text-primary, #0f172a)',
+            cursor: 'pointer',
+          }}
+        >
+          <Coins size={12} />
+          <span>₹100 - ₹499</span>
+        </button>
+
+        {/* Price ₹500+ Filter Pill */}
+        <button
+          type="button"
+          onClick={() => setQuickFilter?.(quickFilter === 'OVER_500' ? 'ALL' : 'OVER_500')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '5px 12px',
+            borderRadius: '20px',
+            fontSize: '0.76rem',
+            fontWeight: 700,
+            backgroundColor: quickFilter === 'OVER_500' ? '#dcfce7' : 'var(--bg-surface, #ffffff)',
+            border: quickFilter === 'OVER_500' ? '1.5px solid #10b981' : '1px solid var(--border-subtle, #e2e8f0)',
+            color: quickFilter === 'OVER_500' ? '#15803d' : 'var(--text-primary, #0f172a)',
+            cursor: 'pointer',
+          }}
+        >
+          <Coins size={12} />
+          <span>₹500+</span>
+        </button>
+
         {/* Availability Filter Pill */}
         <button
           type="button"

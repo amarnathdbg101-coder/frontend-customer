@@ -20,6 +20,7 @@ import {
   Mic,
   MicOff,
   LayoutGrid,
+  Barcode,
 } from 'lucide-react';
 import { shopApi } from '../../api/shop.api';
 import { productApi } from '../../api/product.api';
@@ -194,6 +195,33 @@ export const StorefrontScreen = () => {
       setIsListening(false);
     }
   }, [isHindi, isListening]);
+
+  // 1-Tap In-Store Barcode / SKU Scan Prompt
+  const handleBarcodePrompt = useCallback(() => {
+    const code = window.prompt(
+      isHindi
+        ? 'उत्पाद का बारकोड या SKU दर्ज करें:'
+        : 'Enter or scan product Barcode or SKU:'
+    );
+    if (code && code.trim()) {
+      setSearchTerm(code.trim());
+      setBrowseMode('grid');
+    }
+  }, [isHindi]);
+
+  // Fast Barcode Scan Lookup in Storefront: If user scans/enters 8-14 digits, trigger instant hit
+  useEffect(() => {
+    const clean = searchTerm.trim();
+    if (/^\d{8,14}$/.test(clean) && shop?.id) {
+      let active = true;
+      productApi.scanInStoreBarcode(shop.id, clean).then((found) => {
+        if (active && found) {
+          setInspectedProduct(found);
+        }
+      }).catch(() => {});
+      return () => { active = false; };
+    }
+  }, [searchTerm, shop?.id]);
 
   // Fetch Live Day-Wise Offers for Storefront
   const fetchOffers = useCallback(async () => {
@@ -793,6 +821,65 @@ export const StorefrontScreen = () => {
         />
       )}
 
+      {/* 1.1 Store Live Timing Warning / Notice Banner */}
+      {shop && (shop.live_status === 'CLOSED' || shop.live_status === 'WEEKLY_OFF' || shop.is_open === false || shop.is_currently_open === false) && (
+        <div
+          role="alert"
+          style={{
+            margin: '12px 0',
+            padding: '12px 16px',
+            backgroundColor: shop.live_status === 'WEEKLY_OFF' ? '#faf5ff' : '#fef2f2',
+            border: shop.live_status === 'WEEKLY_OFF' ? '1.5px solid #e9d5ff' : '1.5px solid #fecaca',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: shop.live_status === 'WEEKLY_OFF' ? '#6b21a8' : '#991b1b',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+          }}
+        >
+          <Clock size={20} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, fontSize: '0.82rem', lineHeight: 1.4 }}>
+            <strong>
+              {shop.live_status === 'WEEKLY_OFF'
+                ? (isHindi ? 'आज दुकान की साप्ताहिक छुट्टी है' : 'Store is on weekly off today')
+                : (isHindi ? 'दुकान अभी बंद है' : 'Store is currently closed')}
+            </strong>
+            <span style={{ display: 'block', opacity: 0.9, marginTop: '2px', fontSize: '0.78rem' }}>
+              {shop.status_message || (isHindi ? `दुकान का समय: ${shop.opening_time || '09:00'} - ${shop.closing_time || '21:00'}` : `Opening hours: ${shop.opening_time || '09:00'} - ${shop.closing_time || '21:00'}`)}
+              {' — '}
+              {isHindi ? 'आप कैटलॉग देख सकते हैं व सामान सेव कर सकते हैं, पर लाइव रिज़र्वेशन दुकान खुलने पर ही संभव होगा।' : 'You can browse & wishlist items, but live reservations will resume when the store opens.'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {shop && shop.live_status === 'CLOSING_SOON' && (
+        <div
+          role="status"
+          style={{
+            margin: '12px 0',
+            padding: '12px 16px',
+            backgroundColor: '#fffbeb',
+            border: '1.5px solid #fde68a',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: '#92400e',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+          }}
+        >
+          <Clock size={20} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, fontSize: '0.82rem', lineHeight: 1.4 }}>
+            <strong>{isHindi ? 'दुकान जल्द ही बंद होने वाली है!' : 'Store is closing soon!'}</strong>
+            <span style={{ display: 'block', opacity: 0.9, marginTop: '2px', fontSize: '0.78rem' }}>
+              {shop.status_message || (isHindi ? `दुकान ${shop.closing_time || '21:00'} पर बंद हो जाएगी। तुरंत पिकअप हेतु अभी रिज़र्व करें!` : `Store closes at ${shop.closing_time || '21:00'}. Reserve now for fast pickup!`)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1.2. USP COMPARISON CTA CARD (Reinforces ShopSilo's Unique Value Proposition) */}
       {shop && (
         <div
@@ -1218,6 +1305,30 @@ export const StorefrontScreen = () => {
             isHindi={isHindi}
           />
         </div>
+
+        {/* 1-Tap Barcode / SKU Scan Button */}
+        <button
+          type="button"
+          onClick={handleBarcodePrompt}
+          title={isHindi ? 'बारकोड / SKU से खोजें' : 'Scan or Enter Barcode / SKU'}
+          style={{
+            height: '42px',
+            width: '42px',
+            borderRadius: '12px',
+            border: '1.5px solid var(--border-subtle, #e2e8f0)',
+            backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
+            color: 'var(--color-primary, #2563eb)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.15s ease',
+          }}
+          aria-label={isHindi ? 'बारकोड खोजें' : 'Barcode search'}
+        >
+          <Barcode size={18} />
+        </button>
 
         {/* 1-Tap Voice Search Button */}
         <button
