@@ -58,10 +58,10 @@ export const SearchHeroSection = ({
   };
 
   return (
-    <section className="search-hero-section" aria-label="Product Search Hero" style={{ padding: '6px 0 2px 0' }}>
+    <section className="search-hero-section" aria-label="Product Search Hero" style={{ padding: '6px 0 2px 0', width: '100%', maxWidth: '100vw', boxSizing: 'border-box', overflow: 'hidden' }}>
       <div className="search-hero-inner">
         {/* Large Search Box as Primary App Focus (Placed Right At Top - Blinkit PWA Style) */}
-        <div className="hero-search-wrapper" role="search" style={{ width: '100%', position: 'relative' }}>
+        <div className="hero-search-wrapper" role="search" style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', position: 'relative' }}>
           <div
             className={`hero-search-box ${isSuggestionsOpen ? 'is-focused' : ''}`}
             onClick={() => inputRef.current?.focus()}
@@ -74,6 +74,10 @@ export const SearchHeroSection = ({
               border: '2px solid var(--border-subtle, #e2e8f0)',
               borderRadius: '16px',
               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+              boxSizing: 'border-box',
+              width: '100%',
+              maxWidth: '100%',
+              minWidth: 0,
             }}
           >
             <div className="search-icon-slot" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
