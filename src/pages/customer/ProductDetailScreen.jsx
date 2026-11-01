@@ -25,6 +25,7 @@ import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { calculateDistanceKm } from '../../utils/distance';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
+import { usePageSeo } from '../../hooks/usePageSeo';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
 
@@ -64,6 +65,40 @@ export const ProductDetailScreen = () => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
+
+  // Dynamic SEO & OpenGraph Head Management
+  usePageSeo({
+    title: product?.name
+      ? `${product.name} - ₹${product.price} at ${shop?.name || product.shop_name || 'Local Store'}`
+      : 'Product Details',
+    description: product
+      ? `Buy ${product.name} for ₹${product.price} in ${shop?.name || product.shop_name || 'nearby store'}. Instant 30-min counter pickup, real-time stock, and Bhav-Taav bargain offers.`
+      : undefined,
+    image: product ? getImageUrl(extractFirstImage(product.images || product.image || product.image_url)) : undefined,
+    url: product?.id && (slug || shop?.slug) ? `/shop/${slug || shop?.slug}/product/${product.id}` : undefined,
+    type: 'product',
+    jsonLd: product
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.name,
+          image: getImageUrl(extractFirstImage(product.images || product.image || product.image_url)),
+          description: product.description || `In-stock at ${shop?.name || product.shop_name}`,
+          offers: {
+            '@type': 'Offer',
+            price: product.price,
+            priceCurrency: 'INR',
+            availability: (product.available_quantity || product.stock_quantity) > 0
+              ? 'https://schema.org/InStock'
+              : 'https://schema.org/OutOfStock',
+            seller: {
+              '@type': 'Organization',
+              name: shop?.name || product.shop_name,
+            },
+          },
+        }
+      : undefined,
+  });
 
   // Live Real-Time Product & Store Sync
   const activeSlug = slug || product?.shop_slug || product?.shop?.slug;

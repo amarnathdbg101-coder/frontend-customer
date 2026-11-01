@@ -50,6 +50,9 @@ const CustomerKhataScreen = lazy(() =>
 const CustomerProfileScreen = lazy(() =>
   import('./pages/customer/CustomerProfileScreen').then((m) => ({ default: m.CustomerProfileScreen }))
 );
+const NotFoundScreen = lazy(() =>
+  import('./pages/customer/NotFoundScreen').then((m) => ({ default: m.NotFoundScreen }))
+);
 
 // Code-split Auth Pages
 const LoginScreen = lazy(() =>
@@ -208,8 +211,8 @@ function App() {
                         <Route path="/admin" element={<ExternalRedirect url="https://admin.shopsilo.in" />} />
                         <Route path="/admin/*" element={<ExternalRedirect url="https://admin.shopsilo.in" />} />
 
-                        {/* Fallback */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        {/* 404 Dedicated Not Found Screen */}
+                        <Route path="*" element={<NotFoundScreen />} />
                       </Routes>
                     </Suspense>
                   </BrowserRouter>

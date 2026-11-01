@@ -3,48 +3,48 @@ import client from './client';
 export const shopApi = {
   getMyShop: async () => {
     const res = await client.get('/shops/me');
-    return res.data || res;
+    return res;
   },
 
   createShop: async (shopData) => {
     const res = await client.post('/shops', shopData);
-    return res.data || res;
+    return res;
   },
 
   updateMyShop: async (updateData) => {
     const res = await client.put('/shops/me', updateData);
-    return res.data || res;
+    return res;
   },
 
   toggleShopStatus: async () => {
     const res = await client.patch('/shops/me/status');
-    return res.data || res;
+    return res;
   },
 
   getMyShopQR: async () => {
     const res = await client.get('/shops/me/qr');
-    return res.data || res;
+    return res;
   },
 
   // Public: 1-Call Consolidated Home Feed (Categories, Nearby Shops, In-Stock Products)
   getHomeFeed: async (params = {}) => {
     const res = await client.get('/catalog/home-feed', { params });
-    return res.data?.data || res.data || res;
+    return res;
   },
 
   listPublicShops: async (params = {}) => {
     const res = await client.get('/shops', { params });
-    return res.data || res;
+    return res;
   },
 
   getShopBySlug: async (slug) => {
     try {
       const res = await client.get(`/shops/slug/${slug}`);
-      return res.data || res;
+      return res;
     } catch {
       try {
         const res2 = await client.get(`/shops/${slug}`);
-        return res2.data || res2;
+        return res2;
       } catch (e) {
         throw e;
       }

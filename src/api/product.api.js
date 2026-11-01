@@ -10,7 +10,7 @@ export const productApi = {
   // Public: Single product details by ID
   getById: async (id) => {
     const res = await client.get(`/products/${id}`);
-    return res.data?.data || res.data || res;
+    return res;
   },
 
   getProductById: async (id) => {
@@ -20,7 +20,7 @@ export const productApi = {
   // Public: Single product details by slug
   getBySlug: async (slug) => {
     const res = await client.get(`/products/slug/${slug}`);
-    return res.data?.data || res.data || res;
+    return res;
   },
 
   getProductBySlug: async (slug) => {
@@ -30,13 +30,13 @@ export const productApi = {
   // Public: Shop ke products list karna
   listByShopSlug: async (slug, params = {}) => {
     const res = await client.get(`/shops/${slug}/products`, { params });
-    return res.data || res;
+    return res;
   },
 
   // Public: Global products search
   listProducts: async (params = {}) => {
     const res = await client.get('/products', { params });
-    return res.data || res;
+    return res;
   },
 
   getProducts: async (params = {}) => {
@@ -45,31 +45,31 @@ export const productApi = {
 
   listPublicProducts: async (params = {}) => {
     const res = await client.get('/products', { params });
-    return res.data || res;
+    return res;
   },
 
   // Public: GPS nearby in-stock products across open local shops
   findNearbyProducts: async (params = {}) => {
     const res = await client.get('/products/nearby', { params });
-    return res.data || res;
+    return res;
   },
 
   // Public/Customer: Bhav-Taav Negotiation (Make Offer)
   makeOffer: async (productId, offerData) => {
     const res = await client.post(`/products/${productId}/make-offer`, offerData);
-    return res.data || res;
+    return res;
   },
 
   // Public/Customer: Out-of-Stock Item Notify Me
   subscribeStockAlert: async (productId, alertData) => {
     const res = await client.post(`/products/${productId}/notify-me`, alertData);
-    return res.data || res;
+    return res;
   },
 
   // Barcode / SKU Scan se product turant dhundna
   scanProduct: async (barcode) => {
     const res = await client.get(`/products/scan/${barcode}`);
-    return res.data || res;
+    return res;
   },
 
   // Public: In-Store Fast Barcode Scan Lookup (sub-millisecond B-tree index lookup)
@@ -82,26 +82,26 @@ export const productApi = {
         limit: 1,
       },
     });
-    const prods = res.data?.data?.products || res.data?.products || [];
+    const prods = res?.products || res?.data?.products || [];
     return prods[0] || null;
   },
 
   // Merchant: Naya product catalog me add karna
   createProduct: async (productData) => {
     const res = await client.post('/products', productData);
-    return res.data || res;
+    return res;
   },
 
   // Merchant: Product edit karna
   updateProduct: async (id, updateData) => {
     const res = await client.put(`/products/${id}`, updateData);
-    return res.data || res;
+    return res;
   },
 
   // Merchant: Product delete karna
   deleteProduct: async (id) => {
     const res = await client.delete(`/products/${id}`);
-    return res.data || res;
+    return res;
   },
 
   // Public: Fast autocomplete search suggestions (<0.5ms Go LRU cached)
@@ -111,7 +111,7 @@ export const productApi = {
       const res = await client.get('/products/search/suggestions', {
         params: { q: query.trim(), shop_id: shopId, limit },
       });
-      return res.data?.data?.suggestions || res.data?.suggestions || [];
+      return res?.suggestions || res?.data?.suggestions || [];
     } catch {
       return [];
     }
@@ -120,7 +120,7 @@ export const productApi = {
   // Public: Categories list
   getCategories: async () => {
     const res = await client.get('/categories');
-    return res.data || res;
+    return res;
   },
 };
 

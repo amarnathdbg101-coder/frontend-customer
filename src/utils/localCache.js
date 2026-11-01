@@ -24,6 +24,65 @@ const setMemoryCache = (key, val) => {
   memoryCache.set(key, val);
 };
 
+// Maximum payload size (64 KB) safe for synchronous localStorage without UI freeze or quota errors
+const MAX_LOCAL_STORAGE_BYTES = 64 * 1024;
+
+// Lightweight asynchronous IndexedDB adapter for large product catalogs & offline caches
+const DB_NAME = 'shopsilo_customer_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'catalog_cache';
+
+let idbInstance = null;
+const getIndexedDB = async () => {
+  if (typeof window === 'undefined' || !window.indexedDB) return null;
+  if (idbInstance) return idbInstance;
+
+  return new Promise((resolve) => {
+    try {
+      const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        }
+      };
+      request.onsuccess = () => {
+        idbInstance = request.result;
+        resolve(idbInstance);
+      };
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+};
+
+const saveToIndexedDB = async (key, payload) => {
+  try {
+    const db = await getIndexedDB();
+    if (!db) return;
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put({ key, payload, timestamp: Date.now() });
+  } catch (err) {
+    console.warn('[LocalCache IDB] Failed to store large item in IndexedDB:', err);
+  }
+};
+
+const getFromIndexedDB = async (key) => {
+  try {
+    const db = await getIndexedDB();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result?.payload || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+};
+
 export const isStorageAvailable = () => {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return false;
@@ -177,7 +236,7 @@ class LocalCacheService {
   }
 
   /**
-   * Save data with TTL into local storage
+   * Save data with TTL into local storage (with async IndexedDB offload for large catalogs)
    */
   set(key, data, ttlMinutes = 30) {
     const payload = {
@@ -188,7 +247,19 @@ class LocalCacheService {
       data,
     };
 
-    const serialized = JSON.stringify(payload);
+    let serialized;
+    try {
+      serialized = JSON.stringify(payload);
+    } catch {
+      return;
+    }
+
+    // Offload large datasets (>64 KB) to IndexedDB + Memory cache to avoid localStorage quota freeze
+    if (serialized.length > MAX_LOCAL_STORAGE_BYTES) {
+      setMemoryCache(key, serialized);
+      saveToIndexedDB(key, payload);
+      return;
+    }
 
     if (isStorageAvailable()) {
       try {
@@ -202,6 +273,7 @@ class LocalCacheService {
             window.localStorage.setItem(key, serialized);
           } catch {
             setMemoryCache(key, serialized);
+            saveToIndexedDB(key, payload);
           }
         } else {
           setMemoryCache(key, serialized);
@@ -210,6 +282,20 @@ class LocalCacheService {
     } else {
       setMemoryCache(key, serialized);
     }
+  }
+
+  /**
+   * Async get from Memory, LocalStorage or IndexedDB
+   */
+  async getAsync(key, fallback = null) {
+    const syncVal = this.get(key, null);
+    if (syncVal !== null) return syncVal;
+
+    const idbPayload = await getFromIndexedDB(key);
+    if (idbPayload && idbPayload.data !== undefined) {
+      return idbPayload.data;
+    }
+    return fallback;
   }
 
   /**

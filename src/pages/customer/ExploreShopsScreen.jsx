@@ -38,6 +38,7 @@ import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePageSeo } from '../../hooks/usePageSeo';
 import { ProductCard } from '../../components/cards/ProductCard';
 import { ShopCard } from '../../components/cards/ShopCard';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -148,6 +149,17 @@ export const ExploreShopsScreen = () => {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+
+  // Dynamic SEO & OpenGraph Head Management
+  usePageSeo({
+    title: searchTerm
+      ? `Results for "${searchTerm}" - Nearby Stores & Items`
+      : selectedCategory && selectedCategory !== 'All'
+      ? `${selectedCategory} Stores & In-Stock Items Nearby`
+      : 'Explore Verified Neighborhood Stores & Live Inventory',
+    description: 'Discover verified neighborhood retail shops, live in-stock catalogs, compare nearby prices, and reserve 30-minute counter pickups on ShopSilo.',
+    url: '/explore',
+  });
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 

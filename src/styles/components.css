@@ -333,6 +333,7 @@ body {
   justify-content: center;
   font-weight: 800;
   font-size: 1.05rem;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -516,6 +517,7 @@ body {
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -582,6 +584,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -733,6 +736,7 @@ body {
 .home-header-left {
   display: flex;
   align-items: center;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -774,6 +778,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -804,6 +809,7 @@ body {
 
 .location-chevron {
   color: var(--text-muted, #94a3b8);
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -811,6 +817,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -959,6 +966,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -1010,6 +1018,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 64px;
   flex-shrink: 0;
   transition: all 0.15s ease;
 }
@@ -1036,6 +1045,7 @@ body {
   font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
+  flex: 0 0 64px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -1064,6 +1074,7 @@ body {
   font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
+  flex: 0 0 64px;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
   transition: all 0.15s ease;
@@ -1083,6 +1094,11 @@ body {
   margin-top: 22px;
   flex-wrap: nowrap;
   overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   padding: 4px 2px;
@@ -1112,6 +1128,7 @@ body {
   color: var(--text-primary, #1e293b);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   white-space: nowrap;
+  flex: 0 0 64px;
   flex-shrink: 0;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
@@ -1338,6 +1355,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -1381,6 +1399,7 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary, #475569);
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -1470,6 +1489,12 @@ body {
   }
 }
 
+.product-trust-left-col {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
 /* --- 1. Product Gallery --- */
 .product-gallery-card {
   background-color: var(--bg-surface, #ffffff);
@@ -1477,6 +1502,9 @@ body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .product-gallery-viewport {
@@ -1640,10 +1668,15 @@ body {
 .gallery-thumbnail-strip {
   display: flex;
   gap: 10px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
   border-top: 1px solid var(--border-subtle, #e2e8f0);
-  scrollbar-width: none;
+  scrollbar-width: thin;
 }
 
 .gallery-thumbnail-strip::-webkit-scrollbar {
@@ -1653,11 +1686,13 @@ body {
 .gallery-thumb-btn {
   width: 64px;
   height: 64px;
+  flex: 0 0 64px;
   border-radius: 12px;
   border: 2px solid transparent;
   padding: 4px;
   background-color: var(--bg-surface-subtle, #f8fafc);
   cursor: pointer;
+  flex: 0 0 64px;
   flex-shrink: 0;
   transition: all 0.15s ease;
 }
@@ -1715,6 +1750,7 @@ body {
 
 .trust-green-check {
   color: #16a34a;
+  flex: 0 0 64px;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -1819,6 +1855,7 @@ body {
   border-radius: 50%;
   background-color: #16a34a;
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -1890,6 +1927,7 @@ body {
 
 .store-verified-check {
   color: #16a34a;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -1903,6 +1941,7 @@ body {
 
 .dist-pin-icon {
   color: var(--color-primary, #2563eb);
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -1921,6 +1960,7 @@ body {
 
 .best-offer-pricing {
   text-align: right;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 
@@ -2052,6 +2092,7 @@ body {
 
 .verified-tiny-check {
   color: #16a34a;
+  flex: 0 0 64px;
   flex-shrink: 0;
 }
 

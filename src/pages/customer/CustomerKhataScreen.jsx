@@ -22,6 +22,11 @@ import { useAuth } from '../../context/AuthContext';
 import { customerKhataApi } from '../../api/khata.api';
 import { BaseModal, ModalHeader, ModalBody, ModalFooter, Button, Badge, LoadingSpinner } from '../../components/ui';
 import { CreditLimitBar } from '../../components/khata/CreditLimitBar';
+import { KhataQrCodeModal } from '../../components/khata/KhataQrCodeModal';
+import { KhataPromiseToPayModal } from '../../components/khata/KhataPromiseToPayModal';
+import { KhataDisputeModal } from '../../components/khata/KhataDisputeModal';
+import { KhataUpiPaymentModal } from '../../components/khata/KhataUpiPaymentModal';
+import { KhataParchiViewerModal } from '../../components/khata/KhataParchiViewerModal';
 import { getImageUrl } from '../../utils/imageUrl';
 import { RealQRCode } from '../../components/common/RealQRCode';
 import { useLanguage } from '../../context/LanguageContext';
@@ -863,466 +868,65 @@ export const CustomerKhataScreen = () => {
       </BaseModal>
 
       {/* ================= MODAL 2: DYNAMIC UPI PAYMENT & QR ================= */}
-      <BaseModal
+      <KhataUpiPaymentModal
         isOpen={Boolean(showUpiModal && selectedKhata)}
         onClose={() => setShowUpiModal(false)}
-        maxWidth="540px"
-        maxHeight="90vh"
-      >
-        <ModalHeader
-          title={isHindi ? 'UPI से भुगतान करें' : 'Pay via UPI'}
-          subtitle={`To: ${selectedKhata?.shop_name || selectedKhata?.shop?.name || ''}`}
-          icon={QrCode}
-          onClose={() => setShowUpiModal(false)}
-        />
-        <ModalBody padding="20px">
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '16px',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'var(--bg-surface-subtle)',
-              border: '1px solid var(--border-subtle)',
-              marginBottom: '16px',
-            }}
-          >
-            {(() => {
-              const shopVpa = (
-                selectedKhata?.shop_upi_id ||
-                selectedKhata?.shop?.upi_id ||
-                selectedKhata?.shop_vpa ||
-                selectedKhata?.shop?.vpa ||
-                selectedKhata?.shop_upi ||
-                ''
-              ).trim();
-              const upiUri = getShopUpiUri();
-
-              if (!shopVpa) {
-                return (
-                  <div style={{ padding: '14px', backgroundColor: '#fffbeb', borderRadius: '10px', border: '1px solid #fde68a', color: '#92400e', fontSize: '0.82rem', textAlign: 'left' }}>
-                    <div style={{ fontWeight: 800, marginBottom: '4px' }}>
-                      {isHindi ? '⚠️ दुकानदार का डायरेक्ट UPI ID सेट नहीं है' : '⚠️ Direct UPI ID is not configured by merchant'}
-                    </div>
-                    <div>
-                      {isHindi
-                        ? 'दुकान पर भुगतान करने के बाद, पेमेंट रसीद/मेसेज का 12-अंकों का UTR Ref Number नीचे डालकर प्रूफ सबमिट करें।'
-                        : 'After completing payment in-store, enter the 12-digit UTR reference number from your payment receipt to submit proof.'}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
-                    SCAN WITH ANY UPI APP (GPay / PhonePe / Paytm / BHIM)
-                  </div>
-                  <RealQRCode value={upiUri} size={180} logoText="UPI" showDownload={true} downloadFilename={"upi-pay-" + (selectedKhata?.shop_name || "store")} />
-
-                  <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>UPI ID:</span>
-                    <strong style={{ fontSize: '0.85rem', color: 'var(--color-primary)' }}>{shopVpa}</strong>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard?.writeText(shopVpa);
-                        alert(`UPI ID copied: ${shopVpa}`);
-                      }}
-                      style={{
-                        background: 'rgba(99, 102, 241, 0.1)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        padding: '2px 8px',
-                        fontSize: '0.72rem',
-                        color: 'var(--color-primary)',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Copy
-                    </button>
-                  </div>
-
-                  <a
-                    href={upiUri}
-                    className="btn btn-success btn-block"
-                    style={{ marginTop: '12px', gap: '6px', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <ExternalLink size={16} />
-                    <span>{isHindi ? 'UPI ऐप खोलें (GPay / PhonePe / Paytm)' : 'Pay via UPI App (GPay / PhonePe / Paytm)'}</span>
-                  </a>
-                </>
-              );
-            })()}
-          </div>
-
-          <form onSubmit={handleUpiPaymentSubmit}>
-            {/* Quick Amount Chips */}
-            {selectedKhata && (
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 700 }}>
-                  {t('khata.upi_quick_amounts', 'Quick Amounts')}:
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {Number(selectedKhata.current_balance || selectedKhata.balance || 0) > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setUpiAmount(String(selectedKhata.current_balance || selectedKhata.balance))}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '16px',
-                        fontSize: '0.74rem',
-                        fontWeight: 800,
-                        backgroundColor: upiAmount === String(selectedKhata.current_balance || selectedKhata.balance) ? 'var(--color-primary)' : 'rgba(99, 102, 241, 0.1)',
-                        color: upiAmount === String(selectedKhata.current_balance || selectedKhata.balance) ? '#ffffff' : 'var(--color-primary)',
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {t('khata.upi_full_balance', 'Full Dues: ₹{{amount}}').replace('{{amount}}', Number(selectedKhata.current_balance || selectedKhata.balance).toLocaleString('en-IN'))}
-                    </button>
-                  )}
-
-                  {Number(selectedKhata.current_balance || selectedKhata.balance || 0) >= 200 && (
-                    <button
-                      type="button"
-                      onClick={() => setUpiAmount(String(Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2)))}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '16px',
-                        fontSize: '0.74rem',
-                        fontWeight: 800,
-                        backgroundColor: upiAmount === String(Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2)) ? 'var(--color-primary)' : 'rgba(99, 102, 241, 0.1)',
-                        color: upiAmount === String(Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2)) ? '#ffffff' : 'var(--color-primary)',
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {t('khata.upi_half_balance', 'Half: ₹{{amount}}').replace('{{amount}}', Math.round(Number(selectedKhata.current_balance || selectedKhata.balance) / 2).toLocaleString('en-IN'))}
-                    </button>
-                  )}
-
-                  {[500, 1000, 2000].map((amt) => {
-                    if (amt >= Number(selectedKhata.current_balance || selectedKhata.balance || 0)) return null;
-                    return (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => setUpiAmount(String(amt))}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '16px',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          backgroundColor: upiAmount === String(amt) ? 'var(--color-primary)' : 'rgba(0, 0, 0, 0.05)',
-                          color: upiAmount === String(amt) ? '#ffffff' : 'var(--text-secondary)',
-                          border: 'none',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        ₹{amt.toLocaleString('en-IN')}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                {isHindi ? 'भुगतान राशि (₹)' : 'Payment Amount (₹)'}
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                className="form-input"
-                value={upiAmount}
-                onChange={(e) => setUpiAmount(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                {isHindi ? '12-अंकों का UPI UTR / Ref No.' : '12-Digit UPI UTR / Reference No.'}
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. 423589123456"
-                className="form-input"
-                value={upiUtr}
-                onChange={(e) => setUpiUtr(e.target.value)}
-              />
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {t('khata.upi_utr_hint', 'Enter 12-digit transaction ID from GPay / PhonePe / Paytm')}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                {isHindi ? 'टिप्पणी (वैकल्पिक)' : 'Optional Note'}
-              </label>
-              <input
-                type="text"
-                placeholder={isHindi ? "उदा: GPay से ₹500 भेजा" : "e.g. Paid ₹500 via GPay"}
-                className="form-input"
-                value={upiNote}
-                onChange={(e) => setUpiNote(e.target.value)}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-              <Button
-                type="submit"
-                variant="primary"
-                fullWidth
-                disabled={upiLoading || !upiUtr.trim()}
-                loading={upiLoading}
-              >
-                {t('common.submit')}
-              </Button>
-            </div>
-          </form>
-        </ModalBody>
-      </BaseModal>
+        selectedKhata={selectedKhata}
+        upiAmount={upiAmount}
+        setUpiAmount={setUpiAmount}
+        upiUtr={upiUtr}
+        setUpiUtr={setUpiUtr}
+        upiNote={upiNote}
+        setUpiNote={setUpiNote}
+        upiLoading={upiLoading}
+        getShopUpiUri={getShopUpiUri}
+        onSubmit={handleUpiPaymentSubmit}
+        isHindi={isHindi}
+        t={t}
+      />
 
       {/* ================= MODAL 3: PROMISE TO PAY ================= */}
-      <BaseModal
+      <KhataPromiseToPayModal
         isOpen={Boolean(showPtpModal && selectedKhata)}
         onClose={() => setShowPtpModal(false)}
-        maxWidth="500px"
-      >
-        <ModalHeader
-          title={isHindi ? 'भुगतान का वादा (Promise to Pay)' : 'Promise to Pay'}
-          subtitle={isHindi ? 'दुकानदार को सूचित करें कि आप कब तक बकाया भुगतान कर देंगे।' : 'Inform the merchant when you plan to settle your credit ledger.'}
-          icon={Calendar}
-          onClose={() => setShowPtpModal(false)}
-        />
-        <ModalBody padding="20px">
-          {/* Quick Preset Chips */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
-            {[
-              { label: isHindi ? '3 दिन बाद' : 'In 3 Days', days: 3 },
-              { label: isHindi ? '1 सप्ताह बाद' : 'In 1 Week', days: 7 },
-              { label: isHindi ? '15 दिन बाद' : 'In 15 Days', days: 15 },
-              { label: isHindi ? 'अगले माह 1 को' : 'Next Month 1st', days: 30 },
-            ].map((p, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  const d = new Date();
-                  d.setDate(d.getDate() + p.days);
-                  setPtpDate(d.toISOString().split('T')[0]);
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--bg-surface-subtle)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '0.74rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handlePtpSubmit}>
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                {isHindi ? 'वादा तारीख' : 'Promise Date'}
-              </label>
-              <input
-                type="date"
-                required
-                className="form-input"
-                value={ptpDate}
-                onChange={(e) => setPtpDate(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                {isHindi ? 'संदेश (वैकल्पिक)' : 'Message for Merchant (Optional)'}
-              </label>
-              <input
-                type="text"
-                placeholder={isHindi ? "उदा: सैलरी आते ही भुगतान कर दूंगा" : "e.g. Will settle on salary day"}
-                className="form-input"
-                value={ptpNote}
-                onChange={(e) => setPtpNote(e.target.value)}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <Button
-                type="submit"
-                variant="primary"
-                fullWidth
-                disabled={ptpLoading}
-                loading={ptpLoading}
-              >
-                {t('common.confirm')}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setShowPtpModal(false)}
-              >
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </form>
-        </ModalBody>
-      </BaseModal>
+        selectedKhata={selectedKhata}
+        ptpDate={ptpDate}
+        setPtpDate={setPtpDate}
+        ptpNote={ptpNote}
+        setPtpNote={setPtpNote}
+        ptpLoading={ptpLoading}
+        onSubmit={handlePtpSubmit}
+        isHindi={isHindi}
+        t={t}
+      />
 
       {/* ================= MODAL 4: DISPUTE TRANSACTION ================= */}
-      <BaseModal
-        isOpen={Boolean(disputeTx)}
+      <KhataDisputeModal
+        disputeTx={disputeTx}
         onClose={() => setDisputeTx(null)}
-        maxWidth="500px"
-      >
-        <ModalHeader
-          title={isHindi ? 'लेन-देन विवाद दर्ज करें' : 'Dispute Transaction'}
-          subtitle={disputeTx ? `Amount: ₹${disputeTx.amount} (${new Date(disputeTx.created_at).toLocaleDateString('en-IN')})` : ''}
-          icon={AlertCircle}
-          iconColor="#ef4444"
-          onClose={() => setDisputeTx(null)}
-        />
-        <ModalBody padding="20px">
-          {/* Quick Reason Chips */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
-            {[
-              isHindi ? 'सामान वापस कर दिया था' : 'Returned goods',
-              isHindi ? 'रकम गलत जोड़ी गई' : 'Incorrect amount',
-              isHindi ? 'नकद में पहले भुगतान कर दिया था' : 'Already paid in cash',
-              isHindi ? 'मैंने यह सामान नहीं खरीदा' : 'Did not purchase this item',
-            ].map((r, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setDisputeReason(r)}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--bg-surface-subtle)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '0.74rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleDisputeSubmit}>
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                {isHindi ? 'विवाद का कारण' : 'Reason for dispute'}
-              </label>
-              <textarea
-                rows={3}
-                required
-                placeholder={isHindi ? "विवाद का कारण बताएं..." : "Explain why this transaction is incorrect..."}
-                className="form-input"
-                value={disputeReason}
-                onChange={(e) => setDisputeReason(e.target.value)}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-              <Button
-                type="submit"
-                variant="danger"
-                fullWidth
-                disabled={disputeLoading || !disputeReason.trim()}
-                loading={disputeLoading}
-              >
-                {isHindi ? 'विवाद दर्ज करें' : 'Submit Dispute'}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setDisputeTx(null)}
-              >
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </form>
-        </ModalBody>
-      </BaseModal>
+        disputeReason={disputeReason}
+        setDisputeReason={setDisputeReason}
+        disputeLoading={disputeLoading}
+        onSubmit={handleDisputeSubmit}
+        isHindi={isHindi}
+        t={t}
+      />
 
       {/* ================= MODAL 5: MY KHATA QR ================= */}
-      <BaseModal
+      <KhataQrCodeModal
         isOpen={showQrModal}
         onClose={() => setShowQrModal(false)}
-        maxWidth="400px"
-      >
-        <ModalHeader
-          title={isHindi ? 'मेरा डिजिटल खाता QR कोड' : 'My Khata QR Code'}
-          subtitle={isHindi ? 'दुकान के काउंटर पर यह QR कोड दिखाकर पहचान कराएं' : 'Show this QR code at merchant counter for quick identification'}
-          icon={QrCode}
-          onClose={() => setShowQrModal(false)}
-        />
-        <ModalBody padding="24px" style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              padding: '16px',
-              borderRadius: '16px',
-              display: 'inline-block',
-              margin: '8px auto 16px auto',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-            }}
-          >
-            <RealQRCode value={"SHOPSILO-CUSTOMER-KHATA:" + (user?.phone || user?.id || "")} size={200} logoText="KHATA" showDownload={true} downloadFilename={"my-khata-qr-" + (user?.phone || "")} />
-          </div>
-
-          <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-            {user?.name || user?.full_name || 'Customer'}
-          </div>
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            {user?.phone || 'Phone verified'}
-          </div>
-
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => setShowQrModal(false)}
-            style={{ marginTop: '20px' }}
-          >
-            {isHindi ? 'बंद करें' : 'Close'}
-          </Button>
-        </ModalBody>
-      </BaseModal>
+        user={user}
+        isHindi={isHindi}
+      />
 
       {/* ================= MODAL 6: BILL / PARCHI PHOTO PREVIEW ================= */}
-      <BaseModal
+      <KhataParchiViewerModal
         isOpen={Boolean(viewParchiUrl)}
         onClose={() => setViewParchiUrl(null)}
-        maxWidth="90vw"
-        maxHeight="85vh"
-      >
-        <ModalHeader
-          title={isHindi ? 'भौतिक पर्ची / रसीद' : 'Physical Parchi / Receipt'}
-          onClose={() => setViewParchiUrl(null)}
-        />
-        <ModalBody padding="8px" style={{ backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img
-            loading="lazy"
-            decoding="async"
-            src={viewParchiUrl}
-            alt="Physical Parchi Slip"
-            style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', display: 'block' }}
-          />
-        </ModalBody>
-      </BaseModal>
+        viewParchiUrl={viewParchiUrl}
+        isHindi={isHindi}
+      />
     </AppLayout>
   );
 };

@@ -9,10 +9,11 @@
 
 import axios from 'axios';
 
-// Backend server URL
+// Backend server URL configuration
+const DEFAULT_PROD_API = 'https://shopsiloapi.shopsilo.in';
 const rawUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-export const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : (isLocalhost ? 'http://localhost:8080' : 'https://shopsiloapi.shopsilo.in');
+export const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : (isLocalhost ? 'http://localhost:8080' : DEFAULT_PROD_API);
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -20,11 +21,13 @@ const client = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 20000,
+  withCredentials: true,
 });
 
 // Helper to get active token
 export const getActiveToken = () => {
-  return localStorage.getItem('shopsilo_token') || localStorage.getItem('shopme_token') || null;
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('shopsilo_token') || null;
 };
 
 // Request Interceptor: Attach JWT Token automatically
@@ -39,10 +42,24 @@ client.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Standardize API responses & errors
+// Response Interceptor: Standardize API responses & unwrap payload with defensive self-referential property
 client.interceptors.response.use(
   (response) => {
-    return response.data;
+    const body = response.data;
+    if (body && typeof body === 'object' && 'data' in body && ('success' in body || 'message' in body)) {
+      const payload = body.data;
+      if (payload && typeof payload === 'object' && !('data' in payload)) {
+        // Self-referential .data property ensures legacy callers (res.data) never encounter undefined
+        Object.defineProperty(payload, 'data', {
+          value: payload,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      }
+      return payload !== undefined ? payload : body;
+    }
+    return body;
   },
   async (error) => {
     const originalRequest = error.config;
@@ -51,7 +68,7 @@ client.interceptors.response.use(
     // Localhost down fallback: If local Go backend is not running, seamlessly fallback to live API
     if (isNetworkError && originalRequest && !originalRequest._retry && API_BASE_URL.includes('localhost')) {
       originalRequest._retry = true;
-      const fallbackUrl = 'https://shopsiloapi.shopsilo.in';
+      const fallbackUrl = rawUrl && !rawUrl.includes('localhost') ? rawUrl : DEFAULT_PROD_API;
       console.warn(`[ShopSilo API] Local backend not reachable at ${API_BASE_URL}. Retrying with production API: ${fallbackUrl}`);
       originalRequest.baseURL = fallbackUrl;
       try {
@@ -82,9 +99,7 @@ client.interceptors.response.use(
       if (hadToken) {
         // Clear expired local tokens
         localStorage.removeItem('shopsilo_token');
-        localStorage.removeItem('shopme_token');
         localStorage.removeItem('shopsilo_user');
-        localStorage.removeItem('shopme_user');
 
         // Notify active React AuthContext without violent browser reload
         if (typeof window !== 'undefined') {

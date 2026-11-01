@@ -450,7 +450,7 @@ export const ProductDetailModal = ({
             }}
           >
             {/* LEFT COLUMN: HERO IMAGE STAGE WITH TOUCH FINGER SWIPING */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0, maxWidth: '100%', width: '100%' }}>
               <div
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -549,7 +549,21 @@ export const ProductDetailModal = ({
 
               {/* Thumbnails */}
               {images.length > 1 && (
-                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '8px',
+                    overflowX: 'auto',
+                    overflowY: 'hidden',
+                    maxWidth: '100%',
+                    minWidth: 0,
+                    width: '100%',
+                    paddingBottom: '4px',
+                    paddingTop: '2px',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollbarWidth: 'thin',
+                  }}
+                >
                   {images.map((img, idx) => (
                     <div
                       key={idx}
@@ -557,6 +571,8 @@ export const ProductDetailModal = ({
                       style={{
                         width: '56px',
                         height: '56px',
+                        flex: '0 0 56px',
+                        flexShrink: 0,
                         borderRadius: '8px',
                         backgroundColor: '#f8fafc',
                         border: selectedImageIdx === idx ? '2px solid #0f172a' : '1px solid #e2e8f0',
@@ -567,6 +583,7 @@ export const ProductDetailModal = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         opacity: selectedImageIdx === idx ? 1 : 0.6,
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       <img src={getImageUrl(img)} alt={`Thumbnail ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />

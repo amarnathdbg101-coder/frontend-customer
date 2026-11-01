@@ -20,7 +20,7 @@ export const uploadApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data; // { avatar_url: "..." }
+    return res; // { avatar_url: "..." }
   },
 
   // 2. Shop Logo & Banners Upload
@@ -39,7 +39,7 @@ export const uploadApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data; // { logo_url: "...", banners: [...] }
+    return res; // { logo_url: "...", banners: [...] }
   },
 
   // 3. Product Images Upload (Up to 4 images)
@@ -54,6 +54,6 @@ export const uploadApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return res.data; // { images: ["url1", "url2", ...] }
+    return res; // { images: ["url1", "url2", ...] }
   },
 };

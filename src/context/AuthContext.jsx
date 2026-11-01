@@ -17,15 +17,31 @@ import { cacheEvents, CACHE_EVENTS } from '../utils/cacheEvents';
 
 const AuthContext = createContext(null);
 
+// One-time legacy migration from deprecated 'shopme_*' to standard 'shopsilo_*'
+if (typeof window !== 'undefined') {
+  try {
+    const legacyToken = localStorage.getItem('shopme_token');
+    if (legacyToken && !localStorage.getItem('shopsilo_token')) {
+      localStorage.setItem('shopsilo_token', legacyToken);
+    }
+    const legacyUser = localStorage.getItem('shopme_user');
+    if (legacyUser && !localStorage.getItem('shopsilo_user')) {
+      localStorage.setItem('shopsilo_user', legacyUser);
+    }
+    localStorage.removeItem('shopme_token');
+    localStorage.removeItem('shopme_user');
+  } catch (_) {}
+}
+
 const getStoredToken = () => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('shopsilo_token') || localStorage.getItem('shopme_token') || null;
+  return localStorage.getItem('shopsilo_token') || null;
 };
 
 const getStoredUser = () => {
   if (typeof window === 'undefined') return null;
   try {
-    const saved = localStorage.getItem('shopsilo_user') || localStorage.getItem('shopme_user');
+    const saved = localStorage.getItem('shopsilo_user');
     return saved ? JSON.parse(saved) : null;
   } catch {
     return null;
@@ -54,9 +70,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setShop(null);
     localStorage.removeItem('shopsilo_token');
-    localStorage.removeItem('shopme_token');
     localStorage.removeItem('shopsilo_user');
-    localStorage.removeItem('shopme_user');
     sessionState.clearAll();
     localCache.clearPrefix('shopsilo_cache_khata_');
     localCache.clearPrefix('shopsilo_cache_reservations_');
@@ -190,7 +204,7 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         isAuthenticated: !!token,
-        isMerchant: user?.role === 'shop' || user?.role === 'merchant' || user?.role === 'admin' || !!shop,
+        isMerchant: Boolean(user && (user.role === 'shop' || user.role === 'merchant' || user.role === 'admin')),
         login,
         loginWithGoogle,
         register,

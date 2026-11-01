@@ -8,8 +8,9 @@ export default defineConfig({
   plugins: [
     react(),
     compression({ algorithm: 'gzip', threshold: 1024 }),
+    compression({ algorithm: 'brotliCompress', threshold: 1024 }),
     visualizer({
-      filename: './dist/stats.html',
+      filename: './.stats.html',
       open: false,
       gzipSize: true,
       brotliSize: true,
