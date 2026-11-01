@@ -484,7 +484,7 @@ export const ProductStudioView = ({
         }}
       >
         {/* ================= LEFT COLUMN: STUDIO HERO GALLERY & LOCAL SELLER ================= */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', minWidth: 0, maxWidth: '100%' }}>
           {/* Main Showcase Stage */}
           <div
             onTouchStart={handleTouchStart}
@@ -786,8 +786,13 @@ export const ProductStudioView = ({
                 display: 'flex',
                 gap: '8px',
                 overflowX: 'auto',
-                padding: '2px 2px 6px 2px',
-                scrollbarWidth: 'none',
+                overflowY: 'hidden',
+                minWidth: 0,
+                maxWidth: '100%',
+                width: '100%',
+                padding: '4px 2px 8px 2px',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin',
               }}
             >
               {images.map((img, idx) => (
@@ -798,6 +803,8 @@ export const ProductStudioView = ({
                   style={{
                     width: '58px',
                     height: '58px',
+                    flex: '0 0 58px',
+                    flexShrink: 0,
                     borderRadius: '12px',
                     border: selectedImageIdx === idx
                       ? '2.5px solid var(--color-primary, #4f46e5)'
@@ -805,7 +812,6 @@ export const ProductStudioView = ({
                     backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
                     padding: '4px',
                     cursor: 'pointer',
-                    flexShrink: 0,
                     overflow: 'hidden',
                     transition: 'all 0.18s ease',
                     transform: selectedImageIdx === idx ? 'scale(1.04)' : 'none',

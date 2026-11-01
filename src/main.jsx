@@ -11,11 +11,15 @@ if (sentryDsn) {
     dsn: sentryDsn,
     integrations: [
       Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
+      Sentry.replayIntegration({
+        maskAllText: true,
+        maskAllInputs: true,
+        block: ['.khata-sensitive', '.payment-sensitive', '.upi-input', '[data-sentry-block]', '.cart-drawer', '.checkout-modal'],
+      }),
     ],
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
+    tracesSampleRate: 0.1, // 10% sampling to optimize bandwidth and quota
+    replaysSessionSampleRate: 0.05, // 5% session sampling with 100% input/text masking
+    replaysOnErrorSampleRate: 0.5,
     environment: import.meta.env.MODE || 'production',
   })
 }

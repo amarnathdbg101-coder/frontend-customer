@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Authentication API Service
  * 
  * Hinglish Hint:
@@ -15,7 +15,7 @@ export const authApi = {
   // User login (returns access_token, user object)
   login: async (email, password) => {
     const res = await client.post('/auth/login', { email, password });
-    return res.data; // { access_token, token_type, expires_in, user }
+    return res;
   },
 
   // Google OAuth Login
@@ -24,7 +24,7 @@ export const authApi = {
       id_token: idToken,
       role: role,
     });
-    return res.data; // { access_token, user, token_type, expires_in }
+    return res;
   },
 
   // New user registration
@@ -35,13 +35,13 @@ export const authApi = {
       password,
       phone,
     });
-    return res.data; // { user, access_token }
+    return res;
   },
 
   // Request password reset token via email
   forgotPassword: async (email) => {
     const res = await client.post('/auth/forgot-password', { email });
-    return res.data;
+    return res;
   },
 
   // Reset password using token
@@ -50,13 +50,13 @@ export const authApi = {
       token,
       new_password: newPassword,
     });
-    return res.data;
+    return res;
   },
 
   // Get current user profile
   getProfile: async () => {
     const res = await client.get('/user/me');
-    return res.data;
+    return res;
   },
 
   // Update user personal profile (Full name, phone)

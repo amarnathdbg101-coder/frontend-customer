@@ -19,6 +19,49 @@ import { cacheEvents } from '../utils/cacheEvents';
 // Global map to deduplicate in-flight network requests across components
 const inflightRequests = new Map();
 
+// Fast structural equality check to prevent main-thread freezing on mobile devices
+function isFastEqual(a, b) {
+  if (Object.is(a, b)) return true;
+  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') return false;
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    if (a.length === 0) return true;
+
+    const checkItem = (itemA, itemB) => {
+      if (Object.is(itemA, itemB)) return true;
+      if (!itemA || !itemB || typeof itemA !== 'object') return false;
+      const idA = itemA.id || itemA._id || itemA.slug;
+      const idB = itemB.id || itemB._id || itemB.slug;
+      if (idA !== undefined && idB !== undefined && idA !== idB) return false;
+      const upA = itemA.updated_at || itemA.updatedAt || itemA.price;
+      const upB = itemB.updated_at || itemB.updatedAt || itemB.price;
+      return upA === upB;
+    };
+
+    // Fast heuristic: sample first, middle, last
+    const mid = Math.floor(a.length / 2);
+    if (!checkItem(a[0], b[0]) || !checkItem(a[mid], b[mid]) || !checkItem(a[a.length - 1], b[b.length - 1])) {
+      return false;
+    }
+    if (a.length <= 15) {
+      for (let i = 0; i < a.length; i++) {
+        if (!checkItem(a[i], b[i])) return false;
+      }
+    }
+    return true;
+  }
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const k of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+    if (typeof a[k] !== 'object' && a[k] !== b[k]) return false;
+  }
+  return true;
+}
+
 export const useSWR = (key, fetcher, options = {}) => {
   const {
     ttlMinutes = 30,
@@ -40,6 +83,12 @@ export const useSWR = (key, fetcher, options = {}) => {
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
 
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
   const dataRef = useRef(data);
   dataRef.current = data;
 
@@ -53,7 +102,7 @@ export const useSWR = (key, fetcher, options = {}) => {
     };
   }, []);
 
-  // 2. Revalidate Function with Request Deduplication & Smart Diffing
+  // 2. Revalidate Function with Request Deduplication & Fast Structural Diffing
   const revalidate = useCallback(
     async (isSilent = false) => {
       if (!key || !enabled || !isMountedRef.current) return;
@@ -81,14 +130,13 @@ export const useSWR = (key, fetcher, options = {}) => {
         if (!isMountedRef.current) return;
 
         if (freshData !== undefined && freshData !== null) {
-          // Smart Diffing: Avoid re-rendering if data hasn't changed
-          const currentJson = JSON.stringify(dataRef.current);
-          const freshJson = JSON.stringify(freshData);
+          // Fast Structural Diffing without JSON.stringify overhead
+          const hasChanged = !isFastEqual(dataRef.current, freshData);
 
-          if (currentJson !== freshJson) {
+          if (hasChanged) {
             setData(freshData);
             localCache.set(key, freshData, ttlMinutes);
-            if (onSuccess) onSuccess(freshData);
+            if (onSuccessRef.current) onSuccessRef.current(freshData);
           } else {
             // Touch timestamp in cache to extend freshness
             localCache.set(key, freshData, ttlMinutes);
@@ -99,8 +147,7 @@ export const useSWR = (key, fetcher, options = {}) => {
         console.warn(`[useSWR] Revalidation error for '${key}':`, err);
         if (isMountedRef.current) {
           setError(err);
-          // If we had no cached data, we must still clear loading state
-          if (onError) onError(err);
+          if (onErrorRef.current) onErrorRef.current(err);
         }
       } finally {
         if (isMountedRef.current) {
@@ -109,7 +156,7 @@ export const useSWR = (key, fetcher, options = {}) => {
         }
       }
     },
-    [key, enabled, ttlMinutes, onSuccess, onError]
+    [key, enabled, ttlMinutes]
   );
 
   // 3. Initial Mount & Key Change Effect
@@ -160,15 +207,18 @@ export const useSWR = (key, fetcher, options = {}) => {
       }
     };
 
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('visibilitychange', () => {
+    const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         handleFocus();
       }
-    });
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [key, enabled, revalidateOnFocus, focusThrottleMs, revalidate]);
 

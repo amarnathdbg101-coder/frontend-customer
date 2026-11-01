@@ -7,7 +7,10 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://*.sentry.io https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://shopsiloapi.shopsilo.in wss://shopsiloapi.shopsilo.in https://images.shopsilo.in https://accounts.google.com https://*.sentry.io http://localhost:8080 ws://localhost:8080; frame-src https://accounts.google.com; worker-src 'self' blob:;" />
     <title>ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS</title>
     <meta name="description" content="ShopSilo connects customers with verified neighborhood retail stores for real-time inventory discovery, bargain offers, and instant 30-minute counter pickup. Access the Customer Marketplace or the Merchant Dukan OS." />
     <meta name="keywords" content="ShopSilo, shopsilo.in, shop owner portal, merchant login, hyperlocal retail, local shops, grocery pickup, store inventory, digital khata, dukan billing pos, nearby market" />
@@ -20,13 +23,19 @@
     <meta property="og:description" content="Discover verified neighborhood stores, real-time inventory, and instant counter pickup reservations. Merchant POS billing & Digital Khata available." />
     <meta property="og:site_name" content="ShopSilo" />
     <meta property="og:url" content="https://shopsilo.in/" />
-    <meta property="og:image" content="https://shopsilo.in/favicon.svg" />
+    <meta property="og:image" content="https://shopsilo.in/og-image.png" />
+    <meta property="og:image:secure_url" content="https://shopsilo.in/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS" />
 
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS" />
     <meta name="twitter:description" content="Discover verified neighborhood stores, real-time inventory, and instant counter pickup reservations." />
-    <meta name="twitter:image" content="https://shopsilo.in/favicon.svg" />
+    <meta name="twitter:image" content="https://shopsilo.in/og-image.png" />
+    <meta name="twitter:image:alt" content="ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS" />
 
     <!-- Google Sitelinks & Rich Search Snippets (JSON-LD) -->
     <script type="application/ld+json">
@@ -98,7 +107,7 @@
           "url": "https://shopsilo.in/",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://shopsilo.in/favicon.svg",
+            "url": "https://shopsilo.in/logo512.png",
             "caption": "ShopSilo Logo"
           },
           "description": "Hyperlocal Retail & Merchant Technology Platform connecting neighborhood commerce.",
@@ -158,9 +167,11 @@
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-    <!-- Preconnect to backend API for faster requests -->
-    <link rel="preconnect" href="https://api.shopsilo.in" crossorigin />
-    <link rel="dns-prefetch" href="https://api.shopsilo.in" />
+    <!-- Preconnect to backend API & Edge CDN for faster network hops -->
+    <link rel="preconnect" href="https://shopsiloapi.shopsilo.in" crossorigin />
+    <link rel="dns-prefetch" href="https://shopsiloapi.shopsilo.in" />
+    <link rel="preconnect" href="https://images.shopsilo.in" crossorigin />
+    <link rel="dns-prefetch" href="https://images.shopsilo.in" />
 
     <!-- Google Fonts: Inter & Noto Sans Devanagari -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
