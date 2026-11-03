@@ -14,9 +14,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ChevronRight, Package, MapPin } from 'lucide-react';
+import { ChevronRight, Package, MapPin, ArrowLeft, Search, ShoppingCart } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 import { useLocation as useGeoLocation } from '../../context/LocationContext';
 import { productApi } from '../../api/product.api';
 import { shopApi } from '../../api/shop.api';
@@ -63,6 +64,7 @@ export const ProductDetailScreen = () => {
   const location = useLocation();
   const { isHindi } = useLanguage();
   const { coords } = useGeoLocation();
+  const { cartCount, openCart } = useCart();
 
   // Optimistic initial product from navigation state if available
   const [product, setProduct] = useState(location.state?.product || null);
@@ -322,7 +324,59 @@ export const ProductDetailScreen = () => {
     : String(product?.category_name || product?.category || '');
 
   return (
-    <AppLayout title={product.name} showBack={true}>
+    <AppLayout
+      title={product.name}
+      showBack={true}
+      customHeader={
+        <header className="product-detail-flipkart-header">
+          <div className="product-detail-header-inner">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate('/');
+                }
+              }}
+              className="product-detail-back-btn"
+              title={isHindi ? 'पीछे जाएं' : 'Back'}
+              aria-label={isHindi ? 'पीछे जाएं' : 'Back'}
+            >
+              <ArrowLeft size={22} />
+            </button>
+
+            {/* Clickable Rounded Search Bar */}
+            <div
+              className="product-detail-search-bar"
+              onClick={() => navigate('/explore')}
+              role="search"
+            >
+              <Search size={18} className="search-bar-icon" />
+              <span className="search-bar-placeholder">
+                {isHindi ? 'सामान या दुकानें खोजें...' : 'Search for products'}
+              </span>
+            </div>
+
+            {/* Cart Trigger Button with badge */}
+            <button
+              type="button"
+              onClick={openCart}
+              className="product-detail-cart-btn"
+              title={isHindi ? 'कार्ट देखें' : 'Cart'}
+              aria-label={isHindi ? 'कार्ट देखें' : 'Cart'}
+            >
+              <ShoppingCart size={22} />
+              {cartCount > 0 && (
+                <span className="product-detail-cart-badge">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
+      }
+    >
       <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '16px 16px 80px 16px' }}>
         {/* Top Breadcrumb Navigation */}
         <div
