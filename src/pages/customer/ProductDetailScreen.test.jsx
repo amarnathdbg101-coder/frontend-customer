@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '../../context/ThemeContext';
@@ -176,5 +176,36 @@ describe('ProductDetailScreen Comprehensive Tests', () => {
     await waitFor(() => {
       expect(screen.getByText(/उत्पाद उपलब्ध नहीं है|Product Not Available/i)).toBeInTheDocument();
     });
+  });
+  it('renders interactive Flipkart-style search bar with autocomplete input and clear button', async () => {
+    productApi.getById.mockResolvedValueOnce(mockProduct);
+    shopApi.getShopBySlug.mockResolvedValueOnce(mockShop);
+    productApi.listByShopSlug.mockResolvedValueOnce({
+      products: [mockProduct],
+      total_count: 1,
+    });
+    productApi.getSearchSuggestions = vi.fn().mockResolvedValue(['Clinic Plus Strong', 'Clinic Plus 340ml']);
+
+    render(
+      <AllTestProviders initialEntries={['/product/prod-101']}>
+        <Routes>
+          <Route path="/product/:productId" element={<ProductDetailScreen />} />
+          <Route path="/explore" element={<div>Explore Search Results Page</div>} />
+        </Routes>
+      </AllTestProviders>
+    );
+
+    const searchInput = await screen.findByRole('searchbox', { name: /सामान या दुकानें खोजें|Search for products/i });
+    expect(searchInput).toBeInTheDocument();
+
+    // Type query
+    fireEvent.change(searchInput, { target: { value: 'Clinic' } });
+    expect(searchInput.value).toBe('Clinic');
+
+    // Clear button appears
+    const clearBtn = screen.getByRole('button', { name: /हटाएं|Clear search/i });
+    expect(clearBtn).toBeInTheDocument();
+    fireEvent.click(clearBtn);
+    expect(searchInput.value).toBe('');
   });
 });

@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ChevronRight, Package, MapPin, ArrowLeft, Search, ShoppingCart } from 'lucide-react';
+import { ChevronRight, Package, MapPin, ArrowLeft, Search, ShoppingCart, X, Mic, MicOff, Loader2 } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
@@ -29,6 +29,14 @@ import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
+import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
+import { sessionState } from '../../utils/sessionState';
+import {
+  getStoredRecentSearches,
+  persistRecentSearch,
+  removeRecentSearch,
+  clearAllRecentSearches,
+} from '../../utils/searchHelpers';
 
 // Safe helper to extract a single product object from varied API response shapes
 const extractProductObject = (res) => {
@@ -69,6 +77,14 @@ export const ProductDetailScreen = () => {
   // Optimistic initial product from navigation state if available
   const [product, setProduct] = useState(location.state?.product || null);
   const [shop, setShop] = useState(location.state?.shop || null);
+
+  // Top Header Search, Autocomplete & Voice Search State (Home Dashboard Parity)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
@@ -136,6 +152,84 @@ export const ProductDetailScreen = () => {
       setShop((prev) => (prev ? { ...prev, ...payload } : prev));
     },
   });
+
+  // Fast Autocomplete Suggestions (150ms debounce - supports multi-character prefix matching)
+  useEffect(() => {
+    const clean = searchQuery.trim();
+    if (clean.length < 1) {
+      setSearchSuggestions([]);
+      setIsLoadingSuggestions(false);
+      return;
+    }
+
+    let active = true;
+    setIsLoadingSuggestions(true);
+    const timer = setTimeout(async () => {
+      try {
+        if (typeof productApi.getSearchSuggestions === 'function') {
+          const list = await productApi.getSearchSuggestions(clean, '', 6);
+          if (active) {
+            setSearchSuggestions(Array.isArray(list) ? list : []);
+          }
+        }
+      } catch {
+        if (active) setSearchSuggestions([]);
+      } finally {
+        if (active) setIsLoadingSuggestions(false);
+      }
+    }, 150);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  const handleSearchSubmit = (term) => {
+    const clean = (term ?? searchQuery).trim();
+    if (!clean) return;
+    setIsSuggestionsOpen(false);
+    setRecentSearches(persistRecentSearch(clean));
+    sessionState.saveScreenState('explore', {
+      activeTab: 'products',
+      selectedCategory: 'All',
+      searchTerm: clean,
+    });
+    navigate('/explore?q=' + encodeURIComponent(clean));
+  };
+
+  const toggleVoiceSearch = () => {
+    if (isVoiceListening) {
+      setIsVoiceListening(false);
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(isHindi ? 'आपका ब्राउज़र वॉयस सर्च सपोर्ट नहीं करता' : 'Voice search is not supported in this browser.');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => setIsVoiceListening(true);
+      recognition.onend = () => setIsVoiceListening(false);
+      recognition.onerror = () => setIsVoiceListening(false);
+      recognition.onresult = (event) => {
+        const transcript = event.results?.[0]?.[0]?.transcript;
+        if (transcript?.trim()) {
+          const cleanTranscript = transcript.trim();
+          setSearchQuery(cleanTranscript);
+          handleSearchSubmit(cleanTranscript);
+        }
+      };
+      recognition.start();
+    } catch {
+      setIsVoiceListening(false);
+    }
+  };
 
   // Always fetch fresh product & shop details from API (SWR pattern)
   useEffect(() => {
@@ -346,16 +440,92 @@ export const ProductDetailScreen = () => {
               <ArrowLeft size={22} />
             </button>
 
-            {/* Clickable Rounded Search Bar */}
+            {/* Interactive Search Bar matching Home Dashboard */}
             <div
-              className="product-detail-search-bar"
-              onClick={() => navigate('/explore')}
+              className="product-detail-search-wrapper"
               role="search"
             >
-              <Search size={18} className="search-bar-icon" />
-              <span className="search-bar-placeholder">
-                {isHindi ? 'सामान या दुकानें खोजें...' : 'Search for products'}
-              </span>
+              <form
+                className="product-detail-search-bar"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearchSubmit();
+                }}
+              >
+                {isLoadingSuggestions ? (
+                  <Loader2 size={17} className="search-bar-icon animate-spin" color="var(--color-primary, #2563eb)" />
+                ) : (
+                  <Search size={17} className="search-bar-icon" />
+                )}
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsSuggestionsOpen(true);
+                  }}
+                  onFocus={() => setIsSuggestionsOpen(true)}
+                  placeholder={isHindi ? 'सामान या दुकानें खोजें...' : 'Search for products'}
+                  className="product-detail-search-input"
+                  aria-label={isHindi ? 'सामान या दुकानें खोजें' : 'Search for products'}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchSuggestions([]);
+                    }}
+                    className="product-detail-search-clear-btn"
+                    title={isHindi ? 'हटाएं' : 'Clear search'}
+                    aria-label={isHindi ? 'हटाएं' : 'Clear search'}
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={toggleVoiceSearch}
+                  className="product-detail-search-mic-btn"
+                  title={isHindi ? 'बोलकर खोजें' : 'Voice search'}
+                  aria-label={isHindi ? 'बोलकर खोजें' : 'Voice search'}
+                  style={isVoiceListening ? { color: '#dc2626', backgroundColor: '#fee2e2' } : {}}
+                >
+                  {isVoiceListening ? <MicOff size={15} /> : <Mic size={15} />}
+                </button>
+              </form>
+
+              {/* Autocomplete & Recent Searches Dropdown */}
+              <SearchSuggestionsDropdown
+                isOpen={isSuggestionsOpen}
+                onClose={() => setIsSuggestionsOpen(false)}
+                query={searchQuery}
+                suggestions={searchSuggestions}
+                isLoading={isLoadingSuggestions}
+                onSelectSuggestion={(term) => {
+                  setSearchQuery(term);
+                  handleSearchSubmit(term);
+                }}
+                recentSearches={recentSearches}
+                onSelectRecent={(term) => {
+                  setSearchQuery(term);
+                  handleSearchSubmit(term);
+                }}
+                onRemoveRecent={(term) => {
+                  setRecentSearches(removeRecentSearch(term));
+                }}
+                onClearAllRecent={() => {
+                  setRecentSearches(clearAllRecentSearches());
+                }}
+                isHindi={isHindi}
+                style={{
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  right: 0,
+                  width: '100%',
+                  zIndex: 100,
+                }}
+              />
             </div>
 
             {/* Cart Trigger Button with badge */}

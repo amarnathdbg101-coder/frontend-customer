@@ -9,7 +9,7 @@ import { useScreenState } from '../../hooks/useScreenState.js';
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Store,
@@ -88,6 +88,8 @@ function extractArray(response, fieldName) {
 
 export const ExploreShopsScreen = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlQuery = searchParams.get('q') || searchParams.get('search') || '';
   const { coords, locationName, radiusKm, setRadiusKm, detectLocation, setManualLocation, isDetecting } = useLocation();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const { isProductSaved, toggleSaveProduct, isShopSaved, toggleSaveShop } = useSaved();
@@ -104,7 +106,7 @@ export const ExploreShopsScreen = () => {
   const [shops, setShops] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(savedExploreState.searchTerm || '');
+  const [searchTerm, setSearchTerm] = useState(urlQuery || savedExploreState.searchTerm || '');
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
   const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
   const [activeShelf, setActiveShelf] = useState(null); // When user clicks View All / See More on any shelf
@@ -136,6 +138,17 @@ export const ExploreShopsScreen = () => {
       searchTerm,
     });
   }, [activeTab, selectedCategory, searchTerm]);
+
+  // Synchronize URL search params (?q=... or ?search=...) into active search & trigger results
+  useEffect(() => {
+    const q = searchParams.get('q') || searchParams.get('search');
+    if (q && q.trim()) {
+      const cleanQ = q.trim();
+      setSearchTerm(cleanQ);
+      setActiveTab('products');
+      loadMarketplaceData(cleanQ);
+    }
+  }, [searchParams, loadMarketplaceData]);
 
   // Modals state
   const [inspectedProduct, setInspectedProduct] = useState(null);
