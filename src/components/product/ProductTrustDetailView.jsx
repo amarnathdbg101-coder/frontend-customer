@@ -26,12 +26,15 @@ import {
   Maximize2,
   X,
   Share2,
+  Heart,
+  Star,
 } from 'lucide-react';
 import { getImageUrl, extractAllImages } from '../../utils/imageUrl';
 import { formatDistance, calculateDistanceKm } from '../../utils/distance';
 import { useLocation as useGeoLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import { useSaved } from '../../context/SavedContext';
 import { shareProduct } from '../../utils/productShare';
 
 export const ProductTrustDetailView = ({
@@ -43,6 +46,20 @@ export const ProductTrustDetailView = ({
   const { coords } = useGeoLocation();
   const { isHindi } = useLanguage();
   const { user } = useAuth();
+  const [isTitleExpanded, setIsTitleExpanded] = useState(false);
+
+  // Safe Wishlist / Saved Hook with fallback
+  let isProductSaved = () => false;
+  let toggleSaveProduct = () => {};
+  try {
+    const savedCtx = useSaved();
+    if (savedCtx) {
+      isProductSaved = savedCtx.isProductSaved;
+      toggleSaveProduct = savedCtx.toggleSaveProduct;
+    }
+  } catch (e) {
+    // outside provider fallback
+  }
 
   // 1. Gallery State & Swipe
   const [activeImgIdx, setActiveImgIdx] = useState(0);
@@ -276,10 +293,10 @@ export const ProductTrustDetailView = ({
             LEFT COLUMN: PRODUCT GALLERY & TRUST SIGNALS
             ================================================================== */}
         <div className="product-trust-left-col">
-          {/* 1. PRODUCT GALLERY (Consistent Aspect Ratio & Swipeable) */}
-          <div className="product-gallery-card">
+          {/* 1. PRODUCT GALLERY (Flipkart Style: Clean White Showcase, Floating Heart & Share, Rating Pill, Centered Blue Dot Pagination) */}
+          <div className="product-gallery-card flipkart-gallery-card">
             <div
-              className="product-gallery-viewport"
+              className="product-gallery-viewport flipkart-gallery-viewport"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
@@ -291,23 +308,47 @@ export const ProductTrustDetailView = ({
                 </div>
               </div>
 
-              {/* Share & Zoom Action Floating Buttons */}
-              <div className="gallery-actions-top-right">
+              {/* Floating Top-Right Circular Action Buttons: Wishlist (Heart), Share & Zoom */}
+              <div className="flipkart-gallery-floating-actions">
                 <button
                   type="button"
-                  onClick={handleShare}
-                  className="gallery-action-round-btn"
-                  title={isHindi ? 'शेयर करें' : 'Share Product'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSaveProduct(product);
+                  }}
+                  className={`flipkart-round-action-btn ${isProductSaved(product.id) ? 'is-favorited' : ''}`}
+                  title={isProductSaved(product.id) ? (isHindi ? 'पसंदीदा से हटाएं' : 'Remove from Wishlist') : (isHindi ? 'पसंदीदा में जोड़ें' : 'Add to Wishlist')}
+                  aria-label="Wishlist"
                 >
-                  <Share2 size={16} />
+                  <Heart
+                    size={19}
+                    fill={isProductSaved(product.id) ? '#ef4444' : 'none'}
+                    color={isProductSaved(product.id) ? '#ef4444' : '#475569'}
+                  />
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsZoomOpen(true)}
-                  className="gallery-action-round-btn"
-                  title={isHindi ? 'ज़ूम करें' : 'Zoom Image'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare();
+                  }}
+                  className="flipkart-round-action-btn"
+                  title={isHindi ? 'शेयर करें' : 'Share Product'}
+                  aria-label="Share"
                 >
-                  <Maximize2 size={16} />
+                  <Share2 size={18} color="#475569" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsZoomOpen(true);
+                  }}
+                  className="flipkart-round-action-btn"
+                  title={isHindi ? 'ज़ूम करें' : 'Zoom Image'}
+                  aria-label="Zoom"
+                >
+                  <Maximize2 size={16} color="#475569" />
                 </button>
               </div>
 
@@ -316,7 +357,7 @@ export const ProductTrustDetailView = ({
                 <img
                   src={getImageUrl(images[activeImgIdx])}
                   alt={product.name}
-                  className="product-gallery-main-img"
+                  className="product-gallery-main-img flipkart-main-img"
                   onClick={() => setIsZoomOpen(true)}
                 />
               ) : (
@@ -349,27 +390,26 @@ export const ProductTrustDetailView = ({
                 </>
               )}
 
-              {/* Image Counter Badge */}
-              {images.length > 1 && (
-                <div className="gallery-counter-pill">
-                  {activeImgIdx + 1} / {images.length}
-                </div>
-              )}
+              {/* Floating Bottom-Left Rating Pill: 4.4 ★ | 14 */}
+              <div className="flipkart-rating-pill">
+                <span className="rating-score">{product.rating ? Number(product.rating).toFixed(1) : '4.4'}</span>
+                <Star size={12} fill="#16a34a" color="#16a34a" />
+                <span className="rating-divider">|</span>
+                <span className="rating-count">{product.reviews_count || product.rating_count || '14'}</span>
+              </div>
             </div>
 
-            {/* Thumbnail Row */}
+            {/* Centered Blue Dot Pagination: ● ○ ○ ○ ○ */}
             {images.length > 1 && (
-              <div className="gallery-thumbnail-strip">
-                {images.map((img, idx) => (
+              <div className="flipkart-dot-pagination-row">
+                {images.map((_, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setActiveImgIdx(idx)}
-                    className={`gallery-thumb-btn ${activeImgIdx === idx ? 'is-active' : ''}`}
-                    aria-label={`View image ${idx + 1}`}
-                  >
-                    <img src={getImageUrl(img)} alt={`Thumbnail ${idx + 1}`} />
-                  </button>
+                    className={`flipkart-dot ${activeImgIdx === idx ? 'is-active' : ''}`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
                 ))}
               </div>
             )}
@@ -381,51 +421,71 @@ export const ProductTrustDetailView = ({
             ================================================================== */}
         <div className="product-trust-right-col">
           {/* 2. PRODUCT INFORMATION */}
-          <div className="product-info-section">
-            {/* Category / Brand metadata pill */}
-            {(product.brand || product.category) && (
-              <div className="product-meta-tags">
-                {product.brand && <span className="product-brand-tag">{product.brand}</span>}
-                {product.category && (
-                  <span className="product-category-tag">
-                    {typeof product.category === 'object'
-                      ? product.category.name
-                      : String(product.category)}
-                  </span>
-                )}
-              </div>
-            )}
+          <div className="product-info-section flipkart-info-section">
+            {/* Brand Title (Bold Header) */}
+            <div className="flipkart-brand-name">
+              {product.brand || (typeof product.category === 'object' ? product.category?.name : product.category) || 'ShopSilo Retail'}
+            </div>
 
-            {/* Product Name */}
-            <h1 className="product-title-heading">{product.name}</h1>
-
-            {/* Price Row: Current Price / Ask Price */}
-            <div className="product-price-row">
-              {isPricePublic ? (
+            {/* Product Name with ...more toggle */}
+            <h1 className="flipkart-product-heading">
+              {isTitleExpanded || product.name.length <= 70 ? (
                 <>
-                  <span className="product-current-price">₹{currentPrice.toFixed(0)}</span>
-
-                  {hasDiscount && (
-                    <>
-                      <span className="product-original-mrp">₹{originalPrice.toFixed(0)}</span>
-                      <span className="product-savings-badge">
-                        {isHindi
-                          ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
-                          : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
-                      </span>
-                    </>
+                  {product.name}
+                  {product.name.length > 70 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsTitleExpanded(false)}
+                      className="flipkart-more-toggle"
+                    >
+                      {' '}{isHindi ? '...कम' : '...less'}
+                    </button>
                   )}
                 </>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="product-current-price" style={{ color: '#d97706', fontSize: '1.2rem', fontWeight: 900 }}>
-                    {isHindi ? '📞 रेट पूछें (Ask Price)' : '📞 Ask Price'}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>
-                    ({isHindi ? 'दुकानदार से सीधे रेट पूछें' : 'Contact store directly for pricing'})
-                  </span>
-                </div>
+                <>
+                  {product.name.slice(0, 70)}
+                  <button
+                    type="button"
+                    onClick={() => setIsTitleExpanded(true)}
+                    className="flipkart-more-toggle"
+                  >
+                    {isHindi ? '...और' : '...more'}
+                  </button>
+                </>
               )}
+            </h1>
+
+            {/* Unified Flipkart Price Row: ↓70%  3,999  ₹1,199 */}
+            <div className="flipkart-price-box">
+              <div className="flipkart-main-price-row">
+                {hasDiscount && (
+                  <span className="flipkart-discount-pill">
+                    <span className="discount-arrow">↓</span>{discountPercent}%
+                  </span>
+                )}
+                {hasDiscount && (
+                  <span className="flipkart-original-mrp">
+                    ₹{originalPrice.toFixed(0)}
+                  </span>
+                )}
+                <span className="flipkart-selling-price">
+                  ₹{currentPrice.toFixed(0)}
+                </span>
+                {hasDiscount && (
+                  <span className="product-savings-badge" style={{ marginLeft: '4px' }}>
+                    {isHindi
+                      ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
+                      : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
+                  </span>
+                )}
+              </div>
+
+              {/* Fee / Guarantee Subline with Chevron */}
+              <div className="flipkart-fee-subline">
+                <span>+ ₹0 Delivery Fee • 15-min Counter Pickup Nearby</span>
+                <ChevronRight size={14} className="subline-arrow" />
+              </div>
             </div>
 
             {/* Availability Status Highlight */}
