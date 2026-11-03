@@ -19,6 +19,8 @@ import {
   AlertCircle,
   MessageCircle,
   Maximize2,
+  Heart,
+  Star,
   Clock,
   ShieldCheck,
   Share2,
@@ -28,6 +30,7 @@ import { QuantityStepper } from '../ui';
 import { formatCurrency } from '../../utils/format';
 import { useCart } from '../../context/CartContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useSaved } from '../../context/SavedContext';
 import { shareProduct } from '../../utils/productShare';
 
 export const ProductDetailModal = ({
@@ -43,6 +46,20 @@ export const ProductDetailModal = ({
   const [cartQty, setCartQty] = useState(1);
   const [addedToast, setAddedToast] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [isTitleExpanded, setIsTitleExpanded] = useState(false);
+
+  // Safe Wishlist hook with fallback
+  let isProductSaved = () => false;
+  let toggleSaveProduct = () => {};
+  try {
+    const savedCtx = useSaved();
+    if (savedCtx) {
+      isProductSaved = savedCtx.isProductSaved;
+      toggleSaveProduct = savedCtx.toggleSaveProduct;
+    }
+  } catch (e) {
+    // outside provider fallback
+  }
 
   // Touch Swipe Gesture State
   const touchStartRef = useRef({ x: 0, y: 0 });
@@ -449,7 +466,7 @@ export const ProductDetailModal = ({
               alignItems: 'start',
             }}
           >
-            {/* LEFT COLUMN: HERO IMAGE STAGE WITH TOUCH FINGER SWIPING */}
+            {/* LEFT COLUMN: HERO IMAGE STAGE WITH TOUCH FINGER SWIPING (Flipkart Style) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0, maxWidth: '100%', width: '100%' }}>
               <div
                 onTouchStart={handleTouchStart}
@@ -457,9 +474,9 @@ export const ProductDetailModal = ({
                 onTouchEnd={handleTouchEnd}
                 style={{
                   width: '100%',
-                  height: '300px',
-                  borderRadius: '12px',
-                  backgroundColor: '#f8fafc',
+                  height: '320px',
+                  borderRadius: '16px',
+                  backgroundColor: '#ffffff',
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
@@ -469,11 +486,55 @@ export const ProductDetailModal = ({
                   cursor: activeImage ? 'zoom-in' : 'default',
                   touchAction: 'pan-y',
                   userSelect: 'none',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
                 }}
                 onClick={() => {
                   if (activeImage) setIsZoomOpen(true);
                 }}
               >
+                {/* Floating Top-Left Available Now Status Pill */}
+                <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10 }}>
+                  <div className="available-now-pill" style={{ padding: '4px 10px', fontSize: '0.72rem' }}>
+                    <span className="live-stock-pulse-dot" />
+                    <span>{isHindi ? 'उपलब्ध है' : 'Available Now'}</span>
+                  </div>
+                </div>
+
+                {/* Floating Top-Right Circular Action Buttons: Wishlist, Share, Zoom */}
+                <div className="flipkart-gallery-floating-actions" style={{ top: '12px', right: '12px', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSaveProduct(product);
+                    }}
+                    className={`flipkart-round-action-btn ${isProductSaved(product.id) ? 'is-favorited' : ''}`}
+                    style={{ width: '36px', height: '36px' }}
+                    title={isProductSaved(product.id) ? (isHindi ? 'पसंदीदा से हटाएं' : 'Remove from Wishlist') : (isHindi ? 'पसंदीदा में जोड़ें' : 'Add to Wishlist')}
+                    aria-label="Wishlist"
+                  >
+                    <Heart
+                      size={17}
+                      fill={isProductSaved(product.id) ? '#ef4444' : 'none'}
+                      color={isProductSaved(product.id) ? '#ef4444' : '#475569'}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShareProduct();
+                    }}
+                    className="flipkart-round-action-btn"
+                    style={{ width: '36px', height: '36px' }}
+                    title={isHindi ? 'शेयर करें' : 'Share Product'}
+                    aria-label="Share"
+                  >
+                    <Share2 size={16} color="#475569" />
+                  </button>
+                </div>
+
+                {/* Main Product Image */}
                 {activeImage ? (
                   <img
                     src={getImageUrl(activeImage)}
@@ -482,7 +543,7 @@ export const ProductDetailModal = ({
                       width: '100%',
                       height: '100%',
                       objectFit: 'contain',
-                      padding: '16px',
+                      padding: '18px',
                       transition: 'transform 0.2s ease',
                       pointerEvents: 'none',
                     }}
@@ -491,61 +552,29 @@ export const ProductDetailModal = ({
                   <Package size={54} color="#94a3b8" style={{ opacity: 0.3 }} />
                 )}
 
-                {/* Minimal Discount Badge */}
-                {hasDiscount && discountPct > 0 && (
-                  <div style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 2 }}>
-                    <span style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-                      {discountPct}% OFF
-                    </span>
-                  </div>
-                )}
-
-                {/* Active Dots Indicator for Multi-Image Swiping */}
-                {images.length > 1 && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '10px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      backgroundColor: 'rgba(15, 23, 42, 0.65)',
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      backdropFilter: 'blur(4px)',
-                      zIndex: 3,
-                    }}
-                  >
-                    {images.map((_, idx) => (
-                      <span
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedImageIdx(idx);
-                        }}
-                        style={{
-                          width: selectedImageIdx === idx ? '14px' : '6px',
-                          height: '6px',
-                          borderRadius: '3px',
-                          backgroundColor: selectedImageIdx === idx ? '#ffffff' : 'rgba(255, 255, 255, 0.4)',
-                          transition: 'all 0.2s ease',
-                          cursor: 'pointer',
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Zoom hint */}
-                {activeImage && images.length <= 1 && (
-                  <div style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.7)', color: '#ffffff', borderRadius: '6px', padding: '4px 8px', fontSize: '0.68rem', fontWeight: 700, pointerEvents: 'none' }}>
-                    <Maximize2 size={11} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                    Zoom
-                  </div>
-                )}
+                {/* Floating Bottom-Left Rating Pill: 4.4 ★ | 14 */}
+                <div className="flipkart-rating-pill" style={{ bottom: '12px', left: '12px', padding: '3px 8px', fontSize: '0.78rem' }}>
+                  <span className="rating-score">{product.rating ? Number(product.rating).toFixed(1) : '4.4'}</span>
+                  <Star size={11} fill="#16a34a" color="#16a34a" />
+                  <span className="rating-divider">|</span>
+                  <span className="rating-count">{product.reviews_count || product.rating_count || '14'}</span>
+                </div>
               </div>
+
+              {/* Centered Blue Dot Pagination: ● ○ ○ ○ */}
+              {images.length > 1 && (
+                <div className="flipkart-dot-pagination-row" style={{ padding: '4px 0 2px 0' }}>
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedImageIdx(idx)}
+                      className={`flipkart-dot ${selectedImageIdx === idx ? 'is-active' : ''}`}
+                      aria-label={`Slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Thumbnails */}
               {images.length > 1 && (
@@ -569,20 +598,20 @@ export const ProductDetailModal = ({
                       key={idx}
                       onClick={() => setSelectedImageIdx(idx)}
                       style={{
-                        width: '56px',
-                        height: '56px',
-                        flex: '0 0 56px',
+                        width: '54px',
+                        height: '54px',
+                        flex: '0 0 54px',
                         flexShrink: 0,
-                        borderRadius: '8px',
-                        backgroundColor: '#f8fafc',
-                        border: selectedImageIdx === idx ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        backgroundColor: '#ffffff',
+                        border: selectedImageIdx === idx ? '2px solid #2563eb' : '1px solid #e2e8f0',
                         overflow: 'hidden',
                         cursor: 'pointer',
-                        padding: '4px',
+                        padding: '3px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        opacity: selectedImageIdx === idx ? 1 : 0.6,
+                        opacity: selectedImageIdx === idx ? 1 : 0.65,
                         transition: 'all 0.15s ease',
                       }}
                     >
@@ -594,40 +623,68 @@ export const ProductDetailModal = ({
             </div>
 
             {/* RIGHT COLUMN: PRODUCT INFO & ACTIONS */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                {brand && (
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {brand}
-                  </span>
-                )}
-                <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0', lineHeight: 1.3 }}>
-                  {product.name}
+                <div className="flipkart-brand-name">
+                  {brand || (typeof product.category === 'object' ? product.category?.name : product.category) || 'ShopSilo Retail'}
+                </div>
+                <h1 className="flipkart-product-heading">
+                  {isTitleExpanded || product.name.length <= 70 ? (
+                    <>
+                      {product.name}
+                      {product.name.length > 70 && (
+                        <button
+                          type="button"
+                          onClick={() => setIsTitleExpanded(false)}
+                          className="flipkart-more-toggle"
+                        >
+                          {' '}{isHindi ? '...कम' : '...less'}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {product.name.slice(0, 70)}
+                      <button
+                        type="button"
+                        onClick={() => setIsTitleExpanded(true)}
+                        className="flipkart-more-toggle"
+                      >
+                        {isHindi ? '...और' : '...more'}
+                      </button>
+                    </>
+                  )}
                 </h1>
               </div>
 
-              {/* Pricing Hero Card */}
-              <div style={{ padding: '14px 16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              {/* Flipkart Pricing Hero Card */}
+              <div className="flipkart-price-box" style={{ padding: '12px 14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', margin: 0 }}>
                 {isPricePublic ? (
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
-                        {formatCurrency(price)}
-                      </span>
+                    <div className="flipkart-main-price-row">
                       {hasDiscount && (
-                        <span style={{ fontSize: '1rem', color: '#94a3b8', textDecoration: 'line-through', fontWeight: 500 }}>
+                        <span className="flipkart-discount-pill">
+                          <span className="discount-arrow">↓</span>{discountPct}%
+                        </span>
+                      )}
+                      {hasDiscount && (
+                        <span className="flipkart-original-mrp">
                           {formatCurrency(comparePrice)}
                         </span>
                       )}
+                      <span className="flipkart-selling-price">
+                        {formatCurrency(price)}
+                      </span>
                       {hasDiscount && savings > 0 && (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '3px 8px', borderRadius: '6px' }}>
+                        <span className="product-savings-badge" style={{ marginLeft: '4px' }}>
                           Save {formatCurrency(savings)}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <ShieldCheck size={13} color="#16a34a" />
-                      <span>{isHindi ? 'सभी कर शामिल' : 'Inclusive of all taxes'}</span>
+                    {/* Fee / Pickup Subline */}
+                    <div className="flipkart-fee-subline">
+                      <span>+ ₹0 Delivery Fee • 15-min Counter Pickup Nearby</span>
+                      <ChevronRight size={14} className="subline-arrow" />
                     </div>
                   </div>
                 ) : (
