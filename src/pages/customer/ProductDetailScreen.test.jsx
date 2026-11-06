@@ -36,6 +36,7 @@ vi.mock('../../api/product.api', () => ({
     getBySlug: vi.fn(),
     listByShopSlug: vi.fn(),
     listProducts: vi.fn(),
+    getProductVariants: vi.fn().mockResolvedValue([]),
   },
 }));
 

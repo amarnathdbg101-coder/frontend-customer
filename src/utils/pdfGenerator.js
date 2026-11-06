@@ -49,7 +49,7 @@ export function printPOSInvoice({ bill, shop, format = 'standard' }) {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Nirmala UI', 'Segoe UI', 'Noto Sans Devanagari', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
       color: #0f172a;
     }
     body {
@@ -328,7 +328,7 @@ export function printKhataStatement({ customer, transactions = [], shop }) {
   <title>Khata Statement - ${customerName}</title>
   <style>
     @page { margin: 12mm; size: A4 portrait; }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nirmala UI', 'Segoe UI', 'Noto Sans Devanagari', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif; color: #0f172a; }
     body { padding: 20px; background: #ffffff; font-size: 12px; line-height: 1.4; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 16px; }
     .store-title { font-size: 22px; font-weight: 900; color: #1e1b4b; text-transform: uppercase; }
@@ -471,7 +471,7 @@ export function printProcurementSheet({ items = [], shop, filterName = 'All Proc
   <title>Mandi Procurement List - ${shopName}</title>
   <style>
     @page { margin: 10mm; size: A4 portrait; }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nirmala UI', 'Segoe UI', 'Noto Sans Devanagari', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif; color: #0f172a; }
     body { padding: 16px; background: #ffffff; font-size: 11.5px; line-height: 1.4; }
     .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 14px; }
     .title { font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase; }

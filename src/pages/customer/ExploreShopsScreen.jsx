@@ -108,7 +108,7 @@ export const ExploreShopsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(urlQuery || savedExploreState.searchTerm || '');
   const [selectedCategory, setSelectedCategory] = useState(savedExploreState.selectedCategory || 'All');
-  const [activeTab, setActiveTab] = useState(savedExploreState.activeTab || 'products');
+  const [activeTab, setActiveTab] = useState(urlQuery ? 'products' : (savedExploreState.activeTab || 'products'));
   const [activeShelf, setActiveShelf] = useState(null); // When user clicks View All / See More on any shelf
   const [sortBy, setSortBy] = useState('relevant');
   const [quickFilter, setQuickFilter] = useState('ALL');
@@ -138,17 +138,6 @@ export const ExploreShopsScreen = () => {
       searchTerm,
     });
   }, [activeTab, selectedCategory, searchTerm]);
-
-  // Synchronize URL search params (?q=... or ?search=...) into active search & trigger results
-  useEffect(() => {
-    const q = searchParams.get('q') || searchParams.get('search');
-    if (q && q.trim()) {
-      const cleanQ = q.trim();
-      setSearchTerm(cleanQ);
-      setActiveTab('products');
-      loadMarketplaceData(cleanQ);
-    }
-  }, [searchParams, loadMarketplaceData]);
 
   // Modals state
   const [inspectedProduct, setInspectedProduct] = useState(null);
@@ -374,8 +363,23 @@ export const ExploreShopsScreen = () => {
     }
   }, [coords?.lat, coords?.lng, radiusKm, selectedCategory, quickFilter, showOpenOnly, sortBy]);
 
+  // Synchronize URL search params (?q=... or ?search=...) into active search & trigger results
   useEffect(() => {
-    loadMarketplaceData();
+    const q = searchParams.get('q') || searchParams.get('search');
+    if (q && q.trim()) {
+      const cleanQ = q.trim();
+      setSearchTerm((prev) => (prev !== cleanQ ? cleanQ : prev));
+      setActiveTab('products');
+      loadMarketplaceData(cleanQ);
+    }
+  }, [searchParams, loadMarketplaceData]);
+
+  useEffect(() => {
+    // If URL has search query, the searchParams sync effect handles loading with cleanQ
+    const hasUrlQuery = Boolean((searchParams.get('q') || searchParams.get('search'))?.trim());
+    if (!hasUrlQuery) {
+      loadMarketplaceData();
+    }
 
     // Memory-Safe Event-Driven Cache Invalidation Subscription
     const unsubShops = cacheEvents.on(CACHE_EVENTS.SHOPS_MUTATED, () => loadMarketplaceData());
@@ -385,7 +389,7 @@ export const ExploreShopsScreen = () => {
       unsubShops();
       unsubProds();
     };
-  }, [loadMarketplaceData]);
+  }, [loadMarketplaceData, searchParams]);
 
   // 1a. Dual-Tier Hybrid Database Search (bypasses 20-item local limit & queries PostgreSQL database)
   useEffect(() => {

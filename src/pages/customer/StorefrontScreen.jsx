@@ -44,6 +44,14 @@ import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { isProductInCategory } from '../../utils/categoryMatcher';
 import { getImageUrl } from '../../utils/imageUrl';
+import {
+  getStoredPersona,
+  setExplicitPersona,
+  trackPersonaEngagement,
+  rankProductsByPersona,
+  PERSONA_META,
+  PERSONA_TYPES,
+} from '../../utils/personaEngine';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState, OverflowMenu } from '../../components/ui';
@@ -101,6 +109,8 @@ export const StorefrontScreen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [quickFilter, setQuickFilter] = useState('ALL');
+  const [selectedSize, setSelectedSize] = useState('ALL');
+  const [userPersona, setUserPersona] = useState(() => getStoredPersona().persona);
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [reservationSuccess, setReservationSuccess] = useState(null);
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
@@ -352,6 +362,7 @@ export const StorefrontScreen = () => {
           sort_by: sortParam,
           min_price: minPrice,
           max_price: maxPrice,
+          size: selectedSize !== 'ALL' ? selectedSize : undefined,
         }),
       ]);
 
@@ -391,13 +402,14 @@ export const StorefrontScreen = () => {
         };
       });
 
-      setProducts(normalizedProds);
+      const rankedProds = rankProductsByPersona(normalizedProds, userPersona);
+      setProducts(rankedProds);
     } catch (err) {
       console.error('Failed to load shop storefront:', err);
     } finally {
       setLoading(false);
     }
-  }, [slug, selectedCategory, quickFilter, sortBy, debouncedSearch]);
+  }, [slug, selectedCategory, quickFilter, selectedSize, userPersona, sortBy, debouncedSearch]);
 
   useEffect(() => {
     if (slug) {
@@ -446,6 +458,7 @@ export const StorefrontScreen = () => {
         sort_by: sortParam,
         min_price: minPrice,
         max_price: maxPrice,
+        size: selectedSize !== 'ALL' ? selectedSize : undefined,
       });
 
       const rawProdList = extractArray(res, 'products');
@@ -1643,6 +1656,104 @@ export const StorefrontScreen = () => {
         </div>
       )}
 
+      {/* 🎯 Zero-Click Persona Affinity Filter */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          overflowX: 'auto',
+          paddingBottom: '6px',
+          marginBottom: '6px',
+          scrollbarWidth: 'none',
+        }}
+      >
+        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+          {isHindi ? 'पसंद:' : 'For You:'}
+        </span>
+        {Object.entries(PERSONA_META).map(([pKey, meta]) => {
+          const isSelected = userPersona === pKey;
+          return (
+            <button
+              key={pKey}
+              type="button"
+              onClick={() => {
+                const res = setExplicitPersona(pKey);
+                setUserPersona(res.persona);
+                setProducts((prev) => rankProductsByPersona(prev, pKey));
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '16px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                border: isSelected
+                  ? '1.5px solid var(--color-primary, #4f46e5)'
+                  : '1.5px solid var(--border-subtle, #e2e8f0)',
+                backgroundColor: isSelected
+                  ? 'var(--color-primary-light, #f0f4ff)'
+                  : 'var(--bg-card, #ffffff)',
+                color: isSelected ? 'var(--color-primary, #4f46e5)' : 'var(--text-secondary, #64748b)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>{meta.icon}</span>
+              <span>{isHindi ? meta.labelHi : meta.labelEn}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 👗 Smart Size-First Query Bar (Cloth & Garments Retail) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px',
+          overflowX: 'auto',
+          paddingBottom: '6px',
+          marginBottom: '8px',
+          scrollbarWidth: 'none',
+        }}
+      >
+        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+          {isHindi ? 'साइज़:' : 'Size:'}
+        </span>
+        {['ALL', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size'].map((sz) => {
+          const isSelected = selectedSize === sz;
+          return (
+            <button
+              key={sz}
+              type="button"
+              onClick={() => setSelectedSize(sz)}
+              style={{
+                padding: '3px 9px',
+                borderRadius: '8px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+                border: isSelected
+                  ? '1.5px solid var(--color-primary, #4f46e5)'
+                  : '1.5px solid var(--border-subtle, #e2e8f0)',
+                backgroundColor: isSelected
+                  ? 'var(--color-primary, #4f46e5)'
+                  : 'var(--bg-card, #ffffff)',
+                color: isSelected ? '#ffffff' : 'var(--text-secondary, #64748b)',
+                cursor: 'pointer',
+                transition: 'all 0.12s ease',
+              }}
+            >
+              {sz === 'ALL' ? (isHindi ? 'सभी साइज़' : 'All Sizes') : sz}
+            </button>
+          );
+        })}
+      </div>
+
       {/* 3. Dynamic Category Filter Chips */}
       {availableCategories.length > 0 && (
         <div
@@ -1688,7 +1799,13 @@ export const StorefrontScreen = () => {
               <button
                 key={cat}
                 type="button"
-                onClick={() => setSelectedCategory(isSelected ? 'ALL' : cat)}
+                onClick={() => {
+                  const next = isSelected ? 'ALL' : cat;
+                  setSelectedCategory(next);
+                  if (next !== 'ALL') {
+                    trackPersonaEngagement(next, 2);
+                  }
+                }}
                 style={{
                   padding: '6px 12px',
                   borderRadius: '20px',
