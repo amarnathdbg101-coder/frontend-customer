@@ -72,8 +72,13 @@ export const CartDrawer = () => {
 `;
 
     items.forEach((item, i) => {
-      text += `${i + 1}. *${item.name}* x ${item.quantity} = ₹${item.price * item.quantity}
-`;
+      const vSize = item.size || item.variant?.size;
+      const vColor = item.color || item.variant?.color;
+      const vShade = item.shade || item.variant?.shade_code;
+      const vInfo = [vSize ? `Size: ${vSize}` : '', vColor ? `Color: ${vColor}` : '', vShade ? `Shade: ${vShade}` : ''].filter(Boolean).join(', ');
+      const vTag = vInfo ? ` [${vInfo}]` : '';
+
+      text += `${i + 1}. *${item.name}*${vTag} x ${item.quantity} = ₹${item.price * item.quantity}\n`;
     });
 
     text += isHindi
@@ -102,9 +107,17 @@ export const CartDrawer = () => {
 
 `;
 
+    const shopUpi = items[0]?.shop_upi || items[0]?.upi_id || items[0]?.shop?.upi_id || '';
+    if (shopUpi) {
+      const upiUrl = `upi://pay?pa=${shopUpi}&pn=${encodeURIComponent(shopName)}&am=${finalTotal || subtotal}&cu=INR&tn=ShopSilo_Order`;
+      text += isHindi
+        ? `\n\n💳 *सीधा UPI भुगतान लिंक:* ${upiUrl}`
+        : `\n\n💳 *Direct UPI Instant Payment Link:* ${upiUrl}`;
+    }
+
     text += isHindi
-      ? `नमस्ते ${shopName}! क्या यह ऑर्डर 10-सेकंड काउंटर पिकअप के लिए तैयार और उपलब्ध है?`
-      : `Hello ${shopName}! Is this order ready for 10-second instant counter pickup?`;
+      ? `\n\nनमस्ते ${shopName}! क्या यह ऑर्डर 10-सेकंड काउंटर पिकअप के लिए तैयार और उपलब्ध है?`
+      : `\n\nHello ${shopName}! Is this order ready for 10-second instant counter pickup?`;
 
     const phone = items[0]?.shop_phone ? items[0].shop_phone.replace(/[^0-9]/g, '') : '';
     const url = phone.length >= 10
@@ -384,6 +397,22 @@ export const CartDrawer = () => {
                           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {item.shop_name}
                           </span>
+                        </div>
+                      )}
+
+                      {/* Variant Badges (Size, Color/Shade) */}
+                      {(item.size || item.color || item.shade || item.variant?.size || item.variant?.color) && (
+                        <div style={{ display: 'flex', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
+                          {(item.size || item.variant?.size) && (
+                            <span style={{ fontSize: '0.64rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', backgroundColor: 'var(--color-primary-light, #eef2ff)', color: 'var(--color-primary, #4f46e5)' }}>
+                              Size: {item.size || item.variant?.size}
+                            </span>
+                          )}
+                          {(item.color || item.variant?.color) && (
+                            <span style={{ fontSize: '0.64rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', backgroundColor: 'var(--border-subtle, #f1f5f9)', color: 'var(--text-secondary, #64748b)' }}>
+                              {item.color || item.variant?.color}
+                            </span>
+                          )}
                         </div>
                       )}
 

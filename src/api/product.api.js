@@ -27,6 +27,16 @@ export const productApi = {
     return productApi.getBySlug(slug);
   },
 
+  // Public/Customer: Product Variants (Sizes, Colors, Shades & Live Stock)
+  getProductVariants: async (productId) => {
+    try {
+      const res = await client.get(`/products/${productId}/variants`);
+      return res?.data?.variants || res?.variants || res?.data || [];
+    } catch {
+      return [];
+    }
+  },
+
   // Public: Shop ke products list karna
   listByShopSlug: async (slug, params = {}) => {
     const res = await client.get(`/shops/${slug}/products`, { params });

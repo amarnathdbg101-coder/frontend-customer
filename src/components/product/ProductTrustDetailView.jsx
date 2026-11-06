@@ -14,7 +14,7 @@
  * - Clear visual hierarchy and high readability
  */
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -36,6 +36,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { shareProduct } from '../../utils/productShare';
+import { productApi } from '../../api/product.api';
+import { trackPersonaEngagement } from '../../utils/personaEngine';
 
 export const ProductTrustDetailView = ({
   product,
@@ -81,6 +83,75 @@ export const ProductTrustDetailView = ({
   // 3. Share Toast
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // 4. Apparel & Beauty Variants State (Size / Color / Shade Matrix)
+  const [variants, setVariants] = useState([]);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+
+  useEffect(() => {
+    if (!product?.id) return;
+    try {
+      trackPersonaEngagement(product.category || product.name, 3);
+    } catch {
+      // Safe fallback
+    }
+
+    let isMounted = true;
+    if (typeof productApi?.getProductVariants === 'function') {
+      productApi.getProductVariants(product.id)
+        .then((vars) => {
+          if (!isMounted || !Array.isArray(vars)) return;
+          setVariants(vars);
+          if (vars.length > 0) {
+            const firstInStock = vars.find((v) => (v.available_qty || 0) > 0) || vars[0];
+            setSelectedVariant(firstInStock);
+            if (firstInStock.size) setSelectedSize(firstInStock.size);
+            if (firstInStock.color) setSelectedColor(firstInStock.color);
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [product?.id]);
+
+  const availableSizes = useMemo(() => {
+    if (!variants.length) return [];
+    return Array.from(new Set(variants.map((v) => v.size).filter(Boolean)));
+  }, [variants]);
+
+  const availableColors = useMemo(() => {
+    if (!variants.length) return [];
+    const colorMap = new Map();
+    variants.forEach((v) => {
+      if (v.color && !colorMap.has(v.color)) {
+        colorMap.set(v.color, {
+          color: v.color,
+          hex: v.color_hex || '#4f46e5',
+          shade: v.shade_code,
+        });
+      }
+    });
+    return Array.from(colorMap.values());
+  }, [variants]);
+
+  const handleSelectSize = (sz) => {
+    setSelectedSize(sz);
+    const match = variants.find((v) => v.size === sz && (!selectedColor || v.color === selectedColor))
+      || variants.find((v) => v.size === sz);
+    if (match) setSelectedVariant(match);
+  };
+
+  const handleSelectColor = (col) => {
+    setSelectedColor(col);
+    const match = variants.find((v) => v.color === col && (!selectedSize || v.size === selectedSize))
+      || variants.find((v) => v.color === col);
+    if (match) setSelectedVariant(match);
+  };
+
   // References for scrolling to compare section
   const compareSectionRef = useRef(null);
 
@@ -90,8 +161,8 @@ export const ProductTrustDetailView = ({
     return extractAllImages(product.images || product.image || product.image_url);
   }, [product]);
 
-  // Pricing & Savings computation
-  const currentPrice = Number(product?.price || product?.selling_price || 0);
+  // Pricing & Savings computation (Variant Price Override Awareness)
+  const currentPrice = Number(selectedVariant?.price && selectedVariant.price > 0 ? selectedVariant.price : (product?.price || product?.selling_price || 0));
   const originalPrice = Number(product?.compare_price || product?.mrp || 0);
   const isPricePublic =
     product?.is_price_public !== false &&
@@ -205,6 +276,8 @@ export const ProductTrustDetailView = ({
     price: currentPrice,
   };
 
+  const activeReserveShop = selectedShopForReserve || bestOffer;
+
   // Gallery Swipe Handlers
   const handleTouchStart = (e) => {
     touchStartRef.current = {
@@ -264,7 +337,17 @@ export const ProductTrustDetailView = ({
 
     try {
       const res = await onReserve?.({
-        product,
+        product: {
+          ...product,
+          price: currentPrice,
+          variant: selectedVariant,
+          selected_size: selectedSize || selectedVariant?.size,
+          selected_color: selectedColor || selectedVariant?.color,
+        },
+        variant_id: selectedVariant?.id,
+        size: selectedSize || selectedVariant?.size,
+        color: selectedColor || selectedVariant?.color,
+        shade: selectedVariant?.shade_code,
         shop: selectedShopForReserve,
         quantity: reserveQty,
         hold_hours: holdHours,
@@ -497,6 +580,148 @@ export const ProductTrustDetailView = ({
                   : '🟢 Available Now — Ready for 15-minute pickup nearby'}
               </span>
             </div>
+
+            {/* 👗 Apparel Size & Beauty Shade Variant Matrix */}
+            {(availableSizes.length > 0 || availableColors.length > 0) && (
+              <div
+                style={{
+                  padding: '12px 14px',
+                  backgroundColor: 'var(--bg-surface, #ffffff)',
+                  border: '1.5px solid var(--border-subtle, #e2e8f0)',
+                  borderRadius: '14px',
+                  marginBottom: '10px',
+                }}
+              >
+                {/* Available Sizes */}
+                {availableSizes.length > 0 && (
+                  <div style={{ marginBottom: availableColors.length > 0 ? '12px' : '0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {isHindi ? 'साइज़ चुनें (Select Size)' : 'Select Size'}
+                      </span>
+                      {selectedSize && (
+                        <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--color-primary, #4f46e5)' }}>
+                          {isHindi ? `चुना गया: ${selectedSize}` : `Selected: ${selectedSize}`}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {availableSizes.map((sz) => {
+                        const isSelected = selectedSize === sz;
+                        const varItem = variants.find((v) => v.size === sz && (!selectedColor || v.color === selectedColor))
+                          || variants.find((v) => v.size === sz);
+                        const qty = varItem?.available_qty ?? 1;
+                        const isOutOfStock = qty <= 0;
+
+                        return (
+                          <button
+                            key={sz}
+                            type="button"
+                            disabled={isOutOfStock}
+                            onClick={() => handleSelectSize(sz)}
+                            style={{
+                              padding: '8px 14px',
+                              borderRadius: '10px',
+                              border: isSelected
+                                ? '2px solid var(--color-primary, #4f46e5)'
+                                : '1.5px solid var(--border-subtle, #e2e8f0)',
+                              backgroundColor: isSelected
+                                ? 'var(--color-primary-light, #f0f4ff)'
+                                : isOutOfStock
+                                ? 'var(--bg-surface-subtle, #f8fafc)'
+                                : '#ffffff',
+                              color: isSelected
+                                ? 'var(--color-primary, #4f46e5)'
+                                : isOutOfStock
+                                ? 'var(--text-muted, #94a3b8)'
+                                : 'var(--text-primary, #0f172a)',
+                              fontWeight: 800,
+                              fontSize: '0.82rem',
+                              cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                              opacity: isOutOfStock ? 0.45 : 1,
+                              textDecoration: isOutOfStock ? 'line-through' : 'none',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '2px',
+                              minWidth: '48px',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span>{sz}</span>
+                            {qty > 0 && qty <= 3 && (
+                              <span style={{ fontSize: '0.60rem', color: '#e11d48', fontWeight: 700 }}>
+                                {qty} left
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available Colors & Shades */}
+                {availableColors.length > 0 && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {isHindi ? 'रंग / शेड चुनें' : 'Select Color / Shade'}
+                      </span>
+                      {selectedColor && (
+                        <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--color-primary, #4f46e5)' }}>
+                          {selectedColor}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {availableColors.map((colObj) => {
+                        const isSelected = selectedColor === colObj.color;
+                        return (
+                          <button
+                            key={colObj.color}
+                            type="button"
+                            onClick={() => handleSelectColor(colObj.color)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '5px 10px',
+                              borderRadius: '20px',
+                              border: isSelected
+                                ? '2px solid var(--color-primary, #4f46e5)'
+                                : '1.5px solid var(--border-subtle, #e2e8f0)',
+                              backgroundColor: isSelected
+                                ? 'var(--color-primary-light, #f0f4ff)'
+                                : '#ffffff',
+                              color: 'var(--text-primary, #0f172a)',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '12px',
+                                height: '12px',
+                                borderRadius: '50%',
+                                backgroundColor: colObj.hex,
+                                border: '1px solid rgba(0,0,0,0.15)',
+                                display: 'inline-block',
+                              }}
+                            />
+                            <span>{colObj.color}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* PRODUCT SPECIFICATIONS & ABOUT THIS ITEM (Customer Reads Product Details First) */}
             <div
@@ -811,8 +1036,8 @@ export const ProductTrustDetailView = ({
                 </h4>
                 <p className="reserve-success-info">
                   {isHindi
-                    ? `${selectedShopForReserve.name} ने सामान आपके लिए ${holdHours} घंटे के लिए सुरक्षित रख दिया है।`
-                    : `${selectedShopForReserve.name} has held this item for you for ${holdHours} hours.`}
+                    ? `${activeReserveShop.name} ने सामान आपके लिए ${holdHours} घंटे के लिए सुरक्षित रख दिया है।`
+                    : `${activeReserveShop.name} has held this item for you for ${holdHours} hours.`}
                 </p>
                 <div className="reserve-otp-card">
                   <span className="otp-label">{isHindi ? 'पिकअप टोकन' : 'PICKUP PASS PIN'}</span>
@@ -838,11 +1063,11 @@ export const ProductTrustDetailView = ({
                 <div className="reserve-store-summary-pill">
                   <Store size={16} className="store-pill-icon" />
                   <div className="store-pill-text">
-                    <span className="store-pill-name">{selectedShopForReserve.name}</span>
-                    <span className="store-pill-dist">• {selectedShopForReserve.distanceStr}</span>
+                    <span className="store-pill-name">{activeReserveShop.name}</span>
+                    <span className="store-pill-dist">• {activeReserveShop.distanceStr}</span>
                   </div>
                   <span className="store-pill-price">
-                    ₹{(selectedShopForReserve.price * reserveQty).toFixed(0)}
+                    ₹{((activeReserveShop.price || currentPrice) * reserveQty).toFixed(0)}
                   </span>
                 </div>
 
