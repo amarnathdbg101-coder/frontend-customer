@@ -340,12 +340,26 @@ export const StorefrontScreen = () => {
 
     const hasActiveFilters = cleanSearch || isCatActive || quickFilter !== 'ALL' || sortParam;
 
-    const cachedShop = localCache.get(CACHE_KEYS.STOREFRONT(slug));
+    const cacheShopKey = CACHE_KEYS.STOREFRONT(slug);
+    const cacheProdKey = CACHE_KEYS.STOREFRONT_PRODUCTS(slug);
+    const cachedShop = localCache.get(cacheShopKey);
+    const cachedProds = localCache.get(cacheProdKey);
 
+    let hasCache = false;
     if (cachedShop) {
       setShop(cachedShop);
+      hasCache = true;
     }
-    setLoading(true);
+    if (cachedProds && Array.isArray(cachedProds) && cachedProds.length > 0) {
+      setProducts(cachedProds);
+      hasCache = true;
+    }
+
+    if (hasCache || shop || products.length > 0) {
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     setPage(1);
     setHasMore(true);
@@ -372,7 +386,7 @@ export const StorefrontScreen = () => {
 
       if (realShop) {
         setShop(realShop);
-        localCache.set(CACHE_KEYS.STOREFRONT(slug), realShop, DEFAULT_TTL.STOREFRONT);
+        localCache.set(cacheShopKey, realShop, DEFAULT_TTL.STOREFRONT);
       }
 
       const rawProdList = extractArray(prodData, 'products');
@@ -404,6 +418,9 @@ export const StorefrontScreen = () => {
 
       const rankedProds = rankProductsByPersona(normalizedProds, userPersona);
       setProducts(rankedProds);
+      if (rankedProds.length > 0) {
+        localCache.set(cacheProdKey, rankedProds, DEFAULT_TTL.PRODUCTS);
+      }
     } catch (err) {
       console.error('Failed to load shop storefront:', err);
     } finally {
