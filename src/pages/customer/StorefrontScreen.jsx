@@ -569,7 +569,7 @@ export const StorefrontScreen = () => {
     let under99 = 0;
     let under499 = 0;
     let deals20 = 0;
-    let bargain = 0;
+    let mandiRate = 0;
 
     list.forEach((p) => {
       const isPublic = p.is_price_public !== false && 
@@ -581,15 +581,14 @@ export const StorefrontScreen = () => {
       const price = Number(p.price || 0);
       const mrp = Number(p.compare_price || p.mrp || 0);
       const pct = isPublic && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-      const allowBargain = p.allow_bargain === true || p.attributes?.allow_bargain === true;
 
       if (isPublic && price <= 99) under99++;
       if (isPublic && price <= 499) under499++;
       if (isPublic && pct >= 20) deals20++;
-      if (!isPublic || allowBargain) bargain++;
+      if (!isPublic) mandiRate++;
     });
 
-    return { under99, under499, deals20, bargain };
+    return { under99, under499, deals20, mandiRate };
   }, [products]);
 
   // 3a. Hybrid Debounced Server Database Search & Filter (bypasses 20-item local limit & queries PostgreSQL)
@@ -689,7 +688,6 @@ export const StorefrontScreen = () => {
       const price = Number(p.price || 0);
       const mrp = Number(p.compare_price || p.mrp || 0);
       const pct = isPublic && mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-      const allowBargain = p.allow_bargain === true || p.attributes?.allow_bargain === true;
 
       if (quickFilter === 'UNDER_99') {
         if (!isPublic || price > 99) return false;
@@ -697,8 +695,8 @@ export const StorefrontScreen = () => {
         if (!isPublic || price > 499) return false;
       } else if (quickFilter === 'DEALS_20') {
         if (!isPublic || pct < 20) return false;
-      } else if (quickFilter === 'BARGAIN') {
-        if (isPublic && !allowBargain) return false;
+      } else if (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN') {
+        if (isPublic) return false;
       }
 
       // Search Filter: Only do substring check if server results are not loaded yet
@@ -1606,28 +1604,28 @@ export const StorefrontScreen = () => {
           </button>
         )}
 
-        {quickFilterCounts.bargain > 0 && (
+        {(quickFilterCounts.mandiRate > 0 || quickFilterCounts.bargain > 0) && (
           <button
             type="button"
-            onClick={() => setQuickFilter(quickFilter === 'BARGAIN' ? 'ALL' : 'BARGAIN')}
+            onClick={() => setQuickFilter(quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN' ? 'ALL' : 'MANDI_RATE')}
             style={{
               padding: '5px 10px',
               borderRadius: '16px',
               fontSize: '0.72rem',
               fontWeight: 700,
               whiteSpace: 'nowrap',
-              border: quickFilter === 'BARGAIN'
+              border: (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN')
                 ? '1.5px solid #8b5cf6'
                 : '1px solid var(--border-subtle, #e2e8f0)',
-              backgroundColor: quickFilter === 'BARGAIN'
+              backgroundColor: (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN')
                 ? '#8b5cf6'
                 : 'var(--bg-card, #ffffff)',
-              color: quickFilter === 'BARGAIN' ? '#ffffff' : '#7c3aed',
+              color: (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN') ? '#ffffff' : '#7c3aed',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            🔒 {t('products.quick_filter_bargain', 'Price on Request')} ({quickFilterCounts.bargain})
+            ⚖️ {t('products.quick_filter_mandi', 'Mandi Rate / Counter Price')} ({quickFilterCounts.mandiRate || quickFilterCounts.bargain || 0})
           </button>
         )}
       </div>

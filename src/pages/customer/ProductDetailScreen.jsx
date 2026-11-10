@@ -95,7 +95,7 @@ export const ProductDetailScreen = () => {
       ? `${product.name} - ₹${product.price} at ${shop?.name || product.shop_name || 'Local Store'}`
       : 'Product Details',
     description: product
-      ? `Buy ${product.name} for ₹${product.price} in ${shop?.name || product.shop_name || 'nearby store'}. Instant 30-min counter pickup, real-time stock, and Bhav-Taav bargain offers.`
+      ? `Buy ${product.name} for ₹${product.price} in ${shop?.name || product.shop_name || 'nearby store'}. Instant counter pickup, real-time stock, and verified local store prices.`
       : undefined,
     image: product ? getImageUrl(extractFirstImage(product.images || product.image || product.image_url)) : undefined,
     url: product?.id && (slug || shop?.slug) ? `/shop/${slug || shop?.slug}/product/${product.id}` : undefined,

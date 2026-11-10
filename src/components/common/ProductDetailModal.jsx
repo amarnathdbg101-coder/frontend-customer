@@ -689,7 +689,7 @@ export const ProductDetailModal = ({
                   </div>
                 ) : (
                   <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#d97706' }}>
-                    🔒 {isHindi ? 'मोलभाव करें / Rate on Request' : 'Price on Request / Bargain Allowed'}
+                    🔒 {isHindi ? 'दुकानदार से पूछें / Rate on Request' : 'Price on Request / Mandi Daily Rate'}
                   </div>
                 )}
               </div>
