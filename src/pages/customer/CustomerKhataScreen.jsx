@@ -168,13 +168,13 @@ export const CustomerKhataScreen = () => {
     try {
       setDisputeLoading(true);
       await customerKhataApi.disputeTransaction(selectedKhata.id, disputeTx.id, disputeReason);
-      alert(isHindi ? 'विवाद सफलतापूर्वक भेजा गया।' : 'Dispute submitted successfully. The merchant has been notified.');
+      alert(isHindi ? 'पुष्टि का अनुरोध दुकानदार को भेज दिया गया है।' : 'Clarification request sent to the shopkeeper successfully.');
       cacheEvents.emit(CACHE_EVENTS.KHATA_MUTATED);
       setDisputeTx(null);
       setDisputeReason('');
       if (selectedKhata) loadPassbookForAccount(selectedKhata.id);
     } catch (err) {
-      alert((isHindi ? 'विवाद दर्ज करने में त्रुटि: ' : 'Error submitting dispute: ') + (err.response?.data?.message || err.message));
+      alert((isHindi ? 'अनुरोध भेजने में त्रुटि: ' : 'Error sending clarification: ') + (err.response?.data?.message || err.message));
     } finally {
       setDisputeLoading(false);
     }
@@ -394,7 +394,7 @@ export const CustomerKhataScreen = () => {
                   )}
                 </div>
 
-                {/* Dispute Trigger */}
+                {/* Clarification Trigger */}
                 {isCredit && !isDisputed && (
                   <button
                     type="button"
@@ -405,20 +405,21 @@ export const CustomerKhataScreen = () => {
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: 'var(--text-muted)',
+                      color: 'var(--color-primary, #6366f1)',
                       cursor: 'pointer',
                       fontSize: '0.72rem',
+                      fontWeight: 600,
                       padding: 0,
                     }}
-                    title="Dispute if this amount is wrong"
+                    title="Ask shopkeeper if you have any questions about this entry"
                   >
-                    {isHindi ? 'विवाद?' : 'Dispute?'}
+                    💬 {isHindi ? 'दुकानदार से पूछें' : 'Clarify with Dukandar'}
                   </button>
                 )}
 
                 {isDisputed && (
-                  <span style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: '0.72rem' }}>
-                    ⚠️ {isHindi ? 'विवादित' : 'Disputed'}
+                  <span style={{ color: '#d97706', fontWeight: 600, fontSize: '0.72rem' }}>
+                    ⏳ {isHindi ? 'सत्यापन अनुरोध भेजा गया' : 'Clarification Requested'}
                   </span>
                 )}
               </div>
@@ -900,7 +901,7 @@ export const CustomerKhataScreen = () => {
         t={t}
       />
 
-      {/* ================= MODAL 4: DISPUTE TRANSACTION ================= */}
+      {/* ================= MODAL 4: CLARIFY TRANSACTION WITH DUKANDAR ================= */}
       <KhataDisputeModal
         disputeTx={disputeTx}
         onClose={() => setDisputeTx(null)}
@@ -908,6 +909,8 @@ export const CustomerKhataScreen = () => {
         setDisputeReason={setDisputeReason}
         disputeLoading={disputeLoading}
         onSubmit={handleDisputeSubmit}
+        shopName={selectedKhata?.shop_name || selectedKhata?.name}
+        shopPhone={selectedKhata?.shop_phone || selectedKhata?.phone}
         isHindi={isHindi}
         t={t}
       />

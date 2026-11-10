@@ -1132,7 +1132,7 @@ export const ProductStudioView = ({
 
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
                   {product.allow_bargain || product.attributes?.allow_bargain
-                    ? (isHindi ? 'काउंटर पर मोलभाव संभव • दुकान पर पूछें' : 'Counter bargain enabled • Ask at counter')
+                    ? (isHindi ? 'काउंटर पर आज का ताज़ा भाव • दुकान पर पूछें' : 'Daily Mandi / Counter Rate • Ask at counter')
                     : (isHindi ? 'निश्चित दुकान कीमत • 100% असली सामान' : 'Fixed counter price • 100% Genuine product')}
                 </div>
               </div>
@@ -1152,7 +1152,7 @@ export const ProductStudioView = ({
                 <span style={{ fontSize: '1.2rem' }}>🔒</span>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
-                    {isHindi ? 'रेट पूछें (Price on Request)' : 'Price on Request / Bargain Allowed'}
+                    {isHindi ? 'रेट पूछें (Price on Request)' : 'Price on Request / Mandi Daily Rate'}
                   </div>
                   <div style={{ fontSize: '0.74rem', opacity: 0.9 }}>
                     {isHindi ? 'सर्वश्रेष्ठ कीमत के लिए दुकानदार से संपर्क करें' : 'Contact store owner for the best counter quotation'}
