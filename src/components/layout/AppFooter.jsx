@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, ShieldCheck, ExternalLink, Phone, Mail, MessageCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, ShieldCheck, ExternalLink, Phone, Mail, MessageCircle, Store } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { ShopSiloLogo } from '../common/ShopSiloLogo';
 
@@ -48,8 +48,8 @@ export const AppFooter = () => {
               gap: '4px',
             }}
           >
-            <ShieldCheck size={13} color="#10b981" />
-            <span>{isHindi ? 'सत्यापित स्थानीय व्यापार नेटवर्क' : 'Verified local commerce network.'}</span>
+            <Store size={13} color="var(--color-primary)" />
+            <span>{isHindi ? 'स्थानीय दुकानों से खरीदारी' : 'Discover and shop local.'}</span>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export const AppFooter = () => {
                 textAlign: 'left',
               }}
             >
-              <span>🛍️ {isHindi ? 'ग्राहक सेवाएँ (Shopper Portal)' : 'Shopper Portal'}</span>
+              <span className="app-footer-section-label"><Store size={16} />{isHindi ? 'ग्राहक सेवाएँ' : 'Shopper links'}</span>
               {openSection === 'shopper' ? (
                 <ChevronUp size={16} color="var(--color-primary, #2563eb)" />
               ) : (
@@ -110,12 +110,12 @@ export const AppFooter = () => {
                   </li>
                   <li>
                     <Link to="/deals" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                      • {isHindi ? 'दैनिक बचत व डिस्काउंट' : 'Daily Bargains & Flash Offers'}
+                      • {isHindi ? 'मौजूदा ऑफ़र देखें' : 'Browse current offers'}
                     </Link>
                   </li>
                   <li>
                     <Link to="/reservations" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                      • {isHindi ? 'मेरी बुकिंग्स एवं पिकअप कोड' : 'My Pickups & Hold OTPs'}
+                      • {isHindi ? 'मेरी पिकअप रिज़र्वेशन' : 'My pickup reservations'}
                     </Link>
                   </li>
                   <li>
@@ -160,7 +160,7 @@ export const AppFooter = () => {
                 textAlign: 'left',
               }}
             >
-              <span>🛡️ {isHindi ? 'सुरक्षा एवं नियम (Trust & Legal)' : 'Trust & Legal'}</span>
+              <span className="app-footer-section-label"><ShieldCheck size={16} />{isHindi ? 'नियम और गोपनीयता' : 'Policies & privacy'}</span>
               {openSection === 'trust' ? (
                 <ChevronUp size={16} color="var(--color-primary, #2563eb)" />
               ) : (
@@ -236,7 +236,7 @@ export const AppFooter = () => {
                 textAlign: 'left',
               }}
             >
-              <span>💬 {isHindi ? 'सहायता एवं सपोर्ट (Support)' : 'Support'}</span>
+              <span className="app-footer-section-label"><MessageCircle size={16} />{isHindi ? 'सहायता' : 'Support'}</span>
               {openSection === 'support' ? (
                 <ChevronUp size={16} color="var(--color-primary, #2563eb)" />
               ) : (

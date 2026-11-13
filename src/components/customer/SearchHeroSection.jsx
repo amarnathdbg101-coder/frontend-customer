@@ -1,16 +1,3 @@
-/**
- * SearchHeroSection Component
- * Above-the-fold Search-First Hero Section for ShopSilo Homepage:
- * 1. Hero Heading: "Find Products in Nearby Shops"
- * 2. Hero Subtitle: "Compare prices, check availability and reserve nearby."
- * 3. Large Search Box as primary focus (with live autocomplete & voice search)
- * 4. Four trust badges in one row:
- *    - Verified Shops
- *    - Live Inventory
- *    - Compare Prices
- *    - Reserve & Pickup
- */
-
 import React, { useRef } from 'react';
 import {
   Search,
@@ -18,11 +5,7 @@ import {
   Mic,
   MicOff,
   Loader2,
-  ShieldCheck,
-  Radio,
   Scale,
-  ShoppingBag,
-  Sparkles,
 } from 'lucide-react';
 import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
 
@@ -58,9 +41,13 @@ export const SearchHeroSection = ({
   };
 
   return (
-    <section className="search-hero-section" aria-label="Product Search Hero" style={{ padding: '6px 0 2px 0', width: '100%', maxWidth: '100vw', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <section className="search-hero-section" aria-label={isHindi ? 'सामान खोजें' : 'Product search'} style={{ padding: '6px 0 2px 0', width: '100%', maxWidth: '100vw', boxSizing: 'border-box', overflow: 'hidden' }}>
       <div className="search-hero-inner">
-        {/* Large Search Box as Primary App Focus (Placed Right At Top - Blinkit PWA Style) */}
+        <div className="search-hero-heading">
+          <h1>{isHindi ? 'अपने आसपास ज़रूरत का सामान खोजें' : 'Find what you need, close to home'}</h1>
+          <p>{isHindi ? 'स्थानीय दुकानों के सामान और उपलब्ध जानकारी देखें।' : 'Browse products and availability shared by local shops.'}</p>
+        </div>
+
         <div className="hero-search-wrapper" role="search" style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', position: 'relative' }}>
           <div
             className={`hero-search-box ${isSuggestionsOpen ? 'is-focused' : ''}`}
@@ -164,37 +151,6 @@ export const SearchHeroSection = ({
               {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
 
-            {/* Compare / Smart Search Helper Pill (ALWAYS VISIBLE ON MOBILE) */}
-            {onOpenSmartSearch && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenSmartSearch();
-                }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 10px',
-                  backgroundColor: '#f0fdf4',
-                  border: '1.5px solid #a7f3d0',
-                  borderRadius: '12px',
-                  color: '#059669',
-                  fontSize: '0.76rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  boxShadow: '0 1px 3px rgba(16, 185, 129, 0.15)',
-                  whiteSpace: 'nowrap',
-                }}
-                title={isHindi ? 'मल्टी-शॉप लाइव तुलना' : 'Compare Nearby Stores'}
-              >
-                <Sparkles size={14} color="#059669" />
-                <span>{isHindi ? 'तुलना' : 'Compare'}</span>
-              </button>
-            )}
-
             {/* Search Submit Button */}
             <button
               type="button"
@@ -239,6 +195,20 @@ export const SearchHeroSection = ({
             isHindi={isHindi}
           />
         </div>
+
+        {onOpenSmartSearch && (
+          <div className="search-hero-tools">
+            <button
+              type="button"
+              className="search-hero-compare"
+              onClick={onOpenSmartSearch}
+              title={isHindi ? 'आस-पास की दुकानों में तुलना करें' : 'Compare nearby stores'}
+            >
+              <Scale size={16} aria-hidden="true" />
+              <span>{isHindi ? 'आस-पास की कीमतें तुलना करें' : 'Compare nearby prices'}</span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

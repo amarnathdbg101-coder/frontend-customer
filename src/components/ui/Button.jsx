@@ -20,21 +20,21 @@ export const Button = ({
     sm: {
       padding: '7px 12px',
       fontSize: '0.82rem',
-      borderRadius: '8px',
+      borderRadius: 'var(--radius-sm)',
       gap: '6px',
-      minHeight: '32px',
+      minHeight: 'var(--touch-target-min)',
     },
     md: {
       padding: '10px 16px',
       fontSize: '0.92rem',
-      borderRadius: '10px',
+      borderRadius: 'var(--radius-md)',
       gap: '8px',
-      minHeight: '40px',
+      minHeight: 'var(--touch-target-min)',
     },
     lg: {
       padding: '13px 22px',
       fontSize: '1rem',
-      borderRadius: '12px',
+      borderRadius: 'var(--radius-md)',
       gap: '10px',
       minHeight: '48px',
     },
@@ -48,10 +48,10 @@ export const Button = ({
 
   const variantStyles = {
     primary: {
-      background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+      background: 'var(--color-primary)',
       color: '#ffffff',
       border: 'none',
-      boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+      boxShadow: '0 2px 5px rgba(79, 70, 229, 0.18)',
     },
     secondary: {
       backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
@@ -69,7 +69,7 @@ export const Button = ({
       border: 'none',
     },
     success: {
-      backgroundColor: 'var(--color-success, #10b981)',
+      backgroundColor: 'var(--color-success)',
       color: '#ffffff',
       border: 'none',
     },
@@ -90,7 +90,7 @@ export const Button = ({
       border: 'none',
     },
   }[variant] || {
-    background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+    background: 'var(--color-primary)',
     color: '#ffffff',
     border: 'none',
     boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
@@ -109,7 +109,7 @@ export const Button = ({
         fontWeight: 600,
         cursor: disabled || loading ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.6 : 1,
-        transition: 'all 0.15s ease',
+        transition: 'background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast)',
         width: fullWidth ? '100%' : 'auto',
         userSelect: 'none',
         textDecoration: 'none',

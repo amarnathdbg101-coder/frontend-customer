@@ -1,19 +1,13 @@
 /**
  * ProductStudioView Component
  *
- * Clean, Aesthetic, High-Vibe E-Commerce Product Details Showcase for Customer Web App.
- * Inspired directly by the ShopSilo Merchant Product Details Architecture:
+ * Product details, pricing, availability, and pickup actions for the customer web app.
  * - Studio Hero Gallery with real-time finger touch swipe + desktop mouse drag physics
  * - Animated expandable dot pagination pills (Apple/Shopify style)
- * - Floating badges: Glowing 🔥 % OFF fire badge, 🟢 stock pulse pill, zoom hint, 1/N counter
+ * - Discount, availability, zoom hint, and image counter
  * - Tap-to-zoom fullscreen lightbox with swipe & keyboard navigation
- * - Clean Product Header with category tag, brand chip, and verified counter pill
- * - Pricing Hero Card with tax-inclusive badge, big bold price, strike-through MRP, savings pill
- * - Counter Restock / Stepper with Tactile "Add to Cart" and Quick Action Buttons
- * - Minimalist Specifications Chip Grid (brand, category, unit, net weight, custom attributes)
- * - Enterprise Privacy Shield (Rule 15): zero leakage of cost price, floor price, SKU, supplier
- * - Verified Local Store Card with distance, driving/walking time, directions, call, storefront
- * - Trust & Quality Guarantee highlights
+ * - Product specifications and shop details when provided
+ * - Reservation and contact actions based on available data
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -108,16 +102,19 @@ export const ProductStudioView = ({
   }, [product]);
 
   // Stock, Pricing, and Badges
-  const currentStock = Number(
+  const rawStock =
     product?.available_quantity ??
     product?.stock_quantity ??
     product?.inventory?.available_quantity ??
     product?.inventory?.quantity ??
-    product?.stock ??
-    99
-  );
-  const inStock = currentStock > 0;
-  const isLowStock = inStock && currentStock <= 5;
+    product?.stock;
+  const parsedStock = rawStock == null || rawStock === '' ? null : Number(rawStock);
+  const currentStock = parsedStock !== null && Number.isFinite(parsedStock) ? parsedStock : null;
+  const isAvailabilityKnown = currentStock !== null || typeof product?.is_available === 'boolean';
+  const inStock = currentStock !== null
+    ? currentStock > 0 && product?.is_available !== false
+    : product?.is_available === true;
+  const isLowStock = currentStock !== null && inStock && currentStock <= 5;
 
   const price = Number(
     product?.price ??
@@ -136,6 +133,11 @@ export const ProductStudioView = ({
   const hasDiscount = comparePrice > price && price > 0;
   const savings = hasDiscount ? comparePrice - price : 0;
   const discountPct = hasDiscount ? Math.round((savings / comparePrice) * 100) : 0;
+  const hasNegotiablePrice =
+    product?.allow_bargain === true ||
+    product?.allow_bargain === 'true' ||
+    product?.attributes?.allow_bargain === true ||
+    product?.attributes?.allow_bargain === 'true';
 
   const isPricePublic = product?.is_price_public !== false &&
                         product?.isPricePublic !== false &&
@@ -166,11 +168,17 @@ export const ProductStudioView = ({
   const storePhone = shop?.phone || product?.shop_phone || '';
   const storeAddress = shop?.address || product?.shop_address || '';
   const storeCity = shop?.city || product?.shop_city || '';
-  const storeLat = shop?.latitude || product?.shop_latitude;
-  const storeLng = shop?.longitude || product?.shop_longitude;
-  const distanceKm = storeLat && storeLng ? calculateDistanceKm(coords?.lat, coords?.lng, storeLat, storeLng) : null;
+  const storeLat = shop?.latitude ?? product?.shop_latitude;
+  const storeLng = shop?.longitude ?? product?.shop_longitude;
+  const distanceKm = coords?.lat != null && coords?.lng != null && storeLat != null && storeLng != null
+    ? calculateDistanceKm(coords.lat, coords.lng, storeLat, storeLng)
+    : null;
   const travelInfo = distanceKm !== null ? formatTravelTime(distanceKm, isHindi) : null;
   const travelTime = travelInfo?.timeStr || null;
+  const isShopVerified = shop?.is_verified === true || product?.is_shop_verified === true;
+  const shopRatingValue = Number(shop?.rating ?? shop?.avg_rating);
+  const hasShopRating = Number.isFinite(shopRatingValue) && shopRatingValue > 0;
+  const shopReviewCount = Number(shop?.reviews_count ?? shop?.rating_count) || 0;
 
   // --- Real-Time Finger Swap / Mouse Drag Physics Handlers ---
   const handleTouchStart = (e) => {
@@ -598,8 +606,12 @@ export const ProductStudioView = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                backgroundColor: inStock ? (isLowStock ? '#f59e0b' : '#10b981') : '#ef4444',
-                color: '#ffffff',
+                backgroundColor: inStock
+                  ? (isLowStock ? 'var(--color-warning)' : 'var(--color-success)')
+                  : isAvailabilityKnown
+                  ? 'var(--color-danger)'
+                  : 'var(--bg-surface-raised)',
+                color: inStock || isAvailabilityKnown ? '#ffffff' : 'var(--text-secondary)',
                 fontSize: '0.72rem',
                 fontWeight: 700,
                 padding: '4px 10px',
@@ -619,9 +631,13 @@ export const ProductStudioView = ({
               <span>
                 {inStock
                   ? (isLowStock
-                      ? (isHindi ? `कम स्टॉक (${currentStock})` : `Low (${currentStock})`)
-                      : (isHindi ? `${currentStock} उपलब्ध` : `${currentStock} In Stock`))
-                  : (isHindi ? 'स्टॉक समाप्त' : 'Out of Stock')}
+                      ? (isHindi ? `कम स्टॉक (${currentStock})` : `Low stock (${currentStock})`)
+                      : currentStock !== null
+                      ? (isHindi ? `${currentStock} उपलब्ध` : `${currentStock} in stock`)
+                      : (isHindi ? 'उपलब्ध' : 'In stock'))
+                  : isAvailabilityKnown
+                  ? (isHindi ? 'स्टॉक समाप्त' : 'Out of stock')
+                  : (isHindi ? 'दुकान से उपलब्धता पूछें' : 'Check with shop')}
               </span>
             </div>
 
@@ -872,7 +888,7 @@ export const ProductStudioView = ({
                 </div>
               </div>
 
-              <span
+              {isShopVerified && <span
                 style={{
                   backgroundColor: 'rgba(16, 185, 129, 0.1)',
                   color: '#059669',
@@ -884,11 +900,12 @@ export const ProductStudioView = ({
                 }}
               >
                 ✓ Verified
-              </span>
+              </span>}
             </div>
 
             {/* Quick Action Buttons */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+              {storeLat != null && storeLng != null && (
               <button
                 type="button"
                 onClick={() => {
@@ -915,6 +932,7 @@ export const ProductStudioView = ({
                 <MapPin size={12} color="var(--color-primary, #4f46e5)" />
                 <span>{isHindi ? 'रास्ता देखें' : 'Directions'}</span>
               </button>
+              )}
 
               {storePhone && (
                 <button
@@ -939,6 +957,7 @@ export const ProductStudioView = ({
                 </button>
               )}
 
+              {storeSlug && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -965,6 +984,7 @@ export const ProductStudioView = ({
                 <ExternalLink size={12} />
                 <span>{isHindi ? 'दुकान देखें' : 'Store'}</span>
               </button>
+              )}
             </div>
           </div>
         </div>
@@ -1007,22 +1027,27 @@ export const ProductStudioView = ({
                 </span>
               )}
 
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  color: '#059669',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                }}
-              >
-                <Star size={11} fill="#10b981" color="#10b981" />
-                <span>4.8 Verified Store Inventory</span>
-              </span>
+              {hasShopRating && (
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: 'var(--color-success-text)',
+                    backgroundColor: 'var(--color-success-light)',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                  }}
+                >
+                  <Star size={11} fill="currentColor" />
+                  <span>
+                    {shopRatingValue.toFixed(1)}
+                    {shopReviewCount > 0 ? ` (${shopReviewCount} ${isHindi ? 'समीक्षाएं' : 'reviews'})` : ''}
+                  </span>
+                </span>
+              )}
             </div>
 
             <h1
@@ -1061,24 +1086,7 @@ export const ProductStudioView = ({
                       textTransform: 'uppercase',
                     }}
                   >
-                    {isHindi ? 'दुकान की ऑनलाइन कीमत' : 'ONLINE SELLING PRICE'}
-                  </span>
-
-                  <span
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      color: '#059669',
-                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                      padding: '2px 7px',
-                      borderRadius: '5px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                    }}
-                  >
-                    <CheckCircle size={10} color="#059669" />
-                    <span>{isHindi ? 'सभी कर शामिल' : 'Tax Inclusive'}</span>
+                    {isHindi ? 'दुकान द्वारा दी गई कीमत' : 'SHOP-LISTED PRICE'}
                   </span>
                 </div>
 
@@ -1130,32 +1138,32 @@ export const ProductStudioView = ({
                   )}
                 </div>
 
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                  {product.allow_bargain || product.attributes?.allow_bargain
-                    ? (isHindi ? 'काउंटर पर आज का ताज़ा भाव • दुकान पर पूछें' : 'Daily Mandi / Counter Rate • Ask at counter')
-                    : (isHindi ? 'निश्चित दुकान कीमत • 100% असली सामान' : 'Fixed counter price • 100% Genuine product')}
-                </div>
+                {hasNegotiablePrice && (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                    {isHindi ? 'काउंटर पर मौजूदा कीमत पूछें।' : 'Ask the shop for the current counter price.'}
+                  </div>
+                )}
               </div>
             ) : (
               <div
                 style={{
                   padding: '12px',
-                  backgroundColor: '#fffbeb',
-                  border: '1px solid #fde68a',
+                  backgroundColor: 'var(--bg-surface-subtle)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  color: '#b45309',
+                  color: 'var(--text-secondary)',
                 }}
               >
-                <span style={{ fontSize: '1.2rem' }}>🔒</span>
+                <AlertCircle size={18} aria-hidden="true" />
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>
-                    {isHindi ? 'रेट पूछें (Price on Request)' : 'Price on Request / Mandi Daily Rate'}
+                    {isHindi ? 'दुकान से दाम पूछें' : 'Ask the shop for price'}
                   </div>
                   <div style={{ fontSize: '0.74rem', opacity: 0.9 }}>
-                    {isHindi ? 'सर्वश्रेष्ठ कीमत के लिए दुकानदार से संपर्क करें' : 'Contact store owner for the best counter quotation'}
+                    {isHindi ? 'मौजूदा कीमत दुकान से पूछें।' : 'Contact the shop for its current price.'}
                   </div>
                 </div>
               </div>
@@ -1169,10 +1177,12 @@ export const ProductStudioView = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <QuantityStepper
                     quantity={cartQty}
-                    onIncrement={() => setCartQty((q) => (currentStock > q ? q + 1 : q))}
+                    onIncrement={() => setCartQty((q) => (
+                      currentStock === null || currentStock > q ? q + 1 : q
+                    ))}
                     onDecrement={() => setCartQty((q) => Math.max(1, q - 1))}
                     min={1}
-                    max={currentStock > 0 ? currentStock : 99}
+                    max={currentStock !== null && currentStock > 0 ? currentStock : 99}
                     size="md"
                   />
 
@@ -1203,7 +1213,9 @@ export const ProductStudioView = ({
                     <span>
                       {inStock
                         ? `${t('cart.add_to_cart')} • ${formatCurrency(price * cartQty)}`
-                        : (isHindi ? 'स्टॉक समाप्त' : 'Out of Stock')}
+                        : isAvailabilityKnown
+                        ? (isHindi ? 'स्टॉक समाप्त' : 'Out of stock')
+                        : (isHindi ? 'उपलब्धता पूछें' : 'Check availability')}
                     </span>
                   </button>
                 </div>

@@ -26,8 +26,9 @@ const ShopCardInner = ({
 
   // Real-time Store Timing State Machine (OPEN, CLOSING_SOON, WEEKLY_OFF, CLOSED)
   const rawStatus = (s.live_status || '').toUpperCase();
-  const isShopOpen = Boolean(s.is_currently_open ?? s.is_open ?? s.is_active ?? true);
-  const liveStatus = rawStatus || (isShopOpen ? 'OPEN' : 'CLOSED');
+  const isShopOpen = s.is_currently_open ?? s.is_open;
+  const liveStatus = rawStatus || (isShopOpen === true ? 'OPEN' : isShopOpen === false ? 'CLOSED' : 'UNKNOWN');
+  const isVerified = s.is_verified === true;
 
   const getStatusBadge = () => {
     switch (liveStatus) {
@@ -56,13 +57,21 @@ const ShopCardInner = ({
           label: isHindi ? 'साप्ताहिक छुट्टी' : 'WEEKLY OFF',
         };
       case 'CLOSED':
-      default:
         return {
           bg: '#fee2e2',
           border: '#fca5a5',
           text: '#991b1b',
           dot: '#dc2626',
           label: isHindi ? 'बंद है' : 'CLOSED',
+        };
+      case 'UNKNOWN':
+      default:
+        return {
+          bg: 'var(--bg-surface-subtle)',
+          border: 'var(--border-subtle)',
+          text: 'var(--text-secondary)',
+          dot: 'var(--text-muted)',
+          label: isHindi ? 'समय उपलब्ध नहीं' : 'Hours not listed',
         };
     }
   };
@@ -152,7 +161,7 @@ const ShopCardInner = ({
                 >
                   {s.name}
                 </h3>
-                <ShieldCheck size={14} color="#2563eb" style={{ flexShrink: 0 }} />
+                {isVerified && <ShieldCheck size={14} color="#15803d" style={{ flexShrink: 0 }} aria-label={isHindi ? 'सत्यापित दुकान' : 'Verified shop'} />}
               </div>
 
               {/* Category, Rating & Verified Tag */}
@@ -168,7 +177,7 @@ const ShopCardInner = ({
                     border: '1px solid var(--border-subtle, #e2e8f0)',
                   }}
                 >
-                  {s.category || (isHindi ? 'दुकान' : 'General Store')}
+                  {s.category || (isHindi ? 'स्थानीय दुकान' : 'Local shop')}
                 </span>
 
                 {trustScore > 0 && (
@@ -238,47 +247,29 @@ const ShopCardInner = ({
               <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', fontWeight: 600 }}>
                 {s.status_message}
               </span>
-            ) : (
+            ) : s.opening_time && s.closing_time ? (
               <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <Clock size={11} color="#64748b" />
-                <span>{s.opening_time || '09:00'} - {s.closing_time || '21:00'}</span>
+                <span>{s.opening_time} - {s.closing_time}</span>
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Address & Travel Info */}
-          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #475569)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <MapPin size={12} color="#0f172a" style={{ flexShrink: 0 }} />
-            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {[s.address, s.city].filter(Boolean).join(', ') || (isHindi ? 'स्थानीय बाजार' : 'Local Market')}
-            </span>
-            {travelInfo?.full && (
-              <strong style={{ color: '#2563eb', flexShrink: 0, marginLeft: '4px' }}>
-                • {travelInfo.full}
-              </strong>
-            )}
-          </div>
+          {(s.address || s.city || travelInfo?.full) && (
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #475569)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <MapPin size={12} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {[s.address, s.city].filter(Boolean).join(', ')}
+              </span>
+              {travelInfo?.full && (
+                <strong style={{ color: 'var(--text-secondary)', flexShrink: 0, marginLeft: '4px' }}>
+                  • {travelInfo.full}
+                </strong>
+              )}
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Highlights Bar */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          padding: '6px 10px',
-          backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-          borderRadius: '8px',
-          fontSize: '0.72rem',
-          fontWeight: 700,
-          color: 'var(--text-secondary, #475569)',
-          alignItems: 'center',
-          border: '1px solid var(--border-subtle, #e2e8f0)',
-        }}
-      >
-        <span>{isHindi ? '⚡ 15-मिनट पिकअप' : '⚡ 15-Min Pickup'}</span>
-        <span>•</span>
-        <span>{isHindi ? '✓ लाइव कैटलॉग' : '✓ Live Catalog'}</span>
       </div>
 
       {/* Actions Row */}

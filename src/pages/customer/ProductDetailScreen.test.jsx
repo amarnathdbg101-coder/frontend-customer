@@ -132,6 +132,39 @@ describe('ProductDetailScreen Comprehensive Tests', () => {
     });
   });
 
+  it('omits private or zero price from product SEO and structured data', async () => {
+    productApi.getById.mockResolvedValueOnce({
+      ...mockProduct,
+      price: 0,
+      is_price_public: false,
+      description: '',
+    });
+    shopApi.getShopBySlug.mockResolvedValueOnce(mockShop);
+    productApi.listByShopSlug.mockResolvedValueOnce({
+      products: [mockProduct],
+      total_count: 1,
+    });
+
+    render(
+      <AllTestProviders initialEntries={['/shop/om-kirana-store/product/prod-101']}>
+        <Routes>
+          <Route path="/shop/:slug/product/:productId" element={<ProductDetailScreen />} />
+        </Routes>
+      </AllTestProviders>
+    );
+
+    await waitFor(() => {
+      expect(document.title).toBe('Clinic Plus Strong & Long Shampoo 340ml at Om Kirana Store | ShopSilo');
+    });
+
+    const jsonLd = JSON.parse(document.getElementById('dynamic-route-jsonld').textContent);
+    expect(jsonLd.offers).toBeUndefined();
+    expect(document.querySelector('meta[name="description"]').content).toContain(
+      'contact Om Kirana Store for current price and availability'
+    );
+    expect(document.title).not.toContain('₹0');
+  });
+
   it('falls back to global catalog when shop has no other products', async () => {
     productApi.getById.mockResolvedValueOnce(mockProduct);
     shopApi.getShopBySlug.mockResolvedValueOnce(mockShop);

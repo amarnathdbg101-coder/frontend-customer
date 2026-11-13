@@ -223,9 +223,10 @@
 }
 
 .product-card-store-icon {
-  font-size: 0.82rem;
-  line-height: 1;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
 }
 
 .product-card-store-name {
@@ -254,9 +255,10 @@
 }
 
 .product-card-distance-icon {
-  font-size: 0.76rem;
-  line-height: 1;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
 }
 
 .product-card-distance-text {

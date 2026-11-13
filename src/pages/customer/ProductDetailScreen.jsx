@@ -89,14 +89,38 @@ export const ProductDetailScreen = () => {
   const [loading, setLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
 
+  const seoPrice = Number(product?.price || product?.selling_price || 0);
+  const isSeoPricePublic =
+    product?.is_price_public !== false &&
+    product?.isPricePublic !== false &&
+    product?.attributes?.is_price_public !== false &&
+    product?.attributes?.is_price_public !== 'false' &&
+    seoPrice > 0 &&
+    !product?.hide_price;
+  const seoShopName = shop?.name || product?.shop_name || product?.shop?.name || '';
+  const rawSeoStock =
+    product?.available_quantity ??
+    product?.stock_quantity ??
+    product?.inventory?.available_quantity ??
+    product?.inventory?.quantity ??
+    product?.stock;
+  const seoStock = rawSeoStock == null ? null : Number(rawSeoStock);
+  const hasSeoAvailability =
+    (seoStock !== null && Number.isFinite(seoStock)) ||
+    typeof product?.is_available === 'boolean';
+
   // Dynamic SEO & OpenGraph Head Management
   usePageSeo({
     title: product?.name
-      ? `${product.name} - ₹${product.price} at ${shop?.name || product.shop_name || 'Local Store'}`
+      ? `${product.name}${isSeoPricePublic ? ` - ₹${seoPrice}` : ''}${seoShopName ? ` at ${seoShopName}` : ''}`
       : 'Product Details',
-    description: product
-      ? `Buy ${product.name} for ₹${product.price} in ${shop?.name || product.shop_name || 'nearby store'}. Instant counter pickup, real-time stock, and verified local store prices.`
-      : undefined,
+    description: product?.description || (
+      product
+        ? isSeoPricePublic
+          ? `View the listed price and details for ${product.name}${seoShopName ? ` at ${seoShopName}` : ''}.`
+          : `View product details and contact ${seoShopName || 'the shop'} for current price and availability.`
+        : undefined
+    ),
     image: product ? getImageUrl(extractFirstImage(product.images || product.image || product.image_url)) : undefined,
     url: product?.id && (slug || shop?.slug) ? `/shop/${slug || shop?.slug}/product/${product.id}` : undefined,
     type: 'product',
@@ -106,19 +130,27 @@ export const ProductDetailScreen = () => {
           '@type': 'Product',
           name: product.name,
           image: getImageUrl(extractFirstImage(product.images || product.image || product.image_url)),
-          description: product.description || `In-stock at ${shop?.name || product.shop_name}`,
-          offers: {
-            '@type': 'Offer',
-            price: product.price,
-            priceCurrency: 'INR',
-            availability: (product.available_quantity || product.stock_quantity) > 0
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
-            seller: {
-              '@type': 'Organization',
-              name: shop?.name || product.shop_name,
+          description: product.description || `Product details for ${product.name}.`,
+          ...(isSeoPricePublic && {
+            offers: {
+              '@type': 'Offer',
+              price: seoPrice,
+              priceCurrency: 'INR',
+              ...(hasSeoAvailability && {
+                availability: (seoStock !== null && Number.isFinite(seoStock)
+                  ? seoStock > 0 && product.is_available !== false
+                  : product.is_available)
+                  ? 'https://schema.org/InStock'
+                  : 'https://schema.org/OutOfStock',
+              }),
+              ...(seoShopName && {
+                seller: {
+                  '@type': 'Organization',
+                  name: seoShopName,
+                },
+              }),
             },
-          },
+          }),
         }
       : undefined,
   });

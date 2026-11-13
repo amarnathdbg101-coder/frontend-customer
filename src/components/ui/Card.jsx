@@ -42,7 +42,7 @@ export const Card = ({
       className={`card ${className}`}
       onClick={onClick}
       style={{
-        borderRadius: 'var(--radius-lg, 16px)',
+        borderRadius: 'var(--radius-card, 18px)',
         padding,
         color: 'var(--text-primary, #0f172a)',
         ...variantStyles,
@@ -50,12 +50,12 @@ export const Card = ({
       }}
       onMouseEnter={variant === 'interactive' ? (e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = 'var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08))';
+        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
         e.currentTarget.style.borderColor = 'var(--border-strong, #cbd5e1)';
       } : undefined}
       onMouseLeave={variant === 'interactive' ? (e) => {
         e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = 'var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05))';
+        e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
         e.currentTarget.style.borderColor = 'var(--border-subtle, #e2e8f0)';
       } : undefined}
       {...props}

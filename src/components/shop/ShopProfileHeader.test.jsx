@@ -15,6 +15,8 @@ describe('ShopProfileHeader Component Tests', () => {
     rating: 4.8,
     reviews_count: 142,
     products_count: 128,
+    deals_count: 2,
+    accepts_reservations: true,
     inventory_updated_text: 'Inventory Updated 15 mins ago',
     phone: '+919876543210',
     address: 'Civil Lines Road, Near Subhash Chowk',
@@ -44,7 +46,7 @@ describe('ShopProfileHeader Component Tests', () => {
     expect(screen.getByText(/Open Now/i)).toBeInTheDocument();
     expect(screen.getAllByText(/4.8/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/128 Products/i)).toBeInTheDocument();
-    expect(screen.getByText(/Active Deals/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 active offers/i)).toBeInTheDocument();
 
     // 3. Quick Actions
     const browseBtn = screen.getByRole('button', { name: /Browse Products/i });
@@ -59,15 +61,14 @@ describe('ShopProfileHeader Component Tests', () => {
     expect(directionsLink).toHaveAttribute('href', expect.stringContaining('google.com/maps'));
 
     // 4. About Shop
-    expect(screen.getByText(/About Shop/i)).toBeInTheDocument();
+    expect(screen.getByText(/About this shop/i)).toBeInTheDocument();
     expect(screen.getByText(/Trusted neighborhood grocery store/i)).toBeInTheDocument();
     expect(screen.getByText(/Civil Lines Road/i)).toBeInTheDocument();
 
     // 5. Why Trust This Shop
-    expect(screen.getByText(/Why Trust This Shop/i)).toBeInTheDocument();
-    expect(screen.getByText(/Verified Local Business/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inventory Regularly Updated/i)).toBeInTheDocument();
-    expect(screen.getByText(/Pickup Available/i)).toBeInTheDocument();
-    expect(screen.getByText(/Active On ShopSilo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Shop information/i)).toBeInTheDocument();
+    expect(screen.getByText(/Verified local shop/i)).toBeInTheDocument();
+    expect(screen.getByText(/Inventory update time provided/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pickup reservations available/i)).toBeInTheDocument();
   });
 });

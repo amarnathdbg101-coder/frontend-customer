@@ -1,25 +1,15 @@
 /**
  * ProductTrustDetailView Component
  *
- * Search-, Trust-, Comparison- and Reservation-first Product Detail Page:
- * 1. Product Gallery (Large image, consistent aspect ratio, swipeable)
- * 2. Product Information (Name, Price, MRP, Savings, 🟢 Available Now badge)
- * 3. Best Nearby Offer (Highlight card with best price, shop name, distance & Reserve CTA)
- * 4. Compare Nearby Shops (3-5 shops with distance, price, freshness & reserve action)
- * 5. Why Trust This Listing (4 verified trust signals)
- * 6. Sticky Bottom CTA ([ Compare Prices ] and [ Reserve Now ])
- * 
- * Visual Style:
- * - Premium and uncluttered (Airbnb / Google Maps business pages confidence)
- * - Clear visual hierarchy and high readability
+ * Presents product information, available shop details, and pickup reservation actions.
  */
 
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useContext } from 'react';
 import {
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
   MapPin,
-  Clock,
   ShieldCheck,
   CheckCircle2,
   Store,
@@ -34,7 +24,7 @@ import { formatDistance, calculateDistanceKm } from '../../utils/distance';
 import { useLocation as useGeoLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
-import { useSaved } from '../../context/SavedContext';
+import SavedContext from '../../context/SavedContext';
 import { shareProduct } from '../../utils/productShare';
 import { productApi } from '../../api/product.api';
 import { trackPersonaEngagement } from '../../utils/personaEngine';
@@ -48,20 +38,10 @@ export const ProductTrustDetailView = ({
   const { coords } = useGeoLocation();
   const { isHindi } = useLanguage();
   const { user } = useAuth();
+  const savedCtx = useContext(SavedContext);
   const [isTitleExpanded, setIsTitleExpanded] = useState(false);
-
-  // Safe Wishlist / Saved Hook with fallback
-  let isProductSaved = () => false;
-  let toggleSaveProduct = () => {};
-  try {
-    const savedCtx = useSaved();
-    if (savedCtx) {
-      isProductSaved = savedCtx.isProductSaved;
-      toggleSaveProduct = savedCtx.toggleSaveProduct;
-    }
-  } catch (e) {
-    // outside provider fallback
-  }
+  const isProductSaved = savedCtx?.isProductSaved || (() => false);
+  const toggleSaveProduct = savedCtx?.toggleSaveProduct || (() => {});
 
   // 1. Gallery State & Swipe
   const [activeImgIdx, setActiveImgIdx] = useState(0);
@@ -116,7 +96,7 @@ export const ProductTrustDetailView = ({
     return () => {
       isMounted = false;
     };
-  }, [product?.id]);
+  }, [product?.id, product?.category, product?.name]);
 
   const availableSizes = useMemo(() => {
     if (!variants.length) return [];
@@ -151,9 +131,6 @@ export const ProductTrustDetailView = ({
       || variants.find((v) => v.color === col);
     if (match) setSelectedVariant(match);
   };
-
-  // References for scrolling to compare section
-  const compareSectionRef = useRef(null);
 
   // Extract images safely
   const images = useMemo(() => {
@@ -197,86 +174,79 @@ export const ProductTrustDetailView = ({
     return items;
   }, [product]);
 
-  // Real or synthesized Nearby Comparison Shops (3 to 5 stores)
-  const nearbyOffers = useMemo(() => {
-    const baseStoreName = initialShop?.name || product?.shop_name || 'Gupta General Store';
-    const baseSlug = initialShop?.slug || product?.shop_slug || 'gupta-general-store';
-    const basePhone = initialShop?.phone || product?.shop_phone || '9876543210';
-
-    // Primary store distance
-    let primaryDistKm = 0.45;
-    if (coords?.lat && coords?.lng && initialShop?.latitude && initialShop?.longitude) {
-      const calc = calculateDistanceKm(coords.lat, coords.lng, initialShop.latitude, initialShop.longitude);
-      if (calc) primaryDistKm = calc;
-    }
-
-    const primaryOffer = {
-      id: initialShop?.id || product?.shop_id || 'shop-1',
-      name: baseStoreName,
-      slug: baseSlug,
-      phone: basePhone,
-      distanceKm: primaryDistKm,
-      distanceStr: formatDistance(primaryDistKm) || '450m away',
-      price: currentPrice,
-      updatedTime: isHindi ? '5 मिनट पहले अपडेट' : 'Updated 5 mins ago',
-      isBestPrice: true,
-      verified: true,
-      isOpen: true,
-    };
-
-    // 3-4 other realistic comparison local shops
-    const competitorStores = [
-      {
-        id: 'comp-1',
-        name: 'Raj Store & Provisions',
-        slug: 'raj-store',
-        phone: '9876501234',
-        distanceKm: primaryDistKm + 0.2,
-        distanceStr: formatDistance(primaryDistKm + 0.2) || '650m away',
-        price: currentPrice > 20 ? currentPrice + 3 : currentPrice + 1,
-        updatedTime: isHindi ? '12 मिनट पहले अपडेट' : 'Updated 12 mins ago',
-        isBestPrice: false,
-        verified: true,
-        isOpen: true,
-      },
-      {
-        id: 'comp-2',
-        name: 'Sharma Kirana Supermart',
-        slug: 'sharma-kirana',
-        phone: '9876509876',
-        distanceKm: primaryDistKm + 0.65,
-        distanceStr: formatDistance(primaryDistKm + 0.65) || '1.1 km away',
-        price: currentPrice > 50 ? currentPrice + 7 : currentPrice + 2,
-        updatedTime: isHindi ? '25 मिनट पहले अपडेट' : 'Updated 25 mins ago',
-        isBestPrice: false,
-        verified: true,
-        isOpen: true,
-      },
-      {
-        id: 'comp-3',
-        name: 'Aggarwal Daily Needs',
-        slug: 'aggarwal-daily-needs',
-        phone: '9876505555',
-        distanceKm: primaryDistKm + 0.95,
-        distanceStr: formatDistance(primaryDistKm + 0.95) || '1.4 km away',
-        price: currentPrice > 80 ? currentPrice + 10 : currentPrice + 4,
-        updatedTime: isHindi ? '40 मिनट पहले अपडेट' : 'Updated 40 mins ago',
-        isBestPrice: false,
-        verified: true,
-        isOpen: true,
-      },
-    ];
-
-    return [primaryOffer, ...competitorStores].sort((a, b) => a.price - b.price);
-  }, [initialShop, product, currentPrice, coords, isHindi]);
-
-  const bestOffer = nearbyOffers[0] || {
-    name: 'Gupta General Store',
-    distanceStr: '450m away',
-    price: currentPrice,
-  };
+  const rawStock =
+    selectedVariant?.available_qty ??
+    product?.available_quantity ??
+    product?.stock_quantity ??
+    product?.stock;
+  const stock = rawStock == null ? null : Number(rawStock);
+  const hasStockData = stock !== null && Number.isFinite(stock);
+  const isAvailabilityKnown = hasStockData || typeof product?.is_available === 'boolean';
+  const isInStock = hasStockData ? stock > 0 && product?.is_available !== false : product?.is_available === true;
+  const shopName = initialShop?.name || product?.shop_name || product?.shop?.name || '';
+  const shopId = initialShop?.id || product?.shop_id || product?.shopId || product?.shop?.id || '';
+  const shopSlug = initialShop?.slug || product?.shop_slug || product?.shop?.slug || '';
+  const ratingValue = Number(product?.rating);
+  const reviewCount = Number(product?.reviews_count ?? product?.rating_count) || 0;
+  const hasRating = Number.isFinite(ratingValue) && ratingValue > 0;
+  const rawDistance =
+    initialShop?.distance_text ||
+    product?.distance_text ||
+    (initialShop?.distance_km != null ? formatDistance(Number(initialShop.distance_km)) : '');
+  const calculatedDistance = !rawDistance && coords?.lat != null && coords?.lng != null &&
+    initialShop?.latitude != null && initialShop?.longitude != null
+    ? formatDistance(calculateDistanceKm(coords.lat, coords.lng, initialShop.latitude, initialShop.longitude))
+    : '';
+  const shopDistance = rawDistance || calculatedDistance;
+  const bestOffer = shopId || shopName
+    ? {
+        id: shopId,
+        name: shopName || (isHindi ? 'दुकान का विवरण उपलब्ध नहीं' : 'Store details unavailable'),
+        slug: shopSlug,
+        phone: initialShop?.phone || product?.shop_phone || '',
+        distanceStr: shopDistance,
+        price: currentPrice,
+        isOpen: initialShop?.is_currently_open ?? initialShop?.is_open,
+      }
+    : null;
 
   const activeReserveShop = selectedShopForReserve || bestOffer;
+  const canReserve =
+    Boolean(bestOffer) &&
+    initialShop?.accepts_reservations !== false &&
+    product?.accepts_reservations !== false &&
+    product?.shop?.accepts_reservations !== false &&
+    !(isAvailabilityKnown && !isInStock);
+  const isShopVerified =
+    initialShop?.is_verified === true ||
+    product?.is_shop_verified === true ||
+    product?.shop?.is_verified === true;
+  const inventoryUpdatedText =
+    initialShop?.inventory_updated_text ||
+    product?.inventory_updated_text ||
+    '';
+  const trustSignals = [
+    isShopVerified && {
+      headline: isHindi ? 'सत्यापित दुकान' : 'Verified shop',
+      description: isHindi ? 'इस दुकान की पुष्टि ShopSilo ने की है।' : 'This shop has been verified by ShopSilo.',
+    },
+    inventoryUpdatedText && {
+      headline: isHindi ? 'स्टॉक अपडेट का समय' : 'Stock update time',
+      description: inventoryUpdatedText,
+    },
+    isAvailabilityKnown && {
+      headline: hasStockData
+        ? (isHindi ? 'स्टॉक की मात्रा दी गई है' : 'Stock quantity provided')
+        : (isHindi ? 'उपलब्धता की जानकारी दी गई है' : 'Availability reported'),
+      description: hasStockData
+        ? (isHindi ? 'रिज़र्व करने से पहले दी गई मात्रा देखें।' : 'Check the listed quantity before reserving.')
+        : (isHindi ? 'पिकअप से पहले दुकान से पुष्टि करें।' : 'Confirm with the shop before pickup.'),
+    },
+    {
+      headline: isHindi ? 'पिकअप पर भुगतान' : 'Pay at pickup',
+      description: isHindi ? 'ऑनलाइन अग्रिम भुगतान की आवश्यकता नहीं।' : 'No advance online payment is required.',
+    },
+  ].filter(Boolean);
 
   // Gallery Swipe Handlers
   const handleTouchStart = (e) => {
@@ -322,6 +292,7 @@ export const ProductTrustDetailView = ({
   };
 
   const openReservationForShop = (targetShop) => {
+    if (!canReserve) return;
     setSelectedShopForReserve(targetShop || bestOffer);
     setReserveQty(1);
     setReserveError(null);
@@ -356,16 +327,21 @@ export const ProductTrustDetailView = ({
         customer_phone: customerPhone,
       });
 
-      setReserveSuccess(res || { token: Math.floor(1000 + Math.random() * 9000) });
+      if (!res || res.success === false) {
+        setReserveError(
+          res?.message ||
+            (isHindi
+              ? 'रिज़र्वेशन की पुष्टि नहीं मिली। दोबारा करने से पहले पिकअप में देखें।'
+              : 'No reservation confirmation was returned. Check Pickups before trying again.')
+        );
+        return;
+      }
+      setReserveSuccess(res);
     } catch (err) {
       setReserveError(err.message || (isHindi ? 'रिज़र्व करने में त्रुटि' : 'Failed to create reservation'));
     } finally {
       setReserving(false);
     }
-  };
-
-  const scrollToCompare = () => {
-    compareSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
@@ -385,10 +361,16 @@ export const ProductTrustDetailView = ({
             >
               {/* Floating Availability Badge */}
               <div className="gallery-badge-top-left">
-                <div className="available-now-pill">
+                {isAvailabilityKnown && (
+                <div className={`available-now-pill ${isInStock ? '' : 'is-unavailable'}`}>
                   <span className="live-stock-pulse-dot" />
-                  <span>{isHindi ? 'उपलब्ध है' : 'Available Now'}</span>
+                  <span>
+                    {isInStock
+                      ? (isHindi ? 'अभी उपलब्ध' : 'In stock')
+                      : (isHindi ? 'स्टॉक खत्म' : 'Out of stock')}
+                  </span>
                 </div>
+                )}
               </div>
 
               {/* Floating Top-Right Circular Action Buttons: Wishlist (Heart), Share & Zoom */}
@@ -473,13 +455,18 @@ export const ProductTrustDetailView = ({
                 </>
               )}
 
-              {/* Floating Bottom-Left Rating Pill: 4.4 ★ | 14 */}
-              <div className="flipkart-rating-pill">
-                <span className="rating-score">{product.rating ? Number(product.rating).toFixed(1) : '4.4'}</span>
-                <Star size={12} fill="#16a34a" color="#16a34a" />
-                <span className="rating-divider">|</span>
-                <span className="rating-count">{product.reviews_count || product.rating_count || '14'}</span>
-              </div>
+              {hasRating && (
+                <div className="flipkart-rating-pill">
+                  <span className="rating-score">{ratingValue.toFixed(1)}</span>
+                  <Star size={12} fill="#15803d" color="#15803d" />
+                  {reviewCount > 0 && (
+                    <>
+                      <span className="rating-divider">|</span>
+                      <span className="rating-count">{reviewCount}</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Centered Blue Dot Pagination: ● ○ ○ ○ ○ */}
@@ -506,9 +493,11 @@ export const ProductTrustDetailView = ({
           {/* 2. PRODUCT INFORMATION */}
           <div className="product-info-section flipkart-info-section">
             {/* Brand Title (Bold Header) */}
-            <div className="flipkart-brand-name">
-              {product.brand || (typeof product.category === 'object' ? product.category?.name : product.category) || 'ShopSilo Retail'}
-            </div>
+            {(product.brand || (typeof product.category === 'object' ? product.category?.name : product.category)) && (
+              <div className="flipkart-brand-name">
+                {product.brand || (typeof product.category === 'object' ? product.category?.name : product.category)}
+              </div>
+            )}
 
             {/* Product Name with ...more toggle */}
             <h1 className="flipkart-product-heading">
@@ -542,42 +531,52 @@ export const ProductTrustDetailView = ({
             {/* Unified Flipkart Price Row: ↓70%  3,999  ₹1,199 */}
             <div className="flipkart-price-box">
               <div className="flipkart-main-price-row">
-                {hasDiscount && (
-                  <span className="flipkart-discount-pill">
-                    <span className="discount-arrow">↓</span>{discountPercent}%
-                  </span>
-                )}
-                {hasDiscount && (
-                  <span className="flipkart-original-mrp">
-                    ₹{originalPrice.toFixed(0)}
-                  </span>
-                )}
-                <span className="flipkart-selling-price">
-                  ₹{currentPrice.toFixed(0)}
-                </span>
-                {hasDiscount && (
-                  <span className="product-savings-badge" style={{ marginLeft: '4px' }}>
-                    {isHindi
-                      ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
-                      : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
+                {isPricePublic ? (
+                  <>
+                    {hasDiscount && (
+                      <span className="flipkart-discount-pill">
+                        <span className="discount-arrow">↓</span>{discountPercent}%
+                      </span>
+                    )}
+                    {hasDiscount && (
+                      <span className="flipkart-original-mrp">
+                        ₹{originalPrice.toFixed(0)}
+                      </span>
+                    )}
+                    <span className="flipkart-selling-price">
+                      ₹{currentPrice.toFixed(0)}
+                    </span>
+                    {hasDiscount && (
+                      <span className="product-savings-badge" style={{ marginLeft: '4px' }}>
+                        {isHindi
+                          ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
+                          : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="flipkart-selling-price price-on-request">
+                    {isHindi ? 'दुकान से दाम पूछें' : 'Ask the shop for price'}
                   </span>
                 )}
               </div>
 
               {/* Fee / Guarantee Subline with Chevron */}
               <div className="flipkart-fee-subline">
-                <span>+ ₹0 Delivery Fee • 15-min Counter Pickup Nearby</span>
+                <span>{isHindi ? 'दुकान से पिकअप · भुगतान पिकअप पर' : 'Store pickup · pay at pickup'}</span>
                 <ChevronRight size={14} className="subline-arrow" />
               </div>
             </div>
 
             {/* Availability Status Highlight */}
-            <div className="product-availability-banner" style={{ marginBottom: '12px' }}>
+            <div className={`product-availability-banner ${isAvailabilityKnown && !isInStock ? 'is-unavailable' : ''}`} style={{ marginBottom: '12px' }}>
               <span className="available-dot-indicator" />
               <span className="available-text">
-                {isHindi
-                  ? '🟢 अभी उपलब्ध है — पास की दुकान से 15-मिनट पिकअप'
-                  : '🟢 Available Now — Ready for 15-minute pickup nearby'}
+                {!isAvailabilityKnown
+                  ? (isHindi ? 'पिकअप से पहले दुकान से स्टॉक की पुष्टि करें' : 'Check stock with the shop before pickup')
+                  : isInStock
+                  ? (isHindi ? 'स्टॉक उपलब्ध है · दुकान से पिकअप करें' : 'In stock · collect from the store')
+                  : (isHindi ? 'यह उत्पाद अभी स्टॉक में नहीं है' : 'This item is currently out of stock')}
               </span>
             </div>
 
@@ -611,8 +610,9 @@ export const ProductTrustDetailView = ({
                         const isSelected = selectedSize === sz;
                         const varItem = variants.find((v) => v.size === sz && (!selectedColor || v.color === selectedColor))
                           || variants.find((v) => v.size === sz);
-                        const qty = varItem?.available_qty ?? 1;
-                        const isOutOfStock = qty <= 0;
+                        const rawQty = varItem?.available_qty;
+                        const qty = rawQty == null ? null : Number(rawQty);
+                        const isOutOfStock = qty !== null && Number.isFinite(qty) && qty <= 0;
 
                         return (
                           <button
@@ -761,7 +761,7 @@ export const ProductTrustDetailView = ({
           </div>
 
           {/* SLEEK & COMPACT SHOP LINK CARD (Clicking navigates to shop profile) */}
-          {(() => {
+          {bestOffer && (() => {
             const targetShopSlug =
               product?.shop_slug ||
               product?.shop?.slug ||
@@ -769,8 +769,8 @@ export const ProductTrustDetailView = ({
               product?.shopId ||
               initialShop?.slug ||
               initialShop?.id ||
-              bestOffer?.slug ||
-              bestOffer?.id ||
+              bestOffer.slug ||
+              bestOffer.id ||
               '';
 
             const handleNavigateToShop = (e) => {
@@ -778,7 +778,8 @@ export const ProductTrustDetailView = ({
                 e.stopPropagation();
                 e.preventDefault();
               }
-              const slugToUse = targetShopSlug || 'store';
+              if (!targetShopSlug) return;
+              const slugToUse = targetShopSlug;
               navigate(`/shop/${slugToUse}`, {
                 state: { shop: initialShop || product?.shop || bestOffer },
               });
@@ -823,21 +824,34 @@ export const ProductTrustDetailView = ({
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <span style={{ fontSize: '0.90rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {initialShop?.name || product?.shop_name || product?.shop?.name || bestOffer?.name || 'Gupta General Store'}
+                        {bestOffer.name}
                       </span>
-                      <ShieldCheck size={16} color="#10b981" style={{ flexShrink: 0 }} />
+                      {isShopVerified && (
+                        <ShieldCheck size={16} color="var(--color-success)" style={{ flexShrink: 0 }} aria-label={isHindi ? 'सत्यापित दुकान' : 'Verified shop'} />
+                      )}
                     </div>
 
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
-                      <span style={{ color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                        {isHindi ? 'खुली है' : 'Open Now'}
-                      </span>
-                      <span>•</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                        <MapPin size={11} color="var(--color-primary, #4f46e5)" />
-                        {bestOffer?.distanceStr || '450m away'}
-                      </span>
+                      {bestOffer.isOpen === true && (
+                        <span style={{ color: 'var(--color-success-text)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }} />
+                          {isHindi ? 'खुली है' : 'Open now'}
+                        </span>
+                      )}
+                      {bestOffer.isOpen === false && (
+                        <span style={{ color: 'var(--color-danger)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          {isHindi ? 'बंद है' : 'Closed'}
+                        </span>
+                      )}
+                      {bestOffer.distanceStr && (
+                        <>
+                          {bestOffer.isOpen !== undefined && <span>•</span>}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                            <MapPin size={11} color="var(--color-primary)" />
+                            {bestOffer.distanceStr}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -872,6 +886,8 @@ export const ProductTrustDetailView = ({
             <button
               type="button"
               onClick={() => openReservationForShop(bestOffer)}
+              disabled={!canReserve}
+              aria-disabled={!canReserve}
               style={{
                 width: '100%',
                 backgroundColor: '#10b981',
@@ -890,11 +906,17 @@ export const ProductTrustDetailView = ({
                 transition: 'all 0.15s ease',
               }}
             >
-              <span>⚡ {isHindi ? 'अभी रिज़र्व करें' : 'Reserve Now'}</span>
+              <span>
+                {!bestOffer
+                  ? (isHindi ? 'दुकान की जानकारी उपलब्ध नहीं' : 'Store details unavailable')
+                  : !canReserve
+                  ? (isHindi ? 'रिज़र्वेशन उपलब्ध नहीं' : 'Pickup reservation unavailable')
+                  : (isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for pickup')}
+              </span>
             </button>
 
-            <div style={{ fontSize: '0.72rem', color: '#065f46', marginTop: '8px', textAlign: 'center', fontWeight: 600 }}>
-              🛡️ No advance payment required. Pickup directly from store.
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'center', fontWeight: 500 }}>
+              {isHindi ? 'अग्रिम भुगतान नहीं · भुगतान पिकअप पर करें' : 'No advance payment · pay at pickup'}
             </div>
           </div>
 
@@ -907,61 +929,15 @@ export const ProductTrustDetailView = ({
               </h3>
             </div>
             <div className="why-trust-list">
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'वेरीफाइड लोकल दुकान' : 'Verified Local Shop'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? 'शॉपसिलो टीम द्वारा भौतिक रूप से सत्यापित स्टोर'
-                      : 'Physical storefront verified with real counter presence'}
-                  </span>
+              {trustSignals.map((signal) => (
+                <div className="trust-signal-item" key={signal.headline}>
+                  <CheckCircle2 size={18} className="trust-green-check" />
+                  <div className="trust-signal-text-group">
+                    <span className="trust-signal-headline">{signal.headline}</span>
+                    <span className="trust-signal-subtext">{signal.description}</span>
+                  </div>
                 </div>
-              </div>
-
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'हाल ही में अपडेटेड इन्वेंटरी' : 'Inventory Recently Updated'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? 'दुकानदार के काउंटर स्टॉक से सीधे सिंक'
-                      : 'Stock availability verified directly with merchant'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'पिकअप तुरंत उपलब्ध' : 'Pickup Available'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? '15 मिनट में काउंटर से सुरक्षित रूप से सामान लें'
-                      : 'Collect from counter in under 15 minutes with OTP pass'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="trust-signal-item">
-                <CheckCircle2 size={18} className="trust-green-check" />
-                <div className="trust-signal-text-group">
-                  <span className="trust-signal-headline">
-                    {isHindi ? 'कोई ऑनलाइन भुगतान ज़रूरी नहीं' : 'No Online Payment Required'}
-                  </span>
-                  <span className="trust-signal-subtext">
-                    {isHindi
-                      ? 'सामान देखकर दुकान पर ही कैश या UPI से पे करें'
-                      : 'Zero advance risk — inspect in person and pay at pickup'}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -1041,9 +1017,11 @@ export const ProductTrustDetailView = ({
                 </p>
                 <div className="reserve-otp-card">
                   <span className="otp-label">{isHindi ? 'पिकअप टोकन' : 'PICKUP PASS PIN'}</span>
-                  <span className="otp-code">
-                    #{reserveSuccess.token || reserveSuccess.id?.slice(-4) || '8492'}
-                  </span>
+                  {(reserveSuccess.token || reserveSuccess.pickup_token || reserveSuccess.pickup_code) && (
+                    <span className="otp-code">
+                      #{reserveSuccess.token || reserveSuccess.pickup_token || reserveSuccess.pickup_code}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1064,11 +1042,15 @@ export const ProductTrustDetailView = ({
                   <Store size={16} className="store-pill-icon" />
                   <div className="store-pill-text">
                     <span className="store-pill-name">{activeReserveShop.name}</span>
-                    <span className="store-pill-dist">• {activeReserveShop.distanceStr}</span>
+                    {activeReserveShop.distanceStr && (
+                      <span className="store-pill-dist">• {activeReserveShop.distanceStr}</span>
+                    )}
                   </div>
-                  <span className="store-pill-price">
-                    ₹{((activeReserveShop.price || currentPrice) * reserveQty).toFixed(0)}
-                  </span>
+                  {isPricePublic && currentPrice > 0 && (
+                    <span className="store-pill-price">
+                      ₹{((activeReserveShop.price || currentPrice) * reserveQty).toFixed(0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Quantity Stepper */}
