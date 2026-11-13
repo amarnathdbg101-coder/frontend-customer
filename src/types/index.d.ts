@@ -81,6 +81,8 @@ export interface Product {
   stock_quantity: number;
   unit?: string;
   images?: string[];
+  image?: string;
+  image_url?: string;
   is_active?: boolean;
   tags?: string[];
   created_at?: string;

@@ -24,6 +24,7 @@ import { CheckoutModal } from './components/cart/CheckoutModal';
 import { FloatingCartBar } from './components/cart/FloatingCartBar';
 import OfflineBanner from './components/common/OfflineBanner';
 import PWAInstallBanner from './components/common/PWAInstallBanner';
+import { preloadAllCustomerRoutes } from './utils/routePreloader';
 
 // Code-split / Lazy-loaded Customer Pages
 const ExploreShopsScreen = lazy(() =>
@@ -138,6 +139,10 @@ const ExternalRedirect = ({ url }) => {
 };
 
 function App() {
+  React.useEffect(() => {
+    preloadAllCustomerRoutes();
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider>
