@@ -98,6 +98,18 @@ export const ProductTrustDetailView = ({
     };
   }, [product?.id, product?.category, product?.name]);
 
+  // Pre-fetch gallery images for 0ms instant carousel swipes
+  useEffect(() => {
+    if (!product) return;
+    const images = extractAllImages(product);
+    if (images.length > 1) {
+      images.slice(1, 4).forEach((imgSrc) => {
+        const img = new Image();
+        img.src = getImageUrl(imgSrc);
+      });
+    }
+  }, [product]);
+
   const availableSizes = useMemo(() => {
     if (!variants.length) return [];
     return Array.from(new Set(variants.map((v) => v.size).filter(Boolean)));
