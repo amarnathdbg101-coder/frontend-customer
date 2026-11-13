@@ -155,11 +155,11 @@ export const ExploreShopsScreen = () => {
   // Dynamic SEO & OpenGraph Head Management
   usePageSeo({
     title: searchTerm
-      ? `Results for "${searchTerm}" - Nearby Stores & Items`
+      ? `Results for "${searchTerm}" - Nearby products and shops`
       : selectedCategory && selectedCategory !== 'All'
-      ? `${selectedCategory} Stores & In-Stock Items Nearby`
-      : 'Explore Verified Neighborhood Stores & Live Inventory',
-    description: 'Discover verified neighborhood retail shops, live in-stock catalogs, compare nearby prices, and reserve 30-minute counter pickups on ShopSilo.',
+      ? `${selectedCategory} products and shops nearby`
+      : 'Explore local products and shops near you',
+    description: 'Browse products from local shops, review the details they share, and see which shops offer pickup reservations.',
     url: '/explore',
   });
 

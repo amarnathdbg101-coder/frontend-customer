@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Star, Plus, CheckCircle, ThumbsUp } from 'lucide-react';
+import { Plus, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { AddProductReviewModal } from './AddProductReviewModal';
 import { RatingStars, Button } from '../ui';
@@ -19,43 +19,14 @@ export const ProductReviewsSection = ({ product }) => {
   useEffect(() => {
     if (!product?.id) return;
 
-    // Load from localStorage or initialize with curated verified customer reviews
+    setReviews([]);
     try {
       const stored = JSON.parse(localStorage.getItem(`shopsilo_reviews_${product.id}`) || '[]');
-      if (stored.length > 0) {
-        setReviews(stored);
-      } else {
-        // High quality default seed reviews
-        const defaults = [
-          {
-            id: 'seed-1',
-            user_name: isHindi ? 'अमित कुमार' : 'Amit Kumar',
-            rating: 5,
-            title: isHindi ? 'उत्कृष्ट गुणवत्ता और ताजा पैकिंग' : 'Excellent Quality & Fresh Batch',
-            comment: isHindi
-              ? 'दुकान के काउंटर पर तुरंत मिल गया। सामान पूरी तरह ताजा और सीलबंद था।'
-              : 'Picked it up directly from the shop counter within 15 minutes. Very fresh packaging and authentic item.',
-            created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-            verified_purchase: true,
-          },
-          {
-            id: 'seed-2',
-            user_name: isHindi ? 'प्रिया शर्मा' : 'Priya Sharma',
-            rating: 4,
-            title: isHindi ? 'उचित मूल्य' : 'Value for Money',
-            comment: isHindi
-              ? 'कीमत एमआरपी से काफी कम थी और काउंटर पर त्वरित सेवा मिली।'
-              : 'Great pricing compared to MRP and smooth counter collection with QR code.',
-            created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-            verified_purchase: true,
-          },
-        ];
-        setReviews(defaults);
-      }
+      setReviews(Array.isArray(stored) ? stored : []);
     } catch (e) {
       console.warn('Failed to load product reviews:', e);
     }
-  }, [product?.id, isHindi]);
+  }, [product?.id]);
 
   const handleReviewAdded = (newReview) => {
     setReviews((prev) => [newReview, ...prev]);
@@ -63,14 +34,8 @@ export const ProductReviewsSection = ({ product }) => {
 
   const avgRating =
     reviews.length > 0
-      ? (reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1)
-      : '4.8';
-
-  const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-  reviews.forEach((r) => {
-    const star = Math.min(5, Math.max(1, Math.round(Number(r.rating) || 5)));
-    ratingCounts[star] = (ratingCounts[star] || 0) + 1;
-  });
+      ? (reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviews.length).toFixed(1)
+      : null;
 
   return (
     <div
@@ -103,15 +68,19 @@ export const ProductReviewsSection = ({ product }) => {
           >
             {t('products.customer_reviews')}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-              {avgRating}
-            </span>
-            <RatingStars rating={Number(avgRating)} size={16} />
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              ({reviews.length} {isHindi ? 'समीक्षाएं' : 'reviews'})
-            </span>
-          </div>
+          {avgRating ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 750, color: 'var(--text-primary)' }}>{avgRating}</span>
+              <RatingStars rating={Number(avgRating)} size={16} />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                ({reviews.length} {isHindi ? 'समीक्षाएं' : 'reviews'})
+              </span>
+            </div>
+          ) : (
+            <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              {isHindi ? 'अभी कोई समीक्षा नहीं है' : 'No reviews yet'}
+            </p>
+          )}
         </div>
 
         <Button

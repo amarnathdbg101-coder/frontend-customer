@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Flame, BookOpen, Heart, User } from 'lucide-react';
+import { Home, Flame, ShoppingBag, Heart, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -36,11 +36,11 @@ export const BottomNav = () => {
       </NavLink>
 
       <NavLink
-        to={isAuthenticated ? '/khata' : '/login'}
+        to={isAuthenticated ? '/reservations' : '/login'}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
-        <BookOpen size={20} color="#6366f1" />
-        <span>{isHindi ? 'खाता' : 'Khata'}</span>
+        <ShoppingBag size={20} />
+        <span>{isHindi ? 'पिकअप' : 'Pickups'}</span>
       </NavLink>
 
       <NavLink

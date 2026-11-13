@@ -5,17 +5,17 @@
 
 :root {
   /* ShopSilo Unified Brand Color System */
-  --color-primary: #4f46e5;           /* Deep Purple / Royal Indigo - ShopSilo Brand Identity */
+  --color-primary: #4f46e5;
   --color-primary-hover: #4338ca;
-  --color-primary-light: #f0f4ff;
+  --color-primary-light: #eef0ff;
   --color-primary-dark: #3730a3;
 
-  --color-accent: #10b981;            /* Fresh Green - Reserve, Verified & Savings */
+  --color-accent: #15803d;
   --color-accent-hover: #059669;
   --color-accent-light: #dcfce7;
   --color-accent-text: #15803d;
 
-  --color-success: #10b981;           /* Fresh Green - In-Stock, Verified & Savings */
+  --color-success: #15803d;
   --color-success-hover: #059669;
   --color-success-light: #dcfce7;
   --color-success-text: #15803d;
@@ -33,44 +33,46 @@
   --color-info-light: #f0f9ff;
 
   /* Clean Surfaces & Backgrounds */
-  --bg-app: #f8fafc;                  /* Soft neutral backdrop */
-  --bg-surface: #ffffff;              /* Pure white card surface */
-  --bg-surface-subtle: #f8fafc;
+  --bg-app: #f6f7fb;
+  --bg-surface: #ffffff;
+  --bg-surface-subtle: #f8f9fc;
+  --bg-surface-raised: #ffffff;
   --bg-card: #ffffff;
   --bg-dark-header: #0f172a;
 
   /* High-Contrast Typography */
-  --text-primary: #0f172a;            /* High contrast dark slate */
-  --text-secondary: #475569;          /* Medium dark slate for descriptions */
-  --text-muted: #94a3b8;              /* Muted gray for secondary meta */
+  --text-primary: #182230;
+  --text-secondary: #536174;
+  --text-muted: #778398;
   --text-inverse: #ffffff;
 
   /* Clean Subtle Borders */
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --border-subtle: #e7eaf0;
+  --border-strong: #d3d9e3;
+  --focus-ring: rgba(79, 70, 229, 0.22);
 
   /* Fixed Predictable Responsive Typography Scale System (No Aggressive VW Scaling) */
-  --font-size-display: 2rem;          /* 32px - Display / Hero */
-  --font-size-h1: 1.75rem;            /* 28px - H1 Page Headings */
-  --font-size-h2: 1.5rem;             /* 24px - H2 Section Titles */
-  --font-size-h3: 1.25rem;            /* 20px - H3 Card & Sub-Headings */
-  --font-size-body: 1rem;             /* 16px - Standard Body & Inputs */
-  --font-size-caption: 0.875rem;      /* 14px - Subtitles, Captions & Badges */
-  --font-size-micro: 0.75rem;         /* 12px - Secondary Micro Meta */
+  --font-size-display: 2.25rem;
+  --font-size-h1: 1.75rem;
+  --font-size-h2: 1.375rem;
+  --font-size-h3: 1.125rem;
+  --font-size-body: 1rem;
+  --font-size-caption: 0.875rem;
+  --font-size-micro: 0.75rem;
 
   --line-height-tight: 1.2;
-  --line-height-normal: 1.45;
-  --line-height-relaxed: 1.6;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
 
   /* App-Like PWA Spacing & Touch Tokens */
   --touch-target-min: 44px;
-  --mobile-padding-x: 12px;
+  --mobile-padding-x: 16px;
   --space-2xs: 2px;
   --space-xs: 4px;
   --space-sm: 8px;
-  --space-md: 14px;
-  --space-lg: 20px;
-  --space-xl: 28px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
 
   /* Border Radii */
   --radius-xs: 4px;
@@ -78,14 +80,15 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
+  --radius-card: 18px;
   --radius-full: 9999px;
 
   /* Elevation Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-  --shadow-floating: 0 20px 40px -10px rgba(15, 23, 42, 0.2);
+  --shadow-xs: 0 1px 2px rgba(20, 32, 54, 0.04);
+  --shadow-sm: 0 2px 8px rgba(20, 32, 54, 0.05);
+  --shadow-md: 0 8px 24px rgba(20, 32, 54, 0.08);
+  --shadow-lg: 0 16px 40px rgba(20, 32, 54, 0.12);
+  --shadow-floating: 0 18px 48px rgba(20, 32, 54, 0.18);
 
   /* Typography Families */
   --font-family-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -95,6 +98,7 @@
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.25s ease-in-out;
+  --transition-gentle: 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 
   /* Viewport Layout Bounds */
   --content-max-width: 1280px;
@@ -121,6 +125,7 @@
   --bg-app: #090d16;
   --bg-surface: #111827;
   --bg-surface-subtle: #1f2937;
+  --bg-surface-raised: #182235;
   --bg-card: #111827;
   --bg-dark-header: #030712;
 
@@ -131,6 +136,7 @@
 
   --border-subtle: #1f2937;
   --border-strong: #374151;
+  --focus-ring: rgba(129, 140, 248, 0.32);
 
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);

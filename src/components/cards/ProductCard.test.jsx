@@ -24,8 +24,8 @@ describe('Hyperlocal ProductCard Component Tests', () => {
       </MemoryRouter>
     );
 
-    // 1. Availability Row: Green Dot + "Available Now"
-    expect(screen.getByText(/Available Now/i)).toBeInTheDocument();
+    // 1. Availability Row: Explicit stock status
+    expect(screen.getByText(/In stock/i)).toBeInTheDocument();
 
     // 2. Product Name: Maximum 2 lines
     expect(screen.getByText('Parachute Coconut Oil 500ml')).toBeInTheDocument();
@@ -104,8 +104,19 @@ describe('Hyperlocal ProductCard Component Tests', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getAllByText(/Out of Stock/i).length).toBeGreaterThanOrEqual(1);
-    const reserveBtn = screen.getByRole('button', { name: /Reserve/i });
+    expect(screen.getAllByText(/Out of stock/i).length).toBeGreaterThanOrEqual(1);
+    const reserveBtn = screen.getByRole('button', { name: /out of stock/i });
     expect(reserveBtn).toBeDisabled();
+  });
+
+  it('does not present unknown stock as available or sold out', () => {
+    render(
+      <MemoryRouter>
+        <ProductCard product={{ ...mockProduct, available_quantity: undefined, stock_quantity: undefined, stock: undefined, is_available: undefined }} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText(/Check availability/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /View details for/i })).toBeInTheDocument();
   });
 });

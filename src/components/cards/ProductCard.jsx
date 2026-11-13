@@ -1,6 +1,6 @@
 import React, { memo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Package } from 'lucide-react';
+import { Heart, MapPin, Package, Store } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import LanguageContext from '../../context/LanguageContext';
@@ -39,15 +39,24 @@ const ProductCardInner = ({
   const p = product || {};
 
   // Stock & Availability calculation
-  const stock = Number(
+  const rawStock =
     p.available_quantity ??
     p.stock_quantity ??
     p.inventory?.available_quantity ??
     p.inventory?.quantity ??
     p.stock ??
-    (p.is_available === false ? 0 : 10)
-  );
-  const inStock = stock > 0 && p.is_available !== false;
+    (p.is_available === false ? 0 : null);
+  const stock = rawStock == null ? null : Number(rawStock);
+  const hasStockData = stock !== null && Number.isFinite(stock);
+  const isAvailabilityKnown = hasStockData || typeof p.is_available === 'boolean';
+  const inStock = hasStockData
+    ? stock > 0 && p.is_available !== false
+    : p.is_available === true;
+  const availabilityClass = !isAvailabilityKnown
+    ? 'unknown-stock'
+    : inStock
+    ? ''
+    : 'out-of-stock';
 
   // Price & Savings calculation
   const mrp = Number(p.compare_price || p.mrp || 0);
@@ -73,14 +82,13 @@ const ProductCardInner = ({
     p.shop_name ||
     p.shop?.name ||
     p.store_name ||
-    (isHindi ? 'गुप्ता किराना स्टोर' : 'Gupta Store');
+    '';
 
   const isVerified =
     p.is_verified ??
     p.shop?.is_verified ??
     p.shop_verified ??
-    p.is_shop_verified ??
-    true;
+    p.is_shop_verified;
 
   // Hyperlocal Distance Calculation
   let displayDistance = p.distance_text;
@@ -94,16 +102,16 @@ const ProductCardInner = ({
     } else if (typeof p.distance === 'string' && p.distance.trim()) {
       displayDistance = p.distance;
     } else if (
-      coords?.lat &&
-      coords?.lng &&
-      (p.shop_latitude || p.shop?.latitude) &&
-      (p.shop_longitude || p.shop?.longitude)
+      coords?.lat != null &&
+      coords?.lng != null &&
+      (p.shop_latitude ?? p.shop?.latitude) != null &&
+      (p.shop_longitude ?? p.shop?.longitude) != null
     ) {
       const d = calculateDistanceKm(
         coords.lat,
         coords.lng,
-        p.shop_latitude || p.shop?.latitude,
-        p.shop_longitude || p.shop?.longitude
+        p.shop_latitude ?? p.shop?.latitude,
+        p.shop_longitude ?? p.shop?.longitude
       );
       if (d != null) {
         displayDistance = formatDistance(d);
@@ -111,15 +119,12 @@ const ProductCardInner = ({
     }
   }
 
-  // Fallback to high-trust default distance
-  if (!displayDistance) {
-    displayDistance = isHindi ? '450m दूर' : '450m away';
-  } else if (isHindi && displayDistance.includes('away')) {
+  if (isHindi && displayDistance?.includes('away')) {
     displayDistance = displayDistance.replace('away', 'दूर');
   }
 
   // Navigation & Action Handlers
-  const targetSlug = shopSlug || p.shop_slug || p.shop?.slug || 'store';
+  const targetSlug = shopSlug || p.shop_slug || p.shop?.slug;
 
   const handleCardClick = () => {
     if (onClick) {
@@ -127,7 +132,10 @@ const ProductCardInner = ({
       return;
     }
     if (p.id) {
-      navigate(`/shop/${targetSlug}/product/${p.id}`, { state: { product: p } });
+      const path = targetSlug
+        ? `/shop/${targetSlug}/product/${p.id}`
+        : `/product/${p.id}`;
+      navigate(path, { state: { product: p } });
     }
   };
 
@@ -158,7 +166,10 @@ const ProductCardInner = ({
       return;
     }
     if (p.id) {
-      navigate(`/shop/${targetSlug}/product/${p.id}`, {
+      const path = targetSlug
+        ? `/shop/${targetSlug}/product/${p.id}`
+        : `/product/${p.id}`;
+      navigate(path, {
         state: { product: p, autoReserve: true },
       });
       return;
@@ -181,7 +192,7 @@ const ProductCardInner = ({
           handleCardClick();
         }
       }}
-      aria-label={`${p.name || 'Product'} - ${storeName}`}
+      aria-label={[p.name || (isHindi ? 'उत्पाद' : 'Product'), storeName].filter(Boolean).join(' - ')}
     >
       <div>
         {/* 1. Product Image */}
@@ -247,11 +258,13 @@ const ProductCardInner = ({
 
         {/* 2. Availability Row */}
         <div className="product-card-availability">
-          <span className={`product-card-avail-dot ${!inStock ? 'out-of-stock' : ''}`} />
-          <span className={`product-card-avail-text ${!inStock ? 'out-of-stock' : ''}`}>
+          <span className={`product-card-avail-dot ${availabilityClass}`} />
+          <span className={`product-card-avail-text ${availabilityClass}`}>
             {inStock
-              ? (isHindi ? 'उपलब्ध है' : 'Available Now')
-              : (isHindi ? 'स्टॉक खत्म' : 'Out of Stock')}
+              ? (isHindi ? 'अभी उपलब्ध' : 'In stock')
+              : isAvailabilityKnown
+              ? (isHindi ? 'स्टॉक खत्म' : 'Out of stock')
+              : (isHindi ? 'स्टॉक की पुष्टि करें' : 'Check availability')}
           </span>
         </div>
 
@@ -290,29 +303,33 @@ const ProductCardInner = ({
         </div>
 
         {/* 5. Local Store Information */}
-        <div className="product-card-store-box">
-          <div className="product-card-store-name-row">
-            <span className="product-card-store-icon" aria-hidden="true">🏪</span>
-            <span className="product-card-store-name" title={storeName}>
-              {storeName}
-            </span>
-            {isVerified && (
-              <span
-                className="product-card-verified-badge"
-                title={isHindi ? 'सत्यापित दुकान' : 'Verified Store'}
-                aria-label="Verified Store"
-              >
-                ✓
-              </span>
+        {(storeName || isVerified === true || displayDistance) && (
+          <div className="product-card-store-box">
+            {storeName && (
+              <div className="product-card-store-name-row">
+                <span className="product-card-store-icon" aria-hidden="true"><Store size={13} /></span>
+                <span className="product-card-store-name" title={storeName}>
+                  {storeName}
+                </span>
+                {isVerified === true && (
+                  <span
+                    className="product-card-verified-badge"
+                    title={isHindi ? 'सत्यापित दुकान' : 'Verified store'}
+                    aria-label={isHindi ? 'सत्यापित दुकान' : 'Verified store'}
+                  >
+                    ✓
+                  </span>
+                )}
+              </div>
+            )}
+            {displayDistance && (
+              <div className="product-card-distance-row">
+                <span className="product-card-distance-icon" aria-hidden="true"><MapPin size={12} /></span>
+                <span className="product-card-distance-text">{displayDistance}</span>
+              </div>
             )}
           </div>
-          <div className="product-card-distance-row">
-            <span className="product-card-distance-icon" aria-hidden="true">📍</span>
-            <span className="product-card-distance-text">
-              {displayDistance}
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 6. Action Section */}
@@ -337,14 +354,22 @@ const ProductCardInner = ({
         <button
           type="button"
           className="product-card-btn-reserve"
-          onClick={handleReserve}
-          disabled={!inStock}
-          aria-label={isHindi ? `${p.name} को रिज़र्व करें` : `Reserve ${p.name}`}
-          title={isHindi ? 'दुकान से 30-मिनट पिकअप हेतु रिज़र्व करें' : 'Reserve for in-store pickup'}
+          onClick={inStock ? handleReserve : isAvailabilityKnown ? handleReserve : handleCardClick}
+          disabled={isAvailabilityKnown && !inStock}
+          aria-label={
+            inStock
+              ? (isHindi ? `${p.name} को रिज़र्व करें` : `Reserve ${p.name}`)
+              : isAvailabilityKnown
+              ? (isHindi ? `${p.name} का स्टॉक खत्म है` : `${p.name} is out of stock`)
+              : (isHindi ? `${p.name} का विवरण देखें` : `View details for ${p.name}`)
+          }
+          title={isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for in-store pickup'}
         >
           {inStock
             ? (isHindi ? 'रिज़र्व करें' : 'Reserve')
-            : (isHindi ? 'स्टॉक नहीं' : 'Out of Stock')}
+            : isAvailabilityKnown
+            ? (isHindi ? 'स्टॉक नहीं' : 'Out of stock')
+            : (isHindi ? 'विवरण देखें' : 'View details')}
         </button>
       </div>
     </div>
