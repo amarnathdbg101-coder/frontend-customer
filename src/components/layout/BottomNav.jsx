@@ -1,6 +1,7 @@
 /**
  * Customer App Bottom Navigation Bar
  * Features: Explore, Deals, Mera Khata (Udhar Passbook), Saved, Profile
+ * Instant Route Preloading on Hover & Touch for 0ms transitions
  */
 
 import React from 'react';
@@ -9,6 +10,7 @@ import { Home, Flame, ShoppingBag, Heart, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSaved } from '../../context/SavedContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { preloadRouteOnHover } from '../../utils/routePreloader';
 
 export const BottomNav = () => {
   const { isAuthenticated } = useAuth();
@@ -29,6 +31,8 @@ export const BottomNav = () => {
 
       <NavLink
         to="/deals"
+        onMouseEnter={() => preloadRouteOnHover('deals')}
+        onTouchStart={() => preloadRouteOnHover('deals')}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <Flame size={20} color="#f97316" />
@@ -37,6 +41,8 @@ export const BottomNav = () => {
 
       <NavLink
         to={isAuthenticated ? '/reservations' : '/login'}
+        onMouseEnter={() => preloadRouteOnHover('reservations')}
+        onTouchStart={() => preloadRouteOnHover('reservations')}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <ShoppingBag size={20} />
@@ -45,6 +51,8 @@ export const BottomNav = () => {
 
       <NavLink
         to="/saved"
+        onMouseEnter={() => preloadRouteOnHover('saved')}
+        onTouchStart={() => preloadRouteOnHover('saved')}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
         style={{ position: 'relative' }}
       >
@@ -75,6 +83,8 @@ export const BottomNav = () => {
 
       <NavLink
         to={isAuthenticated ? '/profile' : '/login'}
+        onMouseEnter={() => preloadRouteOnHover('profile')}
+        onTouchStart={() => preloadRouteOnHover('profile')}
         className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
       >
         <User size={20} />
