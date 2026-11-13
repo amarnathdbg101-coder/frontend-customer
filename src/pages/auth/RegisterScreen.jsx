@@ -41,9 +41,14 @@ export const RegisterScreen = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
 
-    if (formData.phone && formData.phone.length < 10) {
+    const cleanName = formData.full_name.trim();
+    const cleanPhone = formData.phone.replace(/[^0-9]/g, '');
+    const cleanEmail = formData.email.trim().toLowerCase();
+
+    if (cleanPhone && cleanPhone.length < 10) {
       setError(t('auth.invalid_phone'));
       return;
     }
@@ -56,7 +61,13 @@ export const RegisterScreen = () => {
     setLoading(true);
 
     try {
-      await register({ ...formData, role: 'customer' });
+      await register({
+        full_name: cleanName,
+        phone: cleanPhone,
+        email: cleanEmail,
+        password: formData.password,
+        role: 'customer',
+      });
       const targetRoute = sessionState.getRedirectAfterLogin() || location.state?.from?.pathname || '/';
       navigate(targetRoute, { replace: true });
     } catch (err) {
@@ -182,6 +193,7 @@ export const RegisterScreen = () => {
               type="text"
               name="full_name"
               required
+              autoComplete="name"
               className="form-input"
               placeholder={t('auth.full_name_placeholder')}
               value={formData.full_name}
@@ -195,6 +207,7 @@ export const RegisterScreen = () => {
               type="tel"
               name="phone"
               required
+              autoComplete="tel"
               className="form-input"
               placeholder={t('auth.phone_placeholder')}
               value={formData.phone}
@@ -208,6 +221,7 @@ export const RegisterScreen = () => {
               type="email"
               name="email"
               required
+              autoComplete="email"
               className="form-input"
               placeholder={t('auth.email_placeholder')}
               value={formData.email}
@@ -223,6 +237,7 @@ export const RegisterScreen = () => {
                 name="password"
                 required
                 minLength={6}
+                autoComplete="new-password"
                 className="form-input"
                 style={{ paddingRight: '40px' }}
                 placeholder={t('auth.password_placeholder')}

@@ -41,11 +41,14 @@ export const LoginScreen = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
     setLoading(true);
 
+    const cleanIdentifier = identifier.trim().toLowerCase();
+
     try {
-      const res = await login(identifier.trim(), password);
+      const res = await login(cleanIdentifier, password);
       const user = res?.user || res?.data?.user;
       if (user && (user.role === 'merchant' || user.role === 'shop')) {
         setError(t('auth.role_merchant_notice'));
@@ -185,6 +188,7 @@ export const LoginScreen = () => {
             <input
               type="text"
               required
+              autoComplete="username email"
               className="form-input"
               placeholder={t('auth.phone_placeholder')}
               value={identifier}
@@ -220,6 +224,7 @@ export const LoginScreen = () => {
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
                 className="form-input"
                 style={{ paddingRight: '40px' }}
                 placeholder={t('auth.password_placeholder')}
