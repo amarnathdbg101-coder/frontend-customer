@@ -58,17 +58,32 @@ export const ShopSiloLogo = ({
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        ...bgStyle,
+        overflow: 'hidden',
+        background: 'transparent',
       }}
       aria-hidden="true"
     >
-      {/* Material Icons Storefront Rounded SVG */}
+      <img
+        src="/logo.png"
+        alt="ShopSilo"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          display: 'block',
+        }}
+        onError={(e) => {
+          e.target.style.display = 'none';
+          if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
+        }}
+      />
+      {/* Fallback SVG */}
       <svg
         width={iconSize}
         height={iconSize}
         viewBox="0 0 24 24"
         fill="currentColor"
-        style={{ display: 'block' }}
+        style={{ display: 'none', color: '#ff7700' }}
       >
         <path d="M21.9 8.89l-.98-4.42c-.2-.88-.98-1.47-1.88-1.47H4.96c-.9 0-1.68.59-1.88 1.47l-.98 4.42c-.24 1.07.39 2.11 1.42 2.46.2.07.41.11.62.13V20c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8.52c.21-.02.42-.06.62-.13 1.03-.35 1.66-1.39 1.42-2.46zM18 20H6v-7.06c.32-.08.62-.23.88-.44.53-.44.88-1.07.97-1.78.16.03.32.06.49.06.62 0 1.18-.26 1.6-.68.41.42.97.68 1.59.68.62 0 1.18-.26 1.6-.68.41.42.97.68 1.59.68.62 0 1.18-.26 1.6-.68.09.71.44 1.34.97 1.78.26.21.56.36.88.44V20zm-9-2v-4h6v4H9z" />
       </svg>
