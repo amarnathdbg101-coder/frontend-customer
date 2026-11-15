@@ -18,6 +18,8 @@ import {
   Share2,
   Heart,
   Star,
+  Camera,
+  Sparkles,
 } from 'lucide-react';
 import { getImageUrl, extractAllImages } from '../../utils/imageUrl';
 import { formatDistance, calculateDistanceKm } from '../../utils/distance';
@@ -46,6 +48,9 @@ export const ProductTrustDetailView = ({
   // 1. Gallery State & Swipe
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [isHoverZooming, setIsHoverZooming] = useState(false);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
+  const [isImgLoaded, setIsImgLoaded] = useState(true);
   const touchStartRef = useRef({ x: 0, y: 0 });
 
   // 2. Reservation Modal State
@@ -260,6 +265,34 @@ export const ProductTrustDetailView = ({
     },
   ].filter(Boolean);
 
+  // Keyboard navigation for fullscreen zoom lightbox
+  useEffect(() => {
+    if (!isZoomOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsZoomOpen(false);
+      } else if (e.key === 'ArrowRight' && images.length > 1) {
+        setActiveImgIdx((prev) => (prev + 1) % images.length);
+      } else if (e.key === 'ArrowLeft' && images.length > 1) {
+        setActiveImgIdx((prev) => (prev - 1 + images.length) % images.length);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomOpen, images.length]);
+
+  // Gallery interactive loupe magnification handler
+  const handleGalleryMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomOrigin({
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    });
+  };
+
   // Gallery Swipe Handlers
   const handleTouchStart = (e) => {
     touchStartRef.current = {
@@ -370,9 +403,19 @@ export const ProductTrustDetailView = ({
               className="product-gallery-viewport flipkart-gallery-viewport"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
+              onMouseEnter={() => setIsHoverZooming(true)}
+              onMouseLeave={() => {
+                setIsHoverZooming(false);
+                setZoomOrigin({ x: 50, y: 50 });
+              }}
+              onMouseMove={handleGalleryMouseMove}
+              style={{
+                cursor: isHoverZooming ? 'crosshair' : 'zoom-in',
+                overflow: 'hidden',
+              }}
             >
-              {/* Floating Availability Badge */}
-              <div className="gallery-badge-top-left">
+              {/* Floating Availability & Discount Badges */}
+              <div className="gallery-badge-top-left" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {isAvailabilityKnown && (
                 <div className={`available-now-pill ${isInStock ? '' : 'is-unavailable'}`}>
                   <span className="live-stock-pulse-dot" />
@@ -382,6 +425,12 @@ export const ProductTrustDetailView = ({
                       : (isHindi ? 'स्टॉक खत्म' : 'Out of stock')}
                   </span>
                 </div>
+                )}
+                {discountPercent >= 10 && (
+                  <div className="product-gallery-deal-pill">
+                    <Sparkles size={11} />
+                    <span>{discountPercent}% {isHindi ? 'बचत' : 'OFF'}</span>
+                  </div>
                 )}
               </div>
 
@@ -429,12 +478,21 @@ export const ProductTrustDetailView = ({
                 </button>
               </div>
 
-              {/* Main Image */}
+              {/* Main Image with Smooth Zoom & Fade */}
               {images.length > 0 ? (
                 <img
                   src={getImageUrl(images[activeImgIdx])}
                   alt={product.name}
                   className="product-gallery-main-img flipkart-main-img"
+                  style={{
+                    transform: isHoverZooming ? 'scale(1.8)' : 'scale(1)',
+                    transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                    transition: isHoverZooming
+                      ? 'transform 0.08s ease-out'
+                      : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease',
+                    opacity: isImgLoaded ? 1 : 0.45,
+                  }}
+                  onLoad={() => setIsImgLoaded(true)}
                   onClick={() => setIsZoomOpen(true)}
                 />
               ) : (
@@ -443,14 +501,23 @@ export const ProductTrustDetailView = ({
                 </div>
               )}
 
+              {/* Photo Index Counter Pill (e.g. 1 / 4 with Camera icon) */}
+              {images.length > 1 && (
+                <div className="product-gallery-photo-counter">
+                  <Camera size={13} />
+                  <span>{activeImgIdx + 1} / {images.length}</span>
+                </div>
+              )}
+
               {/* Desktop Prev / Next Navigation Chevrons */}
               {images.length > 1 && (
                 <>
                   <button
                     type="button"
-                    onClick={() =>
-                      setActiveImgIdx((prev) => (prev - 1 + images.length) % images.length)
-                    }
+                    onClick={() => {
+                      setActiveImgIdx((prev) => (prev - 1 + images.length) % images.length);
+                      setIsImgLoaded(false);
+                    }}
                     className="gallery-nav-chevron left"
                     aria-label="Previous image"
                   >
@@ -458,7 +525,10 @@ export const ProductTrustDetailView = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveImgIdx((prev) => (prev + 1) % images.length)}
+                    onClick={() => {
+                      setActiveImgIdx((prev) => (prev + 1) % images.length);
+                      setIsImgLoaded(false);
+                    }}
                     className="gallery-nav-chevron right"
                     aria-label="Next image"
                   >
@@ -488,7 +558,10 @@ export const ProductTrustDetailView = ({
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setActiveImgIdx(idx)}
+                    onClick={() => {
+                      setActiveImgIdx(idx);
+                      setIsImgLoaded(false);
+                    }}
                     className={`flipkart-dot ${activeImgIdx === idx ? 'is-active' : ''}`}
                     aria-label={`Go to slide ${idx + 1}`}
                   />
@@ -496,13 +569,22 @@ export const ProductTrustDetailView = ({
               </div>
             )}
 
-            {/* Clickable Rounded Thumbnails Strip */}
+            {/* Clickable & Hoverable Rounded Thumbnails Strip */}
             {images.length > 1 && (
               <div className="product-studio-thumbnails-strip">
                 {images.map((img, idx) => (
                   <div
                     key={idx}
-                    onClick={() => setActiveImgIdx(idx)}
+                    onMouseEnter={() => {
+                      if (activeImgIdx !== idx) {
+                        setActiveImgIdx(idx);
+                        setIsImgLoaded(false);
+                      }
+                    }}
+                    onClick={() => {
+                      setActiveImgIdx(idx);
+                      setIsImgLoaded(false);
+                    }}
                     className={`product-studio-thumbnail-item ${activeImgIdx === idx ? 'is-active' : ''}`}
                     title={`Thumbnail ${idx + 1}`}
                   >
@@ -901,26 +983,30 @@ export const ProductTrustDetailView = ({
             );
           })()}
 
-          {/* Primary Action Button: Reserve Now */}
+          {/* Primary Action Button: Add to Cart */}
           <div style={{ marginBottom: '18px' }}>
             <button
               type="button"
-              onClick={() => openReservationForShop(bestOffer)}
+              onClick={() => {
+                if (!canReserve) return;
+                addItem(product, 1);
+                openCart();
+              }}
               disabled={!canReserve}
               aria-disabled={!canReserve}
               aria-label={
                 !bestOffer
                   ? (isHindi ? 'दुकान की जानकारी उपलब्ध नहीं' : 'Store details unavailable')
                   : !canReserve
-                  ? (isHindi ? 'रिज़र्वेशन उपलब्ध नहीं' : 'Pickup reservation unavailable')
-                  : (isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for pickup')
+                  ? (isHindi ? 'स्टॉक उपलब्ध नहीं' : 'Out of Stock')
+                  : (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart')
               }
               style={{
                 width: '100%',
-                background: canReserve ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'var(--bg-surface-subtle, #f1f5f9)',
+                backgroundColor: canReserve ? '#0f172a' : 'var(--bg-surface-subtle, #f1f5f9)',
                 color: canReserve ? '#ffffff' : 'var(--text-muted, #94a3b8)',
                 border: 'none',
-                borderRadius: '14px',
+                borderRadius: '12px',
                 padding: '14px 20px',
                 fontSize: '0.98rem',
                 fontWeight: 900,
@@ -929,16 +1015,16 @@ export const ProductTrustDetailView = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: canReserve ? '0 4px 16px rgba(16, 185, 129, 0.35)' : 'none',
-                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                boxShadow: canReserve ? '0 2px 8px rgba(15, 23, 42, 0.15)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
               <span>
                 {!bestOffer
                   ? (isHindi ? 'दुकान की जानकारी उपलब्ध नहीं' : 'Store details unavailable')
                   : !canReserve
-                  ? (isHindi ? 'रिज़र्वेशन उपलब्ध नहीं' : 'Pickup reservation unavailable')
-                  : (isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for pickup')}
+                  ? (isHindi ? 'स्टॉक उपलब्ध नहीं' : 'Out of Stock')
+                  : (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart')}
               </span>
             </button>
 
@@ -971,7 +1057,7 @@ export const ProductTrustDetailView = ({
       </div>
 
       {/* ====================================================================
-          FULLSCREEN IMAGE ZOOM LIGHTBOX
+          FULLSCREEN IMAGE ZOOM LIGHTBOX WITH KEYBOARD & CHEVRONS
           ==================================================================== */}
       {isZoomOpen && images.length > 0 && (
         <div className="product-zoom-lightbox" onClick={() => setIsZoomOpen(false)}>
@@ -983,12 +1069,47 @@ export const ProductTrustDetailView = ({
           >
             <X size={24} />
           </button>
-          <img
-            src={getImageUrl(images[activeImgIdx])}
-            alt={product.name}
-            className="lightbox-img"
-            onClick={(e) => e.stopPropagation()}
-          />
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="lightbox-nav-btn left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImgIdx((prev) => (prev - 1 + images.length) % images.length);
+                }}
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={28} />
+              </button>
+              <button
+                type="button"
+                className="lightbox-nav-btn right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImgIdx((prev) => (prev + 1) % images.length);
+                }}
+                aria-label="Next image"
+              >
+                <ChevronRight size={28} />
+              </button>
+            </>
+          )}
+
+          <div className="lightbox-content-box" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={getImageUrl(images[activeImgIdx])}
+              alt={product.name}
+              className="lightbox-img"
+            />
+            {images.length > 1 && (
+              <div className="lightbox-photo-counter">
+                <Camera size={13} />
+                <span>{activeImgIdx + 1} / {images.length}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1205,6 +1326,31 @@ export const ProductTrustDetailView = ({
       {copiedLink && (
         <div className="share-feedback-toast">
           ✓ {isHindi ? 'लिंक कॉपी हो गया!' : 'Product Link Copied!'}
+        </div>
+      )}
+
+      {/* Mobile Sticky Bottom Action Bar for Instant Access */}
+      {canReserve && bestOffer && (
+        <div className="product-sticky-bottom-bar">
+          <div className="sticky-bottom-inner">
+            <div className="sticky-price-summary">
+              <span className="sticky-price-label">
+                {isHindi ? 'दुकान की कीमत' : 'Store Price'}
+              </span>
+              <span className="sticky-price-val">
+                ₹{currentPrice.toFixed(0)}
+              </span>
+            </div>
+            <div className="sticky-buttons-group">
+              <button
+                type="button"
+                onClick={() => openReservationForShop(bestOffer)}
+                className="sticky-reserve-btn"
+              >
+                {isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for pickup'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

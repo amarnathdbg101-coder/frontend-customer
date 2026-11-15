@@ -713,33 +713,6 @@ export const ProductDetailModal = ({
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {onReserve && (
-                      <button
-                        type="button"
-                        onClick={handleQuickReserve}
-                        disabled={reserving || !inStock}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          backgroundColor: '#ffffff',
-                          color: '#0f172a',
-                          border: '1.5px solid #0f172a',
-                          borderRadius: '10px',
-                          padding: '10px 14px',
-                          fontSize: '0.82rem',
-                          fontWeight: 800,
-                          cursor: inStock ? 'pointer' : 'not-allowed',
-                          opacity: inStock ? 1 : 0.5,
-                        }}
-                      >
-                        <Clock size={15} />
-                        <span>{reserving ? (isHindi ? 'रिज़र्व...' : 'Reserving...') : (isHindi ? '⚡ काउंटर पिकअप रिज़र्व' : '⚡ Reserve In-Store Pickup')}</span>
-                      </button>
-                    )}
-
                     {(() => {
                       const rawPhone = product.shop_phone || product.shop?.phone || '';
                       const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
