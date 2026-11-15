@@ -174,8 +174,8 @@ export const CheckoutModal = () => {
       if (msg.includes('user not found') || msg.includes('unauthorized') || msg.includes('session expired') || msg.includes('reservations_user_id_fkey')) {
         setError(isHindi ? 'सत्र समाप्त हो गया है। कृपया दोबारा लॉग इन करें।' : 'Your session has expired. Please sign in again.');
         logout();
-      } else if (msg.includes('stock') || msg.includes('insufficient')) {
-        setError(isHindi ? 'उत्पाद स्टॉक में उपलब्ध नहीं है।' : 'Item is currently out of stock.');
+      } else if (msg.includes('stock') || msg.includes('insufficient') || msg.includes('conflict') || msg.includes('409')) {
+        setError(isHindi ? 'उत्पाद अभी रिज़र्वेशन के लिए उपलब्ध नहीं है।' : 'Item is currently unavailable for pickup reservation.');
       } else {
         setError(err.message || t('common.error'));
       }

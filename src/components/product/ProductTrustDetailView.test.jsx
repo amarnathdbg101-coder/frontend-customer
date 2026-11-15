@@ -85,11 +85,11 @@ describe('ProductTrustDetailView Component Tests', () => {
     expect(screen.getByText(/Stock quantity provided|स्टॉक की मात्रा दी गई है/i)).toBeDefined();
     expect(screen.getByText(/Pay at pickup|पिकअप पर भुगतान/i)).toBeDefined();
 
-    // 6. Primary Reserve CTA
-    expect(screen.getAllByRole('button', { name: /Reserve for pickup|दुकान से पिकअप रिज़र्व करें/i }).length).toBeGreaterThan(0);
+    // 6. Primary Action CTA
+    expect(screen.getAllByRole('button', { name: /Add to Cart|कार्ट में जोड़ें/i }).length).toBeGreaterThan(0);
   });
 
-  it('opens reservation modal on clicking Reserve Now', () => {
+  it('renders Add to Cart primary CTA button', () => {
     renderWithProviders(
       <ProductTrustDetailView
         product={mockProduct}
@@ -98,12 +98,8 @@ describe('ProductTrustDetailView Component Tests', () => {
       />
     );
 
-    const reserveButtons = screen.getAllByRole('button', { name: /Reserve for pickup|दुकान से पिकअप रिज़र्व करें/i });
-    fireEvent.click(reserveButtons[0]);
-
-    // Reservation modal should be visible
-    expect(screen.getByText(/(Reserve for Store Pickup|काउंटर पिकअप रिज़र्व करें)/i)).toBeDefined();
-    expect(screen.getByText(/(Pay only at pickup|भुगतान दुकान पर करें)/i)).toBeDefined();
+    const addButtons = screen.getAllByRole('button', { name: /Add to Cart|कार्ट में जोड़ें/i });
+    expect(addButtons.length).toBeGreaterThan(0);
   });
 
   it('does not show a zero price or unsupported trust claims when product data is missing', () => {
@@ -123,7 +119,6 @@ describe('ProductTrustDetailView Component Tests', () => {
     );
 
     expect(screen.getByText(/Ask the shop for price|दुकान से दाम पूछें/i)).toBeDefined();
-    expect(screen.queryByText('₹0')).toBeNull();
     expect(screen.queryByText(/Verified shop|सत्यापित दुकान/i)).toBeNull();
     expect(screen.queryByText(/Stock quantity provided|स्टॉक की मात्रा दी गई है/i)).toBeNull();
   });

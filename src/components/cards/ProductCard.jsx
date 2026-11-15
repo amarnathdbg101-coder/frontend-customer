@@ -1,10 +1,11 @@
 import React, { memo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MapPin, Package, Store } from 'lucide-react';
+import { Heart, MapPin, Package, Store, ShoppingCart } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
 import { formatCurrency } from '../../utils/format';
 import LanguageContext from '../../context/LanguageContext';
 import { LocationContext } from '../../context/LocationContext';
+import CartContext, { useCart } from '../../context/CartContext';
 import { calculateDistanceKm, formatDistance } from '../../utils/distance';
 import { highlightMatch } from '../../utils/searchHelpers';
 
@@ -13,11 +14,11 @@ import { highlightMatch } from '../../utils/searchHelpers';
  * 
  * Layout Hierarchy:
  * 1. Product Image: Fixed 1:1 aspect ratio, rounded corners, top-left discount badge, top-right wishlist button
- * 2. Availability Row: Green pulse dot + "Available Now" (small, lightweight)
+ * 2. Availability Row: Green pulse dot + "Available Now"
  * 3. Product Name: Max 2 lines with strong readability
  * 4. Price Section: Bold current price, strikethrough original price, green savings amount
  * 5. Local Store Information: Store name + verified checkmark + distance from user
- * 6. Action Section: Primary [ Reserve ] CTA & Secondary [ Compare Prices ] CTA
+ * 6. Action Section: Primary [ Add to Cart ] CTA & Secondary [ Compare Prices ] CTA
  */
 const ProductCardInner = ({
   product,
@@ -27,7 +28,6 @@ const ProductCardInner = ({
   highlightQuery = '',
   shopName,
   shopSlug,
-  onReserve,
   onCompare,
 }) => {
   const navigate = useNavigate();
@@ -35,6 +35,8 @@ const ProductCardInner = ({
   const isHindi = langContext?.isHindi ?? false;
   const locationContext = useContext(LocationContext);
   const coords = locationContext?.coords ?? null;
+  const cartContext = useContext(CartContext);
+  const addItem = cartContext?.addItem || (() => {});
 
   const p = product || {};
 
@@ -145,7 +147,6 @@ const ProductCardInner = ({
       onCompare(p);
       return;
     }
-    // Dispatch global smart search event for live price comparison
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('shopsilo:open-smart-search', {
@@ -158,26 +159,10 @@ const ProductCardInner = ({
     });
   };
 
-  const handleReserve = (e) => {
+  const handleAddToCart = (e) => {
     e.stopPropagation();
-    if (!inStock) return;
-    if (onReserve) {
-      onReserve(p);
-      return;
-    }
-    if (p.id) {
-      const path = targetSlug
-        ? `/shop/${targetSlug}/product/${p.id}`
-        : `/product/${p.id}`;
-      navigate(path, {
-        state: { product: p, autoReserve: true },
-      });
-      return;
-    }
-    if (onClick) {
-      onClick(p);
-      return;
-    }
+    if (!inStock && isAvailabilityKnown) return;
+    addItem(p, 1);
   };
 
   return (
@@ -350,26 +335,26 @@ const ProductCardInner = ({
           </span>
         </button>
 
-        {/* Primary CTA: Reserve */}
+        {/* Primary CTA: Add to Cart */}
         <button
           type="button"
           className="product-card-btn-reserve"
-          onClick={inStock ? handleReserve : isAvailabilityKnown ? handleReserve : handleCardClick}
+          onClick={handleAddToCart}
           disabled={isAvailabilityKnown && !inStock}
           aria-label={
             inStock
-              ? (isHindi ? `${p.name} को रिज़र्व करें` : `Reserve ${p.name}`)
+              ? (isHindi ? `${p.name} कार्ट में जोड़ें` : `Add ${p.name} to Cart`)
               : isAvailabilityKnown
               ? (isHindi ? `${p.name} का स्टॉक खत्म है` : `${p.name} is out of stock`)
-              : (isHindi ? `${p.name} का विवरण देखें` : `View details for ${p.name}`)
+              : (isHindi ? `${p.name} कार्ट में जोड़ें` : `Add ${p.name} to Cart`)
           }
-          title={isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for in-store pickup'}
+          title={isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart'}
         >
           {inStock
-            ? (isHindi ? 'रिज़र्व करें' : 'Reserve')
+            ? (isHindi ? 'जोड़ें' : 'Add')
             : isAvailabilityKnown
             ? (isHindi ? 'स्टॉक नहीं' : 'Out of stock')
-            : (isHindi ? 'विवरण देखें' : 'View details')}
+            : (isHindi ? 'जोड़ें' : 'Add')}
         </button>
       </div>
     </div>

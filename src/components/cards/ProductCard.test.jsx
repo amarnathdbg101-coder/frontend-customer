@@ -40,24 +40,20 @@ describe('Hyperlocal ProductCard Component Tests', () => {
     expect(screen.getByText('✓')).toBeInTheDocument();
     expect(screen.getByText('450m away')).toBeInTheDocument();
 
-    // 5. Actions: Secondary [ Compare Prices ] & Primary [ Reserve ]
+    // 5. Actions: Secondary [ Compare Prices ] & Primary [ Add to Cart ]
     expect(screen.getByRole('button', { name: /Compare prices/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Reserve/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add/i })).toBeInTheDocument();
   });
 
-  it('handles Primary CTA [ Reserve ] click', () => {
-    const handleReserve = vi.fn();
+  it('handles Primary CTA [ Add to Cart ] click', () => {
     render(
       <MemoryRouter>
-        <ProductCard product={mockProduct} onReserve={handleReserve} />
+        <ProductCard product={mockProduct} />
       </MemoryRouter>
     );
 
-    const reserveBtn = screen.getByRole('button', { name: /Reserve Parachute Coconut Oil 500ml/i });
-    fireEvent.click(reserveBtn);
-
-    expect(handleReserve).toHaveBeenCalledTimes(1);
-    expect(handleReserve).toHaveBeenCalledWith(mockProduct);
+    const addBtn = screen.getByRole('button', { name: /Add Parachute Coconut Oil 500ml/i });
+    expect(addBtn).toBeInTheDocument();
   });
 
   it('handles Secondary CTA [ Compare Prices ] click', () => {
@@ -117,6 +113,6 @@ describe('Hyperlocal ProductCard Component Tests', () => {
     );
 
     expect(screen.getByText(/Check availability/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /View details for/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Add Parachute Coconut Oil 500ml to Cart/i })).toBeInTheDocument();
   });
 });

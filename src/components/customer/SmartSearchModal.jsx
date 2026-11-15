@@ -630,22 +630,24 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleReserve(item);
+                              if (!item.inStock) return;
+                              addItem(item, 1);
+                              onClose();
+                              openCart();
                             }}
-                            disabled={!item.inStock || reservingId === item.id}
+                            disabled={!item.inStock}
                             style={{
                               padding: '6px 12px',
                               borderRadius: '8px',
-                              backgroundColor: '#0f172a',
-                              color: '#ffffff',
+                              backgroundColor: item.inStock ? '#0f172a' : '#f1f5f9',
+                              color: item.inStock ? '#ffffff' : '#94a3b8',
                               border: 'none',
                               fontSize: '0.76rem',
                               fontWeight: 800,
                               cursor: item.inStock ? 'pointer' : 'not-allowed',
-                              opacity: item.inStock ? 1 : 0.5,
                             }}
                           >
-                            {reservingId === item.id ? '...' : (isHindi ? 'रिज़र्व' : 'Reserve')}
+                            {item.inStock ? (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart') : (isHindi ? 'स्टॉक नहीं' : 'Out of Stock')}
                           </button>
                         </div>
                       </div>
