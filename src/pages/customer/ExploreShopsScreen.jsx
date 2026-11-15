@@ -920,18 +920,6 @@ export const ExploreShopsScreen = () => {
       {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE */}
       <HowShopSiloWorksSection />
 
-      {/* 1.6. QUICK CATEGORY PILLS BAR */}
-      {!searchTerm && (
-        <div style={{ marginTop: '16px', marginBottom: '4px' }}>
-          <CategoryBar
-            selectedCategoryId={selectedCategory === 'All' ? undefined : selectedCategory}
-            onSelectCategory={(catId) => {
-              setSelectedCategory(catId || 'All');
-            }}
-          />
-        </div>
-      )}
-
       {/* 1.8. REDESIGNED SEARCH RESULTS HEADER & FILTER PILLS BAR */}
       <SearchResultHeader
         searchTerm={searchTerm}
