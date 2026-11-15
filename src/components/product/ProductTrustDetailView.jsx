@@ -1330,31 +1330,6 @@ export const ProductTrustDetailView = ({
           ✓ {isHindi ? 'लिंक कॉपी हो गया!' : 'Product Link Copied!'}
         </div>
       )}
-
-      {/* Mobile Sticky Bottom Action Bar for Instant Access */}
-      {canReserve && bestOffer && (
-        <div className="product-sticky-bottom-bar">
-          <div className="sticky-bottom-inner">
-            <div className="sticky-price-summary">
-              <span className="sticky-price-label">
-                {isHindi ? 'दुकान की कीमत' : 'Store Price'}
-              </span>
-              <span className="sticky-price-val">
-                ₹{currentPrice.toFixed(0)}
-              </span>
-            </div>
-            <div className="sticky-buttons-group">
-              <button
-                type="button"
-                onClick={() => openReservationForShop(bestOffer)}
-                className="sticky-reserve-btn"
-              >
-                {isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for pickup'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
