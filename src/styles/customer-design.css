@@ -155,12 +155,12 @@ body.lang-hi {
 }
 
 .how-works-banner {
-  margin: 12px 0 8px;
-  padding: 14px 16px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
+  margin: 14px 0 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--bg-surface, #ffffff) 0%, var(--bg-surface-subtle, #f8fafc) 100%);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
 }
 
 .how-works-heading {
@@ -173,17 +173,19 @@ body.lang-hi {
 
 .how-works-heading h2 {
   margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
 }
 
 .how-works-heading > span {
-  padding: 5px 9px;
-  border-radius: var(--radius-full);
-  color: var(--color-success-text);
-  background: var(--color-success-light);
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: 750;
   white-space: nowrap;
 }
 
@@ -205,15 +207,22 @@ body.lang-hi {
 
 .how-works-step-number {
   display: grid;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 28px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   place-items: center;
-  border-radius: 50%;
-  color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-radius: 10px;
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.1);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.how-works-step:hover .how-works-step-number {
+  background: #4f46e5;
+  color: #ffffff;
+  transform: scale(1.05);
 }
 
 .how-works-step-copy {
@@ -323,9 +332,9 @@ body.lang-hi {
 }
 
 .product-card-image-box {
-  aspect-ratio: 1.06 / 1;
-  border-radius: 12px;
-  background: var(--bg-surface-subtle);
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #f8fafc 100%);
 }
 
 .product-card-image {
@@ -333,10 +342,11 @@ body.lang-hi {
 }
 
 .product-card-discount-badge {
-  top: 9px;
-  left: 9px;
-  border-radius: 7px;
-  background: var(--color-danger);
+  top: 8px;
+  left: 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
 }
 
 .product-card-wishlist-btn {
