@@ -26,6 +26,7 @@ import { formatDistance, calculateDistanceKm } from '../../utils/distance';
 import { useLocation as useGeoLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import SavedContext from '../../context/SavedContext';
 import { shareProduct } from '../../utils/productShare';
 import { productApi } from '../../api/product.api';
@@ -40,6 +41,7 @@ export const ProductTrustDetailView = ({
   const { coords } = useGeoLocation();
   const { isHindi } = useLanguage();
   const { user } = useAuth();
+  const { addItem, openCart } = useCart();
   const savedCtx = useContext(SavedContext);
   const [isTitleExpanded, setIsTitleExpanded] = useState(false);
   const isProductSaved = savedCtx?.isProductSaved || (() => false);

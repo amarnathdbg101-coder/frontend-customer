@@ -166,20 +166,21 @@ export const SearchHeroSection = ({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: '8px 16px',
+                gap: '5px',
+                padding: '7px 14px',
                 backgroundColor: '#0f172a',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '10px',
                 fontSize: '0.80rem',
-                fontWeight: 800,
+                fontWeight: 750,
                 cursor: 'pointer',
                 flexShrink: 0,
-                boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
+                transition: 'all 0.15s ease',
               }}
               title={isHindi ? 'खोजें' : 'Search'}
             >
+              <Search size={14} />
               <span>{isHindi ? 'सर्च' : 'Search'}</span>
             </button>
           </div>
@@ -201,7 +202,7 @@ export const SearchHeroSection = ({
         </div>
 
         {onOpenSmartSearch && (
-          <div className="search-hero-tools" style={{ marginTop: '10px' }}>
+          <div className="search-hero-tools" style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-start' }}>
             <button
               type="button"
               className="search-hero-compare"
@@ -210,19 +211,18 @@ export const SearchHeroSection = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                border: '1px solid var(--border-subtle, #e2e8f0)',
-                color: 'var(--text-primary, #0f172a)',
-                padding: '6px 14px',
-                borderRadius: '20px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                color: 'var(--color-primary, #4f46e5)',
+                padding: '4px 2px',
                 fontSize: '0.78rem',
-                fontWeight: 800,
+                fontWeight: 750,
                 cursor: 'pointer',
               }}
               title={isHindi ? 'आस-पास की दुकानों में तुलना करें' : 'Compare nearby stores'}
             >
-              <Scale size={14} color="#2563eb" aria-hidden="true" />
-              <span>{isHindi ? 'आस-पास की कीमतें तुलना करें' : 'Compare nearby prices'}</span>
+              <Scale size={13} color="var(--color-primary, #4f46e5)" aria-hidden="true" />
+              <span>{isHindi ? 'दुकानों की कीमतें तुलना करें' : 'Compare nearby store prices'} →</span>
             </button>
           </div>
         )}

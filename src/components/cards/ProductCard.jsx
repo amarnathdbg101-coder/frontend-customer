@@ -1,4 +1,4 @@
-import React, { memo, useContext } from 'react';
+import React, { memo, useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Package, Store, ShoppingCart } from 'lucide-react';
 import { getImageUrl, extractFirstImage } from '../../utils/imageUrl';
@@ -39,6 +39,7 @@ const ProductCardInner = ({
   const addItem = cartContext?.addItem || (() => {});
 
   const p = product || {};
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   // Stock & Availability calculation
   const rawStock =
@@ -189,6 +190,11 @@ const ProductCardInner = ({
               loading="lazy"
               decoding="async"
               className="product-card-image"
+              style={{
+                opacity: imgLoaded ? 1 : 0.45,
+                transition: 'opacity 0.22s ease-in-out',
+              }}
+              onLoad={() => setImgLoaded(true)}
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 const parent = e.currentTarget.parentElement;

@@ -12,7 +12,6 @@ import { useCart } from '../../context/CartContext';
 import { sessionState } from '../../utils/sessionState.js';
 import { useScreenState } from '../../hooks/useScreenState.js';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
-import { getImageUrl } from '../../utils/imageUrl';
 
 const CATEGORIES = ['All', 'Electronics', 'Kirana & Grocery', 'Pharmacy', 'Fashion', 'Home & Kitchen'];
 
@@ -32,6 +31,7 @@ export const DealsScreen = () => {
   useEffect(() => {
     sessionState.saveScreenState('deals', { selectedCategory });
   }, [selectedCategory]);
+
   const [claimedToast, setClaimedToast] = useState(null);
 
   useEffect(() => {
@@ -105,12 +105,12 @@ export const DealsScreen = () => {
     if (lower.includes('%') || lower.includes('flat') || lower.includes('off')) {
       return { backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' };
     }
-    return { backgroundColor: '#f1f5f9', color: '#0f172a', border: '1px solid #cbd5e1' };
+    return { backgroundColor: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0' };
   };
 
   return (
     <AppLayout
-      title={isHindi ? 'लाइव बचत व ऑफर्स' : 'Deals & Festival Coupons'}
+      title={isHindi ? 'लाइव डील्स व कूपन्स' : 'Deals & Store Coupons'}
       subtitle={isHindi ? 'अपने आस-पास की दुकानों के विशेष डिस्काउंट कूपन' : 'Exclusive discounts & coupons from nearby stores'}
     >
       <title>{isHindi ? 'लाइव डील्स — शॉपसिलो' : 'Live Deals — ShopSilo'}</title>
@@ -122,7 +122,7 @@ export const DealsScreen = () => {
             position: 'sticky',
             top: '70px',
             zIndex: 40,
-            backgroundColor: '#065f46',
+            backgroundColor: '#0f172a',
             color: '#ffffff',
             padding: '12px 16px',
             borderRadius: '12px',
@@ -130,24 +130,24 @@ export const DealsScreen = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 8px 20px rgba(6, 95, 70, 0.2)',
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.2)',
             animation: 'fadeIn 0.2s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.86rem', fontWeight: 800 }}>
-            <CheckCircle size={18} color="#34d399" />
+            <CheckCircle size={18} color="#10b981" />
             <span>
               {isHindi
-                ? `कूपन "${claimedToast}" क्लेम हो गया! चेकआउट पर स्वतः लागू होगा।`
-                : `Coupon "${claimedToast}" claimed! Auto-applies at checkout.`}
+                ? `कूपन "${claimedToast}" क्लेम हो गया! चेकआउट पर लागू होगा।`
+                : `Coupon "${claimedToast}" claimed! Applies at checkout.`}
             </span>
           </div>
           <button
             type="button"
             onClick={openCart}
             style={{
-              backgroundColor: '#34d399',
-              color: '#064e3b',
+              backgroundColor: '#10b981',
+              color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
               padding: '6px 12px',
@@ -201,7 +201,7 @@ export const DealsScreen = () => {
 
       {/* Deals Feed */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+        <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted, #94a3b8)', fontSize: '0.85rem', fontWeight: 600 }}>
           {isHindi ? 'आस-पास के लाइव ऑफर्स खोजे जा रहे हैं...' : 'Discovering live discounts near you...'}
         </div>
       ) : deals.length === 0 ? (
@@ -238,8 +238,8 @@ export const DealsScreen = () => {
                   borderRadius: '14px',
                   position: 'relative',
                   overflow: 'hidden',
-                  border: isClaimed ? '2px solid #16a34a' : '1px solid var(--border-subtle, #e2e8f0)',
-                  boxShadow: isClaimed ? '0 4px 16px rgba(22, 163, 74, 0.12)' : 'var(--shadow-xs)',
+                  border: isClaimed ? '2px solid #10b981' : '1px solid var(--border-subtle, #e2e8f0)',
+                  boxShadow: isClaimed ? '0 4px 16px rgba(16, 185, 129, 0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -353,7 +353,7 @@ export const DealsScreen = () => {
                       }}
                     >
                       <Tag size={15} />
-                      <span>{isHindi ? 'कूपन क्लेम करें (1-Tap Claim)' : 'Claim Coupon Code'}</span>
+                      <span>{isHindi ? 'कूपन क्लेम करें' : 'Claim Coupon Code'}</span>
                     </button>
                   )}
                 </div>
@@ -383,39 +383,17 @@ export const DealsScreen = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            color: '#2563eb',
-                            textDecoration: 'none',
+                            color: 'var(--color-primary, #2563eb)',
                             fontWeight: 800,
-                            display: 'flex',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
                             alignItems: 'center',
                             gap: '3px',
                           }}
                         >
                           <Navigation size={12} />
-                          <span>{isHindi ? 'रास्ता' : 'Maps'}</span>
+                          <span>{isHindi ? 'रास्ता देखें' : 'Map'}</span>
                         </a>
-                      )}
-
-                      {deal.shop_slug && (
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/shop/${deal.shop_slug}`)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#0f172a',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            padding: 0,
-                            fontSize: '0.78rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                          }}
-                        >
-                          <span>{isHindi ? 'दुकान' : 'Store'}</span>
-                          <ArrowRight size={12} />
-                        </button>
                       )}
                     </div>
                   </div>

@@ -155,12 +155,12 @@ body.lang-hi {
 }
 
 .how-works-banner {
-  margin: 12px 0 8px;
-  padding: 14px 16px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
+  margin: 10px 0 6px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 14px;
+  background-color: var(--bg-surface, #ffffff);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
 }
 
 .how-works-heading {
@@ -168,22 +168,24 @@ body.lang-hi {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .how-works-heading h2 {
   margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  font-weight: 750;
+  color: var(--text-primary, #0f172a);
 }
 
 .how-works-heading > span {
-  padding: 5px 9px;
-  border-radius: var(--radius-full);
-  color: var(--color-success-text);
-  background: var(--color-success-light);
-  font-size: 0.72rem;
-  font-weight: 650;
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  font-size: 0.70rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -209,11 +211,18 @@ body.lang-hi {
   height: 28px;
   flex: 0 0 28px;
   place-items: center;
-  border-radius: 50%;
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  font-size: 0.75rem;
-  font-weight: 700;
+  border-radius: 8px;
+  color: #4f46e5;
+  background: #f5f3ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.how-works-step:hover .how-works-step-number {
+  background: #4f46e5;
+  color: #ffffff;
+  transform: scale(1.05);
 }
 
 .how-works-step-copy {
@@ -323,9 +332,9 @@ body.lang-hi {
 }
 
 .product-card-image-box {
-  aspect-ratio: 1.06 / 1;
-  border-radius: 12px;
-  background: var(--bg-surface-subtle);
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #f8fafc 100%);
 }
 
 .product-card-image {
@@ -333,10 +342,11 @@ body.lang-hi {
 }
 
 .product-card-discount-badge {
-  top: 9px;
-  left: 9px;
-  border-radius: 7px;
-  background: var(--color-danger);
+  top: 8px;
+  left: 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
 }
 
 .product-card-wishlist-btn {
