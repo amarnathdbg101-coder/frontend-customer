@@ -2,22 +2,54 @@
  * HowShopSiloWorksSection Component
  *
  * Ultra-Compact 1-Row Connected Stepper Banner (< 65px Height on Mobile).
- * Communicates ShopSilo's 3-step value proposition with zero vertical clutter:
- * 1. 🔍 Search (Nearby products)
- * 2. ⚡ Compare (Local stores)
- * 3. 🏪 Reserve (Counter pickup)
+ * Dismissible with 'X' button for zero vertical screen clutter on home page.
  */
 
-import React from 'react';
-import { Search, Scale, Store, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Scale, Store, ShieldCheck, X } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const HowShopSiloWorksSection = () => {
   const { isHindi } = useLanguage();
+  const [isDismissed, setIsDismissed] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('shopsilo_hide_how_it_works') === 'true';
+  });
+
+  if (isDismissed) return null;
+
+  const handleDismiss = (e) => {
+    e.stopPropagation();
+    setIsDismissed(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('shopsilo_hide_how_it_works', 'true');
+    }
+  };
 
   return (
-    <section className="how-works-banner" aria-label={isHindi ? 'शॉपसिलो कैसे काम करता है' : 'How ShopSilo works'}>
-      <div className="how-works-heading">
+    <section className="how-works-banner" style={{ position: 'relative', marginTop: '10px', marginBottom: '10px' }} aria-label={isHindi ? 'शॉपसिलो कैसे काम करता है' : 'How ShopSilo works'}>
+      <button
+        type="button"
+        onClick={handleDismiss}
+        style={{
+          position: 'absolute',
+          top: '6px',
+          right: '8px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-muted, #94a3b8)',
+          padding: '2px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '50%',
+        }}
+        title={isHindi ? 'बैनर हटाएं' : 'Dismiss banner'}
+      >
+        <X size={14} />
+      </button>
+
+      <div className="how-works-heading" style={{ paddingRight: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <h2>{isHindi ? 'ShopSilo कैसे काम करता है' : 'How ShopSilo Works'}</h2>
         </div>
@@ -43,7 +75,7 @@ export const HowShopSiloWorksSection = () => {
             title: isHindi ? 'पिकअप' : 'Pickup',
             detail: isHindi ? 'दुकान से लें' : 'Store pickup',
           },
-        ].map((step, index) => (
+        ].map((step) => (
           <li className="how-works-step" key={step.title}>
             <span className="how-works-step-number">
               {step.icon}
