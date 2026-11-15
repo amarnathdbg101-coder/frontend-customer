@@ -495,6 +495,22 @@ export const ProductTrustDetailView = ({
                 ))}
               </div>
             )}
+
+            {/* Clickable Rounded Thumbnails Strip */}
+            {images.length > 1 && (
+              <div className="product-studio-thumbnails-strip">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setActiveImgIdx(idx)}
+                    className={`product-studio-thumbnail-item ${activeImgIdx === idx ? 'is-active' : ''}`}
+                    title={`Thumbnail ${idx + 1}`}
+                  >
+                    <img src={getImageUrl(img)} alt={`${product.name} thumbnail ${idx + 1}`} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -506,90 +522,78 @@ export const ProductTrustDetailView = ({
           <div className="product-info-section flipkart-info-section">
             {/* Brand Title (Bold Header) */}
             {(product.brand || (typeof product.category === 'object' ? product.category?.name : product.category)) && (
-              <div className="flipkart-brand-name">
-                {product.brand || (typeof product.category === 'object' ? product.category?.name : product.category)}
+              <div className="flipkart-brand-name product-studio-eyebrow">
+                <span>{product.brand || (typeof product.category === 'object' ? product.category?.name : product.category)}</span>
               </div>
             )}
 
-            {/* Product Name with ...more toggle */}
-            <h1 className="flipkart-product-heading">
-              {isTitleExpanded || product.name.length <= 70 ? (
-                <>
-                  {product.name}
-                  {product.name.length > 70 && (
-                    <button
-                      type="button"
-                      onClick={() => setIsTitleExpanded(false)}
-                      className="flipkart-more-toggle"
-                    >
-                      {' '}{isHindi ? '...कम' : '...less'}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
-                  {product.name.slice(0, 70)}
-                  <button
-                    type="button"
-                    onClick={() => setIsTitleExpanded(true)}
-                    className="flipkart-more-toggle"
-                  >
-                    {isHindi ? '...और' : '...more'}
-                  </button>
-                </>
-              )}
+            {/* Product Name with Full Title */}
+            <h1 className="flipkart-product-heading product-studio-heading">
+              {product.name}
             </h1>
 
-            {/* Unified Flipkart Price Row: ↓70%  3,999  ₹1,199 */}
-            <div className="flipkart-price-box">
-              <div className="flipkart-main-price-row">
+            {/* Meta Row: Live Stock & Verification Badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+              {isAvailabilityKnown && (
+                <div className={`available-now-pill ${isInStock ? '' : 'is-unavailable'}`} style={{ display: 'inline-flex', padding: '3px 10px', fontSize: '0.74rem' }}>
+                  <span className="live-stock-pulse-dot" />
+                  <span>
+                    {isInStock
+                      ? (isHindi ? 'अभी उपलब्ध है' : 'Available Now')
+                      : (isHindi ? 'स्टॉक खत्म' : 'Out of stock')}
+                  </span>
+                </div>
+              )}
+              {isShopVerified && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', color: '#059669', backgroundColor: '#ecfdf5', padding: '3px 9px', borderRadius: '6px', fontWeight: 750 }}>
+                  <ShieldCheck size={13} color="#059669" />
+                  <span>{isHindi ? 'सत्यापित स्टोर' : 'Verified Store'}</span>
+                </span>
+              )}
+            </div>
+
+            {/* Executive Pricing Hero Card */}
+            <div className="flipkart-price-box product-studio-price-card">
+              <div className="flipkart-main-price-row product-studio-price-row">
                 {isPricePublic ? (
                   <>
-                    {hasDiscount && (
-                      <span className="flipkart-discount-pill">
-                        <span className="discount-arrow">↓</span>{discountPercent}%
-                      </span>
-                    )}
-                    {hasDiscount && (
-                      <span className="flipkart-original-mrp">
-                        ₹{originalPrice.toFixed(0)}
-                      </span>
-                    )}
-                    <span className="flipkart-selling-price">
+                    <span className="flipkart-selling-price product-studio-selling-price">
                       ₹{currentPrice.toFixed(0)}
                     </span>
                     {hasDiscount && (
-                      <span className="product-savings-badge" style={{ marginLeft: '4px' }}>
-                        {isHindi
-                          ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
-                          : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
+                      <span className="flipkart-original-mrp product-studio-mrp">
+                        ₹{originalPrice.toFixed(0)}
+                      </span>
+                    )}
+                    {hasDiscount && (
+                      <span className="flipkart-discount-pill product-studio-discount-pill">
+                        <span className="discount-arrow">↓</span>{discountPercent}% OFF
                       </span>
                     )}
                   </>
                 ) : (
-                  <span className="flipkart-selling-price price-on-request">
+                  <span className="flipkart-selling-price price-on-request" style={{ fontSize: '1.25rem', color: '#d97706' }}>
                     {isHindi ? 'दुकान से दाम पूछें' : 'Ask the shop for price'}
                   </span>
                 )}
               </div>
 
-              {/* Fee / Guarantee Subline with Chevron */}
-              <div className="flipkart-fee-subline">
+              {hasDiscount && (
+                <div className="product-savings-badge">
+                  <CheckCircle2 size={13} color="#059669" />
+                  <span>
+                    {isHindi
+                      ? `बचत ₹${savingsAmount.toFixed(0)} (${discountPercent}% छूट)`
+                      : `Save ₹${savingsAmount.toFixed(0)} (${discountPercent}% OFF)`}
+                  </span>
+                </div>
+              )}
+
+              {/* Fee / Guarantee Subline */}
+              <div className="flipkart-fee-subline product-studio-tax-note">
                 <span>{isHindi ? 'दुकान से पिकअप · भुगतान पिकअप पर' : 'Store pickup · pay at pickup'}</span>
                 <ChevronRight size={14} className="subline-arrow" />
               </div>
-            </div>
-
-            {/* Availability Status Highlight */}
-            <div className={`product-availability-banner ${isAvailabilityKnown && !isInStock ? 'is-unavailable' : ''}`} style={{ marginBottom: '12px' }}>
-              <span className="available-dot-indicator" />
-              <span className="available-text">
-                {!isAvailabilityKnown
-                  ? (isHindi ? 'पिकअप से पहले दुकान से स्टॉक की पुष्टि करें' : 'Check stock with the shop before pickup')
-                  : isInStock
-                  ? (isHindi ? 'स्टॉक उपलब्ध है · दुकान से पिकअप करें' : 'In stock · collect from the store')
-                  : (isHindi ? 'यह उत्पाद अभी स्टॉक में नहीं है' : 'This item is currently out of stock')}
-              </span>
             </div>
 
             {/* 👗 Apparel Size & Beauty Shade Variant Matrix */}
@@ -735,39 +739,43 @@ export const ProductTrustDetailView = ({
               </div>
             )}
 
-            {/* PRODUCT SPECIFICATIONS & ABOUT THIS ITEM (Customer Reads Product Details First) */}
+            {/* PRODUCT SPECIFICATIONS & ABOUT THIS ITEM */}
             <div
               style={{
-                padding: '12px 14px',
+                padding: '16px',
                 backgroundColor: 'var(--bg-surface, #ffffff)',
-                border: '1.5px solid var(--border-subtle, #e2e8f0)',
-                borderRadius: '14px',
-                marginTop: '10px',
+                border: '1px solid var(--border-subtle, #e2e8f0)',
+                borderRadius: '16px',
+                marginTop: '14px',
+                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.02)',
               }}
             >
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
                 {isHindi ? 'उत्पाद विवरण एवं विशेषताएं' : 'Product Details & Specifications'}
               </div>
 
               {specItems.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '6px', marginBottom: product.description ? '10px' : '0' }}>
-                  {specItems.map((spec) => (
-                    <div key={spec.label} style={{ padding: '6px 10px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', borderRadius: '8px', border: '1px solid var(--border-subtle, #f1f5f9)' }}>
-                      <div style={{ fontSize: '0.64rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 700, textTransform: 'uppercase' }}>
-                        {spec.label}
-                      </div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', marginTop: '1px' }}>
-                        {spec.value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <table className="product-studio-specs-table" style={{ marginBottom: product.description ? '14px' : '0' }}>
+                  <tbody>
+                    {specItems.map((spec) => (
+                      <tr key={spec.label}>
+                        <td className="product-studio-specs-label">{spec.label}</td>
+                        <td className="product-studio-specs-value">{spec.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
 
               {product.description && (
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-primary, #0f172a)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-line' }}>
-                  {product.description}
-                </p>
+                <div style={{ marginTop: specItems.length > 0 ? '14px' : '0', paddingTop: specItems.length > 0 ? '12px' : '0', borderTop: specItems.length > 0 ? '1px solid var(--border-subtle, #f1f5f9)' : 'none' }}>
+                  <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    {isHindi ? 'विवरण (About Item)' : 'About this item'}
+                  </div>
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-primary, #1e293b)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>
+                    {product.description}
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -894,28 +902,35 @@ export const ProductTrustDetailView = ({
           })()}
 
           {/* Primary Action Button: Reserve Now */}
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '18px' }}>
             <button
               type="button"
               onClick={() => openReservationForShop(bestOffer)}
               disabled={!canReserve}
               aria-disabled={!canReserve}
+              aria-label={
+                !bestOffer
+                  ? (isHindi ? 'दुकान की जानकारी उपलब्ध नहीं' : 'Store details unavailable')
+                  : !canReserve
+                  ? (isHindi ? 'रिज़र्वेशन उपलब्ध नहीं' : 'Pickup reservation unavailable')
+                  : (isHindi ? 'दुकान से पिकअप रिज़र्व करें' : 'Reserve for pickup')
+              }
               style={{
                 width: '100%',
-                backgroundColor: '#10b981',
-                color: '#ffffff',
+                background: canReserve ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'var(--bg-surface-subtle, #f1f5f9)',
+                color: canReserve ? '#ffffff' : 'var(--text-muted, #94a3b8)',
                 border: 'none',
-                borderRadius: '12px',
-                padding: '12px 18px',
-                fontSize: '0.92rem',
+                borderRadius: '14px',
+                padding: '14px 20px',
+                fontSize: '0.98rem',
                 fontWeight: 900,
-                cursor: 'pointer',
+                cursor: canReserve ? 'pointer' : 'not-allowed',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
-                transition: 'all 0.15s ease',
+                boxShadow: canReserve ? '0 4px 16px rgba(16, 185, 129, 0.35)' : 'none',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
               <span>
@@ -927,8 +942,8 @@ export const ProductTrustDetailView = ({
               </span>
             </button>
 
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'center', fontWeight: 500 }}>
-              {isHindi ? 'अग्रिम भुगतान नहीं · भुगतान पिकअप पर करें' : 'No advance payment · pay at pickup'}
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)', marginTop: '8px', textAlign: 'center', fontWeight: 600 }}>
+              {isHindi ? '✓ कोई अग्रिम भुगतान नहीं · दुकान पर सामान देखकर भुगतान करें' : '✓ No advance payment · Inspect item at store before paying'}
             </div>
           </div>
 

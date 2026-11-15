@@ -625,64 +625,41 @@ export const ProductDetailModal = ({
             {/* RIGHT COLUMN: PRODUCT INFO & ACTIONS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <div className="flipkart-brand-name">
-                  {brand || (typeof product.category === 'object' ? product.category?.name : product.category) || 'ShopSilo Retail'}
+                <div className="flipkart-brand-name product-studio-eyebrow">
+                  <span>{brand || (typeof product.category === 'object' ? product.category?.name : product.category) || 'ShopSilo Retail'}</span>
                 </div>
-                <h1 className="flipkart-product-heading">
-                  {isTitleExpanded || product.name.length <= 70 ? (
-                    <>
-                      {product.name}
-                      {product.name.length > 70 && (
-                        <button
-                          type="button"
-                          onClick={() => setIsTitleExpanded(false)}
-                          className="flipkart-more-toggle"
-                        >
-                          {' '}{isHindi ? '...कम' : '...less'}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {product.name.slice(0, 70)}
-                      <button
-                        type="button"
-                        onClick={() => setIsTitleExpanded(true)}
-                        className="flipkart-more-toggle"
-                      >
-                        {isHindi ? '...और' : '...more'}
-                      </button>
-                    </>
-                  )}
+                <h1 className="flipkart-product-heading product-studio-heading">
+                  {product.name}
                 </h1>
               </div>
 
-              {/* Flipkart Pricing Hero Card */}
-              <div className="flipkart-price-box" style={{ padding: '12px 14px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', margin: 0 }}>
+              {/* Pricing Hero Card */}
+              <div className="flipkart-price-box product-studio-price-card" style={{ margin: 0 }}>
                 {isPricePublic ? (
                   <div>
-                    <div className="flipkart-main-price-row">
+                    <div className="flipkart-main-price-row product-studio-price-row">
+                      <span className="flipkart-selling-price product-studio-selling-price">
+                        {formatCurrency(price)}
+                      </span>
                       {hasDiscount && (
-                        <span className="flipkart-discount-pill">
-                          <span className="discount-arrow">↓</span>{discountPct}%
-                        </span>
-                      )}
-                      {hasDiscount && (
-                        <span className="flipkart-original-mrp">
+                        <span className="flipkart-original-mrp product-studio-mrp">
                           {formatCurrency(comparePrice)}
                         </span>
                       )}
-                      <span className="flipkart-selling-price">
-                        {formatCurrency(price)}
-                      </span>
-                      {hasDiscount && savings > 0 && (
-                        <span className="product-savings-badge" style={{ marginLeft: '4px' }}>
-                          Save {formatCurrency(savings)}
+                      {hasDiscount && (
+                        <span className="flipkart-discount-pill product-studio-discount-pill">
+                          <span className="discount-arrow">↓</span>{discountPct}% OFF
                         </span>
                       )}
                     </div>
+                    {hasDiscount && savings > 0 && (
+                      <div className="product-savings-badge">
+                        <CheckCircle size={13} color="#059669" />
+                        <span>Save {formatCurrency(savings)} ({discountPct}% OFF)</span>
+                      </div>
+                    )}
                     {/* Fee / Pickup Subline */}
-                    <div className="flipkart-fee-subline">
+                    <div className="flipkart-fee-subline product-studio-tax-note">
                       <span>+ ₹0 Delivery Fee • 15-min Counter Pickup Nearby</span>
                       <ChevronRight size={14} className="subline-arrow" />
                     </div>
@@ -852,48 +829,50 @@ export const ProductDetailModal = ({
                 </div>
               )}
 
-              {/* Product Specifications Grid */}
+              {/* Product Specifications Table */}
               {hasSpecifications && (
-                <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 14px' }}>
-                  <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.02)' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
                     {t('products.product_details')}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
-                    {brand && (
-                      <div style={{ backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>Brand</div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{brand}</div>
-                      </div>
-                    )}
-                    {categoryName && (
-                      <div style={{ backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>Category</div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{categoryName}</div>
-                      </div>
-                    )}
-                    {product.weight > 0 && (
-                      <div style={{ backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>{t('products.weight')}</div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{product.weight} {product.unit || 'g'}</div>
-                      </div>
-                    )}
-                    {product.unit && (
-                      <div style={{ backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>Unit</div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{product.unit}</div>
-                      </div>
-                    )}
-                    {safeAttributes.map(([key, val]) => {
-                      if (key.toLowerCase() === 'brand' && brand) return null;
-                      const label = key.replace(/_/g, ' ').toUpperCase();
-                      return (
-                        <div key={key} style={{ backgroundColor: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700 }}>{label}</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{String(val)}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <table className="product-studio-specs-table">
+                    <tbody>
+                      {brand && (
+                        <tr>
+                          <td className="product-studio-specs-label">Brand</td>
+                          <td className="product-studio-specs-value">{brand}</td>
+                        </tr>
+                      )}
+                      {categoryName && (
+                        <tr>
+                          <td className="product-studio-specs-label">Category</td>
+                          <td className="product-studio-specs-value">{categoryName}</td>
+                        </tr>
+                      )}
+                      {product.weight > 0 && (
+                        <tr>
+                          <td className="product-studio-specs-label">{t('products.weight')}</td>
+                          <td className="product-studio-specs-value">{product.weight} {product.unit || 'g'}</td>
+                        </tr>
+                      )}
+                      {product.unit && (
+                        <tr>
+                          <td className="product-studio-specs-label">Unit</td>
+                          <td className="product-studio-specs-value">{product.unit}</td>
+                        </tr>
+                      )}
+                      {safeAttributes.map(([key, val]) => {
+                        if (key.toLowerCase() === 'brand' && brand) return null;
+                        const label = key.replace(/_/g, ' ');
+                        return (
+                          <tr key={key}>
+                            <td className="product-studio-specs-label">{label}</td>
+                            <td className="product-studio-specs-value">{String(val)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
