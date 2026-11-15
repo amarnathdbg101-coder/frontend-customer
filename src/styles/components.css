@@ -2854,73 +2854,107 @@ body {
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
 }
 
-/* 2. Hero Image Gallery */
-.flipkart-gallery-card {
+/* ==========================================================================
+   2. HERO IMAGE GALLERY & PREMIUM PRODUCT SHOWCASE
+   ========================================================================== */
+.flipkart-gallery-card,
+.product-studio-gallery-card {
   background-color: var(--bg-surface, #ffffff);
   border: 1px solid var(--border-subtle, #e2e8f0);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-.flipkart-gallery-viewport {
+.flipkart-gallery-card:hover,
+.product-studio-gallery-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+}
+
+.flipkart-gallery-viewport,
+.product-studio-gallery-viewport {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 420px;
-  background-color: #f8fafc;
+  max-height: 440px;
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #fbfcfd 60%, #f8fafc 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   user-select: none;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
-.flipkart-main-img {
-  max-width: 90%;
-  max-height: 90%;
+.flipkart-main-img,
+.product-studio-main-img {
+  max-width: 92%;
+  max-height: 92%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   cursor: zoom-in;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+  filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.07));
 }
 
-/* Top-Right Floating Round Action Buttons */
-.flipkart-gallery-floating-actions {
+.flipkart-gallery-viewport:hover .flipkart-main-img,
+.product-studio-gallery-viewport:hover .product-studio-main-img {
+  transform: scale(1.04);
+  filter: drop-shadow(0 16px 30px rgba(15, 23, 42, 0.10));
+}
+
+/* Top-Right Floating Frosted Glass Action Buttons */
+.flipkart-gallery-floating-actions,
+.product-studio-floating-actions {
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 10;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
 }
 
-.flipkart-round-action-btn {
-  width: 40px;
-  height: 40px;
+.flipkart-round-action-btn,
+.product-studio-action-btn {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background-color: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: #475569;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.flipkart-round-action-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+.flipkart-round-action-btn:hover,
+.product-studio-action-btn:hover {
+  transform: scale(1.10);
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.14);
 }
 
-.flipkart-round-action-btn.is-favorited {
+.flipkart-round-action-btn.is-favorited,
+.product-studio-action-btn.is-favorited {
   color: #ef4444;
+  background: #fff5f5;
+  border-color: #fecaca;
 }
 
-/* Bottom-Left Floating Rating Pill */
+/* Floating Rating Pill */
 .flipkart-rating-pill {
   position: absolute;
   bottom: 14px;
@@ -2929,11 +2963,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
-  background-color: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 9999px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
   font-size: 0.82rem;
   font-weight: 750;
   color: #0f172a;
@@ -2941,12 +2977,13 @@ body {
 
 .flipkart-rating-pill .rating-score {
   font-weight: 850;
+  color: #0f172a;
 }
 
 .flipkart-rating-pill .rating-divider {
   color: #cbd5e1;
   font-size: 0.76rem;
-  margin: 0 1px;
+  margin: 0 2px;
 }
 
 .flipkart-rating-pill .rating-count {
@@ -2955,13 +2992,59 @@ body {
   font-weight: 600;
 }
 
-/* Centered Blue Dot Pagination */
+/* Thumbnail Strip Row */
+.product-studio-thumbnails-strip {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  background: #ffffff;
+  border-top: 1px solid var(--border-subtle, #f1f5f9);
+  scrollbar-width: none;
+}
+
+.product-studio-thumbnail-item {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 2px solid transparent;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.product-studio-thumbnail-item:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.product-studio-thumbnail-item.is-active {
+  border-color: var(--color-primary, #4f46e5);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  transform: scale(1.05);
+}
+
+.product-studio-thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Centered Dot Pagination */
 .flipkart-dot-pagination-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 0 12px 0;
+  padding: 10px 0;
   background-color: var(--bg-surface, #ffffff);
 }
 
@@ -2977,101 +3060,165 @@ body {
 }
 
 .flipkart-dot.is-active {
-  width: 18px;
+  width: 20px;
   height: 6px;
   border-radius: 9999px;
-  background-color: #2563eb;
+  background-color: var(--color-primary, #4f46e5);
 }
 
-/* 3. Flipkart Brand & Title Block */
-.flipkart-brand-title-block {
-  margin-top: 14px;
-  margin-bottom: 8px;
+/* 3. Product Brand & Title Block */
+.flipkart-brand-title-block,
+.product-studio-title-block {
+  margin-bottom: 12px;
 }
 
-.flipkart-brand-name {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--text-primary, #0f172a);
-  margin-bottom: 4px;
-  letter-spacing: -0.01em;
-}
-
-.flipkart-product-heading {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-primary, #1e293b);
-  line-height: 1.35;
-  margin: 0;
-}
-
-.flipkart-more-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  margin-left: 4px;
-  color: #2563eb;
-  font-weight: 800;
-  font-size: 0.92rem;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.flipkart-more-toggle:hover {
-  text-decoration: underline;
-}
-
-/* 4. Flipkart Pricing Row */
-.flipkart-price-box {
-  margin: 10px 0 14px 0;
-}
-
-.flipkart-main-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.flipkart-discount-pill {
+.flipkart-brand-name,
+.product-studio-eyebrow {
   display: inline-flex;
   align-items: center;
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: #16a34a;
-  letter-spacing: -0.02em;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-primary, #4f46e5);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 6px;
 }
 
-.flipkart-discount-pill .discount-arrow {
-  font-weight: 900;
-  margin-right: 1px;
+.flipkart-product-heading,
+.product-studio-heading {
+  font-size: 1.45rem;
+  font-weight: 850;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.28;
+  letter-spacing: -0.025em;
+  margin: 0 0 10px 0;
 }
 
-.flipkart-original-mrp {
+@media (min-width: 768px) {
+  .flipkart-product-heading,
+  .product-studio-heading {
+    font-size: 1.70rem;
+    line-height: 1.25;
+  }
+}
+
+/* 4. Flipkart / Studio Pricing Hero Section */
+.flipkart-price-box,
+.product-studio-price-card {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin: 12px 0 16px 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.flipkart-main-price-row,
+.product-studio-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.flipkart-selling-price,
+.product-studio-selling-price {
+  font-size: 2.1rem;
+  font-weight: 950;
+  color: var(--text-primary, #0f172a);
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.flipkart-original-mrp,
+.product-studio-mrp {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #64748b;
+  color: #94a3b8;
   text-decoration: line-through;
 }
 
-.flipkart-selling-price {
-  font-size: 1.65rem;
-  font-weight: 900;
-  color: var(--text-primary, #0f172a);
-  letter-spacing: -0.02em;
+.flipkart-discount-pill,
+.product-studio-discount-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 850;
+  letter-spacing: -0.01em;
 }
 
-.flipkart-fee-subline {
-  display: flex;
+.product-savings-badge {
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: #059669;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: 4px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
 }
 
-.flipkart-fee-subline .subline-arrow {
-  color: #94a3b8;
+.flipkart-fee-subline,
+.product-studio-tax-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* 5. Clean Specifications Table */
+.product-studio-specs-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+.product-studio-specs-table tr {
+  transition: background-color 0.15s ease;
+}
+
+.product-studio-specs-table tr:nth-child(even) {
+  background-color: var(--bg-surface-subtle, #f8fafc);
+}
+
+.product-studio-specs-table tr:nth-child(odd) {
+  background-color: var(--bg-surface, #ffffff);
+}
+
+.product-studio-specs-table td {
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+  vertical-align: top;
+}
+
+.product-studio-specs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.product-studio-specs-label {
+  width: 38%;
+  color: var(--text-muted, #64748b);
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.product-studio-specs-value {
+  width: 62%;
+  color: var(--text-primary, #0f172a);
+  font-weight: 800;
 }
