@@ -937,9 +937,9 @@ export const ExploreShopsScreen = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             marginBottom: '16px',
-            gap: '8px',
+            gap: '14px',
             flexWrap: 'wrap',
           }}
         >
