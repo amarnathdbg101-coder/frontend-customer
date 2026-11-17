@@ -54,7 +54,7 @@ export const AppFooter = () => {
         </div>
 
         {/* Compact Accordion Sections */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', alignItems: 'flex-start' }}>
           {/* Section 1: Shopper Portal */}
           <div
             style={{
@@ -62,17 +62,19 @@ export const AppFooter = () => {
               borderRadius: '10px',
               backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
               overflow: 'hidden',
+              width: 'fit-content',
+              maxWidth: '320px',
             }}
           >
             <button
               type="button"
               onClick={() => toggleSection('shopper')}
               style={{
-                width: '100%',
-                display: 'flex',
+                width: 'auto',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 12px',
+                gap: '10px',
+                padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
                 fontWeight: 800,
@@ -80,13 +82,17 @@ export const AppFooter = () => {
                 color: 'var(--text-primary, #0f172a)',
                 cursor: 'pointer',
                 textAlign: 'left',
+                whiteSpace: 'nowrap',
               }}
             >
-              <span className="app-footer-section-label"><Store size={16} />{isHindi ? 'ग्राहक सेवाएँ' : 'Shopper links'}</span>
+              <span className="app-footer-section-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Store size={15} />
+                {isHindi ? 'ग्राहक सेवाएँ' : 'Shopper links'}
+              </span>
               {openSection === 'shopper' ? (
-                <ChevronUp size={16} color="var(--color-primary, #2563eb)" />
+                <ChevronUp size={15} color="var(--color-primary, #2563eb)" />
               ) : (
-                <ChevronDown size={16} color="var(--text-muted, #94a3b8)" />
+                <ChevronDown size={15} color="var(--text-muted, #94a3b8)" />
               )}
             </button>
 
@@ -140,17 +146,19 @@ export const AppFooter = () => {
               borderRadius: '10px',
               backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
               overflow: 'hidden',
+              width: 'fit-content',
+              maxWidth: '320px',
             }}
           >
             <button
               type="button"
               onClick={() => toggleSection('trust')}
               style={{
-                width: '100%',
-                display: 'flex',
+                width: 'auto',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 12px',
+                gap: '10px',
+                padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
                 fontWeight: 800,
@@ -158,13 +166,17 @@ export const AppFooter = () => {
                 color: 'var(--text-primary, #0f172a)',
                 cursor: 'pointer',
                 textAlign: 'left',
+                whiteSpace: 'nowrap',
               }}
             >
-              <span className="app-footer-section-label"><ShieldCheck size={16} />{isHindi ? 'नियम और गोपनीयता' : 'Policies & privacy'}</span>
+              <span className="app-footer-section-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={15} />
+                {isHindi ? 'नियम और गोपनीयता' : 'Policies & privacy'}
+              </span>
               {openSection === 'trust' ? (
-                <ChevronUp size={16} color="var(--color-primary, #2563eb)" />
+                <ChevronUp size={15} color="var(--color-primary, #2563eb)" />
               ) : (
-                <ChevronDown size={16} color="var(--text-muted, #94a3b8)" />
+                <ChevronDown size={15} color="var(--text-muted, #94a3b8)" />
               )}
             </button>
 
@@ -216,17 +228,19 @@ export const AppFooter = () => {
               borderRadius: '10px',
               backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
               overflow: 'hidden',
+              width: 'fit-content',
+              maxWidth: '320px',
             }}
           >
             <button
               type="button"
               onClick={() => toggleSection('support')}
               style={{
-                width: '100%',
-                display: 'flex',
+                width: 'auto',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 12px',
+                gap: '10px',
+                padding: '8px 14px',
                 backgroundColor: 'transparent',
                 border: 'none',
                 fontWeight: 800,
@@ -234,13 +248,17 @@ export const AppFooter = () => {
                 color: 'var(--text-primary, #0f172a)',
                 cursor: 'pointer',
                 textAlign: 'left',
+                whiteSpace: 'nowrap',
               }}
             >
-              <span className="app-footer-section-label"><MessageCircle size={16} />{isHindi ? 'सहायता' : 'Support'}</span>
+              <span className="app-footer-section-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <MessageCircle size={15} />
+                {isHindi ? 'सहायता' : 'Support'}
+              </span>
               {openSection === 'support' ? (
-                <ChevronUp size={16} color="var(--color-primary, #2563eb)" />
+                <ChevronUp size={15} color="var(--color-primary, #2563eb)" />
               ) : (
-                <ChevronDown size={16} color="var(--text-muted, #94a3b8)" />
+                <ChevronDown size={15} color="var(--text-muted, #94a3b8)" />
               )}
             </button>
 
