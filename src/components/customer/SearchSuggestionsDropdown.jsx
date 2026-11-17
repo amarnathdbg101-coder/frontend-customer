@@ -97,17 +97,19 @@ export const SearchSuggestionsDropdown = ({
       ref={containerRef}
       style={{
         position: 'absolute',
-        top: 'calc(100% + 6px)',
+        top: 'calc(100% + 4px)',
         left: 0,
         right: 0,
         backgroundColor: 'var(--bg-surface, #ffffff)',
         border: '1px solid var(--border-subtle, #e2e8f0)',
-        borderRadius: '16px',
-        boxShadow: '0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.06)',
-        zIndex: 1050,
-        overflow: 'hidden',
+        borderRadius: '12px',
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.05)',
+        zIndex: 9999,
+        maxHeight: '340px',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
         backdropFilter: 'blur(12px)',
-        padding: '8px 0',
+        padding: '4px 0',
         ...style,
       }}
     >
@@ -118,8 +120,8 @@ export const SearchSuggestionsDropdown = ({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '12px 16px',
-            fontSize: '0.8rem',
+            padding: '10px 14px',
+            fontSize: '0.82rem',
             color: 'var(--text-secondary, #64748b)',
           }}
         >
@@ -133,8 +135,8 @@ export const SearchSuggestionsDropdown = ({
         <div>
           <div
             style={{
-              padding: '4px 16px 6px 16px',
-              fontSize: '0.72rem',
+              padding: '4px 14px 4px 14px',
+              fontSize: '0.70rem',
               fontWeight: 800,
               color: 'var(--text-muted, #94a3b8)',
               textTransform: 'uppercase',
@@ -160,25 +162,30 @@ export const SearchSuggestionsDropdown = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   width: '100%',
-                  padding: '10px 16px',
+                  padding: '9px 14px',
                   border: 'none',
                   backgroundColor: isActive ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  fontSize: '0.85rem',
-                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '0.86rem',
+                  fontWeight: isActive ? 750 : 500,
                   color: isActive ? 'var(--color-primary, #4f46e5)' : 'var(--text-primary, #0f172a)',
                   transition: 'background-color 0.12s ease',
                   gap: '10px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                   <Search
                     size={15}
                     color="var(--color-primary, #4f46e5)"
                     style={{ flexShrink: 0 }}
                   />
-                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{
+                    fontSize: '0.86rem',
+                    lineHeight: 1.35,
+                    wordBreak: 'break-word',
+                    color: 'inherit',
+                  }}>
                     {highlightMatch(item, query)}
                   </span>
                 </div>
