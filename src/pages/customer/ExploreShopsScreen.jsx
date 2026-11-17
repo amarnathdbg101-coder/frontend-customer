@@ -864,12 +864,6 @@ export const ExploreShopsScreen = () => {
           locationName={locationName}
           isDetecting={isDetecting}
           onOpenLocationModal={() => setShowLocationModal(true)}
-          rightAction={
-            <OverflowMenu
-              items={exploreMenuItems}
-              ariaLabel={isHindi ? 'मार्केटप्लेस विकल्प' : 'Marketplace options'}
-            />
-          }
         />
       }
     >

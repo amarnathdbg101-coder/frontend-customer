@@ -130,8 +130,21 @@ export const useRealtimeCustomer = (options = {}) => {
     isUnmountedRef.current = false;
     connect();
 
+    // Fast-reconnect on network return or tab visibility restore
+    const handleOnlineOrVisible = () => {
+      if (document.visibilityState === 'visible' && (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN)) {
+        reconnectAttemptsRef.current = 0;
+        connect();
+      }
+    };
+
+    window.addEventListener('online', handleOnlineOrVisible);
+    document.addEventListener('visibilitychange', handleOnlineOrVisible);
+
     return () => {
       isUnmountedRef.current = true;
+      window.removeEventListener('online', handleOnlineOrVisible);
+      document.removeEventListener('visibilitychange', handleOnlineOrVisible);
       cleanup();
     };
   }, [connect, cleanup]);

@@ -183,6 +183,7 @@ export const ReservationsScreen = () => {
   const [inspectToken, setInspectToken] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const [liveAlert, setLiveAlert] = useState(null);
 
   // Dynamic live countdown refresh every 30 seconds
   useEffect(() => {
@@ -200,8 +201,27 @@ export const ReservationsScreen = () => {
   // Live Real-Time Customer Pickup & Order Updates via WebSocket
   useRealtimeCustomer({
     enabled: isAuthenticated,
-    onReservationUpdate: () => {
+    onReservationUpdate: (payload) => {
       revalidate?.(true);
+      const status = payload?.status?.toLowerCase() || '';
+      const prodName = payload?.product_name || payload?.product?.name || (isHindi ? 'आपका ऑर्डर' : 'Your item');
+      if (status === 'ready') {
+        setLiveAlert({
+          type: 'success',
+          message: isHindi ? `🎉 ${prodName} काउंटर पर पिकअप के लिए तैयार है!` : `🎉 ${prodName} is READY for pickup at the counter!`,
+        });
+      } else if (status === 'completed' || status === 'verified') {
+        setLiveAlert({
+          type: 'success',
+          message: isHindi ? `✅ ${prodName} सफलतापूर्वक काउंटर से डिलीवर हुआ!` : `✅ ${prodName} successfully picked up!`,
+        });
+      } else if (status === 'cancelled') {
+        setLiveAlert({
+          type: 'warning',
+          message: isHindi ? `ℹ️ ${prodName} का रिजर्वेशन रद्द हुआ।` : `ℹ️ ${prodName} reservation was cancelled.`,
+        });
+      }
+      setTimeout(() => setLiveAlert(null), 7000);
     },
   });
 
@@ -305,6 +325,46 @@ export const ReservationsScreen = () => {
       subtitle={isHindi ? 'दुकान से 30-मिनट काउंटर पिकअप रिजर्वेशन' : '30-Minute Counter Pickup reservations'}
     >
       <title>{t('nav.reservations')} — ShopSilo</title>
+
+      {/* Live Real-Time Pickup Status Notification Banner */}
+      {liveAlert && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            borderRadius: '12px',
+            backgroundColor: liveAlert.type === 'warning' ? '#FEF3C7' : '#DCFCE7',
+            color: liveAlert.type === 'warning' ? '#92400E' : '#166534',
+            border: `1px solid ${liveAlert.type === 'warning' ? '#FCD34D' : '#86EFAC'}`,
+            fontSize: '13.5px',
+            fontWeight: 600,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>🔔</span>
+          <span style={{ flex: 1 }}>{liveAlert.message}</span>
+          <button
+            type="button"
+            onClick={() => setLiveAlert(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '14px',
+              color: 'inherit',
+              padding: '2px 6px',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Status Filter Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
