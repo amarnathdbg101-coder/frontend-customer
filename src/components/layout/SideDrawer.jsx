@@ -186,7 +186,7 @@ export const SideDrawer = ({ isOpen, onClose }) => {
             backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
           }}
         >
-          <ShopSiloLogo size={28} subtitle={isHindi ? 'हायपरलोकल बाज़ार' : 'Hyperlocal Market'} />
+          <ShopSiloLogo size={32} showText={false} variant="gradient" />
           <button
             type="button"
             onClick={onClose}

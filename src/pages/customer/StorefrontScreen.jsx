@@ -44,14 +44,6 @@ import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents';
 import { calculateDistanceKm, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { isProductInCategory } from '../../utils/categoryMatcher';
 import { getImageUrl } from '../../utils/imageUrl';
-import {
-  getStoredPersona,
-  setExplicitPersona,
-  trackPersonaEngagement,
-  rankProductsByPersona,
-  PERSONA_META,
-  PERSONA_TYPES,
-} from '../../utils/personaEngine';
 import { useRealtimeStorefront } from '../../hooks/useRealtimeStorefront';
 import { usePageSeo } from '../../hooks/usePageSeo';
 import { BaseModal, ModalHeader, ModalBody, SearchInput, Button, LoadingSpinner, EmptyState, OverflowMenu } from '../../components/ui';
@@ -110,7 +102,6 @@ export const StorefrontScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [quickFilter, setQuickFilter] = useState('ALL');
   const [selectedSize, setSelectedSize] = useState('ALL');
-  const [userPersona, setUserPersona] = useState(() => getStoredPersona().persona);
   const [inspectedProduct, setInspectedProduct] = useState(null);
   const [reservationSuccess, setReservationSuccess] = useState(null);
   const [showShopDetailModal, setShowShopDetailModal] = useState(false);
@@ -416,17 +407,16 @@ export const StorefrontScreen = () => {
         };
       });
 
-      const rankedProds = rankProductsByPersona(normalizedProds, userPersona);
-      setProducts(rankedProds);
-      if (rankedProds.length > 0) {
-        localCache.set(cacheProdKey, rankedProds, DEFAULT_TTL.PRODUCTS);
+      setProducts(normalizedProds);
+      if (normalizedProds.length > 0) {
+        localCache.set(cacheProdKey, normalizedProds, DEFAULT_TTL.PRODUCTS);
       }
     } catch (err) {
       console.error('Failed to load shop storefront:', err);
     } finally {
       setLoading(false);
     }
-  }, [slug, selectedCategory, quickFilter, selectedSize, userPersona, sortBy, debouncedSearch]);
+  }, [slug, selectedCategory, quickFilter, selectedSize, sortBy, debouncedSearch]);
 
   useEffect(() => {
     if (slug) {
@@ -569,7 +559,6 @@ export const StorefrontScreen = () => {
     let under99 = 0;
     let under499 = 0;
     let deals20 = 0;
-    let mandiRate = 0;
 
     list.forEach((p) => {
       const isPublic = p.is_price_public !== false && 
@@ -585,10 +574,9 @@ export const StorefrontScreen = () => {
       if (isPublic && price <= 99) under99++;
       if (isPublic && price <= 499) under499++;
       if (isPublic && pct >= 20) deals20++;
-      if (!isPublic) mandiRate++;
     });
 
-    return { under99, under499, deals20, mandiRate };
+    return { under99, under499, deals20 };
   }, [products]);
 
   // 3a. Hybrid Debounced Server Database Search & Filter (bypasses 20-item local limit & queries PostgreSQL)
@@ -695,8 +683,6 @@ export const StorefrontScreen = () => {
         if (!isPublic || price > 499) return false;
       } else if (quickFilter === 'DEALS_20') {
         if (!isPublic || pct < 20) return false;
-      } else if (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN') {
-        if (isPublic) return false;
       }
 
       // Search Filter: Only do substring check if server results are not loaded yet
@@ -1603,31 +1589,6 @@ export const StorefrontScreen = () => {
             🔥 {t('products.quick_filter_deals_20', 'Deals (>20% Off)')} ({quickFilterCounts.deals20})
           </button>
         )}
-
-        {(quickFilterCounts.mandiRate > 0 || quickFilterCounts.bargain > 0) && (
-          <button
-            type="button"
-            onClick={() => setQuickFilter(quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN' ? 'ALL' : 'MANDI_RATE')}
-            style={{
-              padding: '5px 10px',
-              borderRadius: '16px',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              border: (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN')
-                ? '1.5px solid #8b5cf6'
-                : '1px solid var(--border-subtle, #e2e8f0)',
-              backgroundColor: (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN')
-                ? '#8b5cf6'
-                : 'var(--bg-card, #ffffff)',
-              color: (quickFilter === 'MANDI_RATE' || quickFilter === 'BARGAIN') ? '#ffffff' : '#7c3aed',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            ⚖️ {t('products.quick_filter_mandi', 'Mandi Rate / Counter Price')} ({quickFilterCounts.mandiRate || quickFilterCounts.bargain || 0})
-          </button>
-        )}
       </div>
 
       {/* 2c. Active Filters Status Summary with 1-Tap Reset */}
@@ -1670,59 +1631,6 @@ export const StorefrontScreen = () => {
           </button>
         </div>
       )}
-
-      {/* 🎯 Zero-Click Persona Affinity Filter */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          overflowX: 'auto',
-          paddingBottom: '6px',
-          marginBottom: '6px',
-          scrollbarWidth: 'none',
-        }}
-      >
-        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
-          {isHindi ? 'पसंद:' : 'For You:'}
-        </span>
-        {Object.entries(PERSONA_META).map(([pKey, meta]) => {
-          const isSelected = userPersona === pKey;
-          return (
-            <button
-              key={pKey}
-              type="button"
-              onClick={() => {
-                const res = setExplicitPersona(pKey);
-                setUserPersona(res.persona);
-                setProducts((prev) => rankProductsByPersona(prev, pKey));
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '4px 10px',
-                borderRadius: '16px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                border: isSelected
-                  ? '1.5px solid var(--color-primary, #4f46e5)'
-                  : '1.5px solid var(--border-subtle, #e2e8f0)',
-                backgroundColor: isSelected
-                  ? 'var(--color-primary-light, #f0f4ff)'
-                  : 'var(--bg-card, #ffffff)',
-                color: isSelected ? 'var(--color-primary, #4f46e5)' : 'var(--text-secondary, #64748b)',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>{meta.icon}</span>
-              <span>{isHindi ? meta.labelHi : meta.labelEn}</span>
-            </button>
-          );
-        })}
-      </div>
 
       {/* 👗 Smart Size-First Query Bar (Cloth & Garments Retail) */}
       <div
@@ -1817,9 +1725,6 @@ export const StorefrontScreen = () => {
                 onClick={() => {
                   const next = isSelected ? 'ALL' : cat;
                   setSelectedCategory(next);
-                  if (next !== 'ALL') {
-                    trackPersonaEngagement(next, 2);
-                  }
                 }}
                 style={{
                   padding: '6px 12px',

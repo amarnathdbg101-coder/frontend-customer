@@ -35,7 +35,7 @@ export const HomeHeader = ({
         <div className="home-header-inner">
           {/* 1. ShopSilo Logo */}
           <div className="home-header-left">
-            <ShopSiloLogo size={32} showText={true} variant="gradient" to="/" />
+            <ShopSiloLogo size={34} showText={false} variant="gradient" to="/" />
           </div>
 
           {/* 2. Current Location */}

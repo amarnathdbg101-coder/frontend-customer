@@ -30,7 +30,7 @@ import { useCart } from '../../context/CartContext';
 import SavedContext from '../../context/SavedContext';
 import { shareProduct } from '../../utils/productShare';
 import { productApi } from '../../api/product.api';
-import { trackPersonaEngagement } from '../../utils/personaEngine';
+import { parseProductDetails } from '../../utils/productDetailsHelper';
 
 export const ProductTrustDetailView = ({
   product,
@@ -78,11 +78,6 @@ export const ProductTrustDetailView = ({
 
   useEffect(() => {
     if (!product?.id) return;
-    try {
-      trackPersonaEngagement(product.category || product.name, 3);
-    } catch {
-      // Safe fallback
-    }
 
     let isMounted = true;
     if (typeof productApi?.getProductVariants === 'function') {
@@ -172,26 +167,36 @@ export const ProductTrustDetailView = ({
   const savingsAmount = hasDiscount ? originalPrice - currentPrice : 0;
   const discountPercent = hasDiscount ? Math.round((savingsAmount / originalPrice) * 100) : 0;
 
-  // Product Specifications & Metadata Extraction
+  // Product Specifications & Metadata Extraction (Defensively Parsed & Enterprise Privacy Protected)
+  const parsedDetails = useMemo(() => parseProductDetails(product, isHindi), [product, isHindi]);
   const specItems = useMemo(() => {
     if (!product) return [];
     const items = [];
-    if (product.brand) items.push({ label: 'Brand', value: product.brand });
-    if (product.category) items.push({ label: 'Category', value: typeof product.category === 'object' ? (product.category?.name || '') : String(product.category) });
-    if (product.unit) items.push({ label: 'Unit', value: product.unit });
-    if (product.weight > 0) items.push({ label: 'Weight', value: `${product.weight} kg` });
+    const resolvedBrand = parsedDetails.brand || product.brand;
+    if (resolvedBrand) items.push({ label: 'Brand', value: resolvedBrand });
 
-    if (product.attributes && typeof product.attributes === 'object') {
-      Object.entries(product.attributes).forEach(([k, v]) => {
-        const kLow = k.toLowerCase().trim();
-        if (kLow !== 'brand' && kLow !== 'category' && kLow !== 'category_name' && kLow !== 'unit' && kLow !== 'weight' && v && String(v).trim()) {
-          const formattedKey = k.replaceAll('_', ' ').replaceAll('-', ' ');
-          items.push({ label: formattedKey, value: String(v) });
+    const resolvedCategory = (parsedDetails.categoryName && parsedDetails.categoryName !== 'General' && parsedDetails.categoryName !== 'सामान्य (General)')
+      ? parsedDetails.categoryName
+      : (typeof product.category === 'object' ? (product.category?.name || '') : String(product.category || ''));
+    if (resolvedCategory) items.push({ label: 'Category', value: resolvedCategory });
+
+    const resolvedUnit = parsedDetails.unit || product.unit;
+    if (resolvedUnit) items.push({ label: 'Unit', value: resolvedUnit });
+
+    const resolvedWeight = parsedDetails.weightLabel || (product.weight > 0 ? `${product.weight} kg` : '');
+    if (resolvedWeight) items.push({ label: 'Weight', value: resolvedWeight });
+
+    // Dynamic Specifications from parsed details (safe from private merchant blocklist)
+    if (Array.isArray(parsedDetails.specifications)) {
+      parsedDetails.specifications.forEach((spec) => {
+        const k = (spec.key || '').toLowerCase().trim();
+        if (!['brand', 'category', 'category_name', 'unit', 'weight'].includes(k)) {
+          items.push({ label: spec.label, value: spec.value });
         }
       });
     }
     return items;
-  }, [product]);
+  }, [product, parsedDetails]);
 
   const rawStock =
     selectedVariant?.available_qty ??

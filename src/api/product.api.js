@@ -64,12 +64,6 @@ export const productApi = {
     return res;
   },
 
-  // Public/Customer: Bhav-Taav Negotiation (Make Offer)
-  makeOffer: async (productId, offerData) => {
-    const res = await client.post(`/products/${productId}/make-offer`, offerData);
-    return res;
-  },
-
   // Public/Customer: Out-of-Stock Item Notify Me
   subscribeStockAlert: async (productId, alertData) => {
     const res = await client.post(`/products/${productId}/notify-me`, alertData);

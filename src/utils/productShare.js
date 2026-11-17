@@ -65,7 +65,7 @@ export function formatProductShareText(options) {
       priceStr += isHindi ? ` (MRP: ₹${mrp}, ${discountPct}% छूट)` : ` (MRP: ₹${mrp}, ${discountPct}% OFF)`;
     }
   } else {
-    priceStr = isHindi ? '🔒 मोलभाव करें / रेट पूछें' : '🔒 Price on Request';
+    priceStr = isHindi ? '🔒 दुकान पर रेट पूछें' : '🔒 Price on Request';
   }
 
   const store = opts?.shopName || p.shop_name || p.shop?.name || '';

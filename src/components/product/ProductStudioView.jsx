@@ -133,11 +133,6 @@ export const ProductStudioView = ({
   const hasDiscount = comparePrice > price && price > 0;
   const savings = hasDiscount ? comparePrice - price : 0;
   const discountPct = hasDiscount ? Math.round((savings / comparePrice) * 100) : 0;
-  const hasNegotiablePrice =
-    product?.allow_bargain === true ||
-    product?.allow_bargain === 'true' ||
-    product?.attributes?.allow_bargain === true ||
-    product?.attributes?.allow_bargain === 'true';
 
   const isPricePublic = product?.is_price_public !== false &&
                         product?.isPricePublic !== false &&
@@ -1137,12 +1132,6 @@ export const ProductStudioView = ({
                     </span>
                   )}
                 </div>
-
-                {hasNegotiablePrice && (
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                    {isHindi ? 'काउंटर पर मौजूदा कीमत पूछें।' : 'Ask the shop for the current counter price.'}
-                  </div>
-                )}
               </div>
             ) : (
               <div

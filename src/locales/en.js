@@ -177,7 +177,6 @@ export default {
     "quick_filter_under_99": "Under ₹99",
     "quick_filter_under_499": "Under ₹499",
     "quick_filter_deals_20": "Deals (>20% Off)",
-    "quick_filter_bargain": "Price on Request",
     "share_whatsapp": "Share on WhatsApp",
     "share_copied": "Link Copied!",
     "active_filters": "Active Filters",
@@ -259,24 +258,6 @@ export default {
     "step_collected": "Collected",
     "view_my_pickups": "View in My Pickups",
     "pickup_instructions_counter": "Show your 6-digit PIN at the counter to collect your item instantly."
-  },
-  "bargain": {
-    "title": "Price Negotiation (Make Offer)",
-    "subtitle": "Propose your offer price — our smart pricing engine calculates the best instant deal!",
-    "propose_price": "Your Proposed Price (₹)",
-    "quantity": "Quantity (Units)",
-    "mobile_label": "Your Mobile Number (10-Digit)",
-    "submit_offer": "Submit Offer Price",
-    "calculating": "Calculating Deal...",
-    "deal_accepted_title": "Deal Accepted!",
-    "deal_accepted_msg": "Your offer price has been approved by the merchant pricing policy.",
-    "deal_code": "EXCLUSIVE DEAL CODE",
-    "valid_for": "VALID FOR",
-    "order_whatsapp": "Order via WhatsApp",
-    "counter_offer_title": "Store Counter Offer: ₹{{price}}",
-    "bundle_title": "VOLUME BUNDLE SAVINGS OFFER",
-    "try_another": "Try Another Offer Price",
-    "fixed_price_msg": "This item has fixed pricing and is not eligible for negotiation."
   },
   "stock_alert": {
     "title": "Currently Out of Stock",
@@ -407,8 +388,6 @@ export default {
   "help_support": {
     "title": "Customer Support & FAQs",
     "faq_title": "Frequently Asked Questions",
-    "q_bargain": "How does price negotiation (Bargain) work?",
-    "a_bargain": "Click 'Make Offer' on any eligible product. Our pricing system calculates your proposed price against verified merchant discount margins for instant approval or counter-offer.",
     "q_wrong_bill": "What should I do if a store creates an incorrect bill?",
     "a_wrong_bill": "You can dispute any transaction directly in your Khata passbook, or register a formal report under Grievance Redressal.",
     "call_support": "Customer Helpline",

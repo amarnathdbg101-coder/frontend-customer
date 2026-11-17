@@ -9,7 +9,7 @@
 import { useEffect } from 'react';
 
 const DEFAULT_TITLE = 'ShopSilo - Hyperlocal Retail Marketplace & Smart Dukan OS';
-const DEFAULT_DESCRIPTION = 'ShopSilo connects customers with verified neighborhood retail stores for real-time inventory discovery, bargain offers, and instant 30-minute counter pickup.';
+const DEFAULT_DESCRIPTION = 'ShopSilo connects customers with verified neighborhood retail stores for real-time inventory discovery, exclusive store deals, and instant 30-minute counter pickup.';
 const DEFAULT_IMAGE = 'https://shopsilo.in/og-image.png';
 const BASE_URL = 'https://shopsilo.in';
 
