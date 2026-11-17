@@ -247,7 +247,7 @@ export function printPOSInvoice({ bill, shop, format = 'standard' }) {
     </div>
     ${discount > 0 ? `
       <div class="summary-row discount">
-        <span>Special Discount / Bargain Savings:</span>
+        <span>Special Discount / Store Savings:</span>
         <span>- ${formatInr(discount)}</span>
       </div>
     ` : ''}

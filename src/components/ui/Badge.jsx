@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const Badge = ({
-  variant = 'neutral', // 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'bargain'
+  variant = 'neutral', // 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'
   size = 'md', // 'sm' | 'md'
   icon: Icon,
   children,
@@ -58,11 +58,6 @@ export const Badge = ({
       backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',
       color: 'var(--text-secondary, #475569)',
       border: '1px solid var(--border-subtle, #e2e8f0)',
-    },
-    bargain: {
-      backgroundColor: 'rgba(124, 58, 237, 0.12)',
-      color: '#7c3aed',
-      border: '1px solid rgba(124, 58, 237, 0.25)',
     },
   }[variant] || {
     backgroundColor: 'var(--bg-surface-subtle, #f1f5f9)',

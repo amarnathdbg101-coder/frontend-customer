@@ -1,67 +1,30 @@
 /**
- * Customer Login Screen
- * Clean, modern, responsive, 100% localized (English & हिन्दी, zero Hinglish)
+ * Customer Login Screen - Pure 1-Tap Google Sign-In
+ * Clean, modern, responsive, 100% localized (English & हिन्दी, zero passwords, zero forms)
  * Features:
- * - Phone / Email & Password authentication
- * - 1-Click Google Sign-In
+ * - 1-Click Google Sign-In (Google Identity Services)
+ * - Zero form filling & zero forgotten passwords
  * - Direct Language Selector
- * - Merchant boundary guard
+ * - Merchant Portal Link
  */
 
 import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Store, ArrowRight, AlertCircle, Eye, EyeOff, X, Send, CheckCircle2, Globe } from 'lucide-react';
+import { Store, Zap, ShieldCheck, KeyRound, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { sessionState } from '../../utils/sessionState';
 import { useLanguage } from '../../context/LanguageContext';
-import { authApi } from '../../api/auth.api';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { GoogleLoginButton } from '../../components/auth/GoogleLoginButton';
 import { ShopSiloLogo } from '../../components/common/ShopSiloLogo';
-import { BaseModal, ModalHeader, ModalBody, Button, AlertBanner } from '../../components/ui';
 
 export const LoginScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithGoogle } = useAuth();
+  const { loginWithGoogle } = useAuth();
   const { isHindi, setLanguage, t } = useLanguage();
 
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Forgot password modal state
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotMsg, setForgotMsg] = useState('');
-  const [forgotError, setForgotError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (loading) return;
-    setError('');
-    setLoading(true);
-
-    const cleanIdentifier = identifier.trim().toLowerCase();
-
-    try {
-      const res = await login(cleanIdentifier, password);
-      const user = res?.user || res?.data?.user;
-      if (user && (user.role === 'merchant' || user.role === 'shop')) {
-        setError(t('auth.role_merchant_notice'));
-        return;
-      }
-      const targetRoute = sessionState.getRedirectAfterLogin() || location.state?.from?.pathname || '/';
-      navigate(targetRoute, { replace: true });
-    } catch (err) {
-      setError(err.message || t('common.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogleSuccess = useCallback(async (idToken) => {
     setError('');
@@ -79,25 +42,9 @@ export const LoginScreen = () => {
     }
   }, [loginWithGoogle, location, navigate, t]);
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setForgotError('');
-    setForgotMsg('');
-    setForgotLoading(true);
-
-    try {
-      const res = await authApi.forgotPassword(forgotEmail.trim());
-      setForgotMsg(res.message || t('auth.reset_link_sent'));
-    } catch (err) {
-      setForgotError(err.message || t('common.error'));
-    } finally {
-      setForgotLoading(false);
-    }
-  };
-
   return (
     <AppLayout title={t('app_name')} subtitle={t('auth.login_title')} hideNav={true}>
-      <div style={{ paddingTop: '16px', maxWidth: '440px', margin: '0 auto' }}>
+      <div style={{ paddingTop: '20px', maxWidth: '440px', margin: '0 auto', paddingBottom: '32px' }}>
         
         {/* Top Language Toggle Pill */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
@@ -105,8 +52,8 @@ export const LoginScreen = () => {
             style={{
               display: 'inline-flex',
               background: 'var(--bg-surface-subtle, rgba(255,255,255,0.06))',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--border-subtle, #e2e8f0)',
+              borderRadius: '9999px',
               padding: '3px',
               gap: '4px',
             }}
@@ -118,12 +65,12 @@ export const LoginScreen = () => {
               onClick={() => setLanguage('hi')}
               style={{
                 border: 'none',
-                background: isHindi ? 'var(--color-primary)' : 'transparent',
-                color: isHindi ? '#ffffff' : 'var(--text-secondary)',
+                background: isHindi ? 'var(--color-primary, #4f46e5)' : 'transparent',
+                color: isHindi ? '#ffffff' : 'var(--text-secondary, #64748b)',
                 fontWeight: 700,
                 fontSize: '0.78rem',
                 padding: '4px 12px',
-                borderRadius: 'var(--radius-full)',
+                borderRadius: '9999px',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
@@ -135,12 +82,12 @@ export const LoginScreen = () => {
               onClick={() => setLanguage('en')}
               style={{
                 border: 'none',
-                background: !isHindi ? 'var(--color-primary)' : 'transparent',
-                color: !isHindi ? '#ffffff' : 'var(--text-secondary)',
+                background: !isHindi ? 'var(--color-primary, #4f46e5)' : 'transparent',
+                color: !isHindi ? '#ffffff' : 'var(--text-secondary, #64748b)',
                 fontWeight: 700,
                 fontSize: '0.78rem',
                 padding: '4px 12px',
-                borderRadius: 'var(--radius-full)',
+                borderRadius: '9999px',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
@@ -152,28 +99,93 @@ export const LoginScreen = () => {
 
         {/* Brand Banner */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "14px" }}><ShopSiloLogo size={64} showText={false} variant="tint" /></div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
-            {t('auth.login_title')}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+            <ShopSiloLogo size={68} showText={false} variant="tint" />
+          </div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
+            {isHindi ? 'ShopSilo में आपका स्वागत है' : 'Welcome to ShopSilo'}
           </h1>
-          <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-            {t('auth.login_subtitle')}
+          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+            {isHindi 
+              ? 'पासवर्ड याद रखने का झंझट खत्म। 1-क्लिक में Google से तुरंत लॉगिन करें।' 
+              : 'No passwords to remember. 1-click instant secure login with Google.'}
           </p>
+        </div>
+
+        {/* Value Prop Benefits Card */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface-subtle, rgba(248, 250, 252, 0.8))',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color, #e2e8f0)',
+            padding: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', display: 'flex' }}>
+              <Zap size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {isHindi ? '1-क्लिक तुरंत लॉगिन' : '1-Click Instant Sign-In'}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                {isHindi ? 'बिना कोई लंबा फॉर्म भरे सीधे शुरू करें' : 'Zero form filling or manual registration'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-color, #e2e8f0)' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: 'rgba(79, 70, 229, 0.12)', color: '#4f46e5', display: 'flex' }}>
+              <KeyRound size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {isHindi ? 'पासवर्ड का झंझट खत्म' : 'Zero Password Hassle'}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                {isHindi ? 'पासवर्ड भूलने या रीसेट करने की कोई चिंता नहीं' : 'No forgotten passwords to reset or recover'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-color, #e2e8f0)' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ padding: '8px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981', display: 'flex' }}>
+              <ShieldCheck size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {isHindi ? '100% Google सुरक्षित' : 'Bank-Grade Google Security'}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                {isHindi ? 'Google द्वारा सुरक्षित और वेरिफाइड प्रोफ़ाइल' : 'Official Google Identity Services protection'}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Error Notification */}
         {error && (
           <div
             style={{
-              backgroundColor: 'var(--color-danger-light)',
-              color: 'var(--color-danger)',
+              backgroundColor: 'var(--color-danger-light, #fef2f2)',
+              color: 'var(--color-danger, #ef4444)',
               padding: '12px 14px',
-              borderRadius: 'var(--radius-md)',
+              borderRadius: '12px',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               fontSize: '0.85rem',
-              marginBottom: '16px',
+              marginBottom: '20px',
             }}
           >
             <AlertCircle size={18} style={{ flexShrink: 0 }} />
@@ -181,146 +193,21 @@ export const LoginScreen = () => {
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label className="form-label">{t('auth.phone_label')}</label>
-            <input
-              type="text"
-              required
-              autoComplete="username email"
-              className="form-input"
-              placeholder={t('auth.phone_placeholder')}
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label className="form-label" style={{ margin: 0 }}>{t('auth.password_label')}</label>
-              <button
-                type="button"
-                onClick={() => {
-                  setForgotEmail(identifier.includes('@') ? identifier : '');
-                  setForgotMsg('');
-                  setForgotError('');
-                  setShowForgotModal(true);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--color-primary)',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                {t('auth.forgot_password')}
-              </button>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                autoComplete="current-password"
-                className="form-input"
-                style={{ paddingRight: '40px' }}
-                placeholder={t('auth.password_placeholder')}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: 0,
-                }}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '12px',
-              backgroundColor: '#0f172a',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: 800,
-              fontSize: '0.92rem',
-              marginTop: '12px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
-          >
-            {loading ? t('auth.waiting') : (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                {t('auth.login_button')} <ArrowRight size={18} />
-              </span>
-            )}
-          </button>
-        </form>
-
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', gap: '12px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748b)', fontWeight: 600 }}>
-            {t('auth.or_continue_with')}
-          </span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-color, #e2e8f0)' }} />
-        </div>
-
-        {/* Google Sign-In Button */}
-        <GoogleLoginButton
-          text="continue_with"
-          onSuccess={handleGoogleSuccess}
-          onError={(err) => setError(err.message || t('common.error'))}
-        />
-
-        {/* Switch to Register */}
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.85rem' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>{t('auth.register_cta_question')} </span>
-          <Link
-            to="/register"
-            style={{
-              color: 'var(--color-primary)',
-              fontWeight: 700,
-              textDecoration: 'none',
-              marginLeft: '4px',
-            }}
-          >
-            {t('auth.register_cta_link')}
-          </Link>
+        {/* Primary Google Sign-In Button */}
+        <div style={{ marginBottom: '24px' }}>
+          <GoogleLoginButton
+            text="continue_with"
+            onSuccess={handleGoogleSuccess}
+            onError={(err) => setError(err.message || t('common.error'))}
+          />
         </div>
 
         {/* Merchant Portal Direct Access Banner */}
         <div
           style={{
-            marginTop: '24px',
+            marginTop: '16px',
             padding: '14px 16px',
-            borderRadius: 'var(--radius-lg)',
+            borderRadius: '14px',
             background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%)',
             border: '1px solid rgba(79, 70, 229, 0.2)',
             display: 'flex',
@@ -330,7 +217,7 @@ export const LoginScreen = () => {
           }}
         >
           <div>
-            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--color-primary)' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--color-primary, #4f46e5)' }}>
               🏪 {t('nav.merchant_link_title')}
             </div>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -338,132 +225,34 @@ export const LoginScreen = () => {
             </div>
           </div>
           <a
-            href="https://shop.shopsilo.in/login"
-            className="btn btn-sm btn-primary"
+            href="https://merchant.shopsilo.in"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              background: 'var(--color-primary, #4f46e5)',
+              color: '#ffffff',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '0.76rem',
               textDecoration: 'none',
-              padding: '6px 14px',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              borderRadius: 'var(--radius-full)',
+              flexShrink: 0,
             }}
           >
-            {t('nav.merchant_link_action')} 👉
+            {isHindi ? 'खोलें' : 'Open'}
           </a>
         </div>
 
-        {/* Forgot Password Modal */}
-        {showForgotModal && (
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px',
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: 'var(--color-surface, #1e293b)',
-                color: 'var(--text-primary, #ffffff)',
-                borderRadius: 'var(--radius-lg, 16px)',
-                padding: '24px',
-                width: '100%',
-                maxWidth: '400px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>
-                  {t('auth.forgot_password_title')}
-                </h3>
-                <button
-                  onClick={() => setShowForgotModal(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted, #94a3b8)',
-                    cursor: 'pointer',
-                    padding: '4px',
-                  }}
-                  aria-label="Close"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+        {/* Terms Disclaimer */}
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', marginTop: '20px', lineHeight: 1.4 }}>
+          {isHindi 
+            ? 'Google से जारी रखकर आप ShopSilo की सेवा शर्तों व गोपनीयता नीति से सहमत होते हैं।' 
+            : 'By continuing with Google, you agree to ShopSilo\'s Terms of Service and Privacy Policy.'}
+        </p>
 
-              {forgotMsg ? (
-                <div style={{ textAlign: 'center', padding: '12px 0' }}>
-                  <CheckCircle2 size={42} color="#22c55e" style={{ margin: '0 auto 10px auto' }} />
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
-                    {forgotMsg}
-                  </p>
-                  <button
-                    onClick={() => setShowForgotModal(false)}
-                    className="btn btn-primary btn-block"
-                  >
-                    {t('auth.understood')}
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleForgotPassword}>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.4 }}>
-                    {t('auth.forgot_password_desc')}
-                  </p>
-
-                  {forgotError && (
-                    <div
-                      style={{
-                        backgroundColor: 'var(--color-danger-light)',
-                        color: 'var(--color-danger)',
-                        padding: '10px',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '0.82rem',
-                        marginBottom: '12px',
-                      }}
-                    >
-                      {forgotError}
-                    </div>
-                  )}
-
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label">{t('auth.email_label')}</label>
-                    <input
-                      type="email"
-                      required
-                      className="form-input"
-                      placeholder={t('auth.email_placeholder')}
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-block"
-                    disabled={forgotLoading}
-                  >
-                    {forgotLoading ? t('auth.sending') : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        {t('auth.send_reset_link')} <Send size={16} />
-                      </span>
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </AppLayout>
   );

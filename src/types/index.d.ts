@@ -72,9 +72,7 @@ export interface Product {
   category_name?: string;
   price: number;
   compare_price?: number;
-  floor_price?: number;
   cost_price?: number;
-  allow_bargain?: boolean;
   is_price_public?: boolean;
   sku?: string;
   barcode?: string;

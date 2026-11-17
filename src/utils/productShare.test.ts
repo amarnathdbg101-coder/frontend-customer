@@ -59,7 +59,7 @@ describe('productShare Utility', () => {
     expect(text).toContain('ShopSilo पर देखें: https://shopsilo.in/shop/gupta-kirana/product/prod-101');
   });
 
-  it('handles hidden price / bargain products gracefully', () => {
+  it('handles hidden price / Price on Request products gracefully', () => {
     const hiddenProduct = {
       ...sampleProduct,
       is_price_public: false,
@@ -69,7 +69,7 @@ describe('productShare Utility', () => {
     expect(textEn).toContain('Price on Request');
 
     const textHi = formatProductShareText({ product: hiddenProduct, isHindi: true });
-    expect(textHi).toContain('मोलभाव करें / रेट पूछें');
+    expect(textHi).toContain('दुकान पर रेट पूछें');
   });
 
   it('generates valid WhatsApp share url', () => {

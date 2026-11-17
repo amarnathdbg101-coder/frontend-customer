@@ -50,7 +50,7 @@ export const DesktopNavbar = () => {
         {/* Brand Logo */}
         <ShopSiloLogo
           size={38}
-          subtitle={isHindi ? 'हायपरलोकल बाज़ार' : 'Hyperlocal Market'}
+          showText={false}
           to="/"
           variant="gradient"
         />

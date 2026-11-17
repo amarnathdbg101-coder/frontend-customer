@@ -35,7 +35,7 @@ export const AppFooter = () => {
         {/* Brand Header */}
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShopSiloLogo size={22} showText={true} variant="gradient" />
+            <ShopSiloLogo size={26} showText={false} variant="gradient" />
           </div>
           <div
             style={{

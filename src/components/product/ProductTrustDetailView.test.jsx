@@ -122,4 +122,33 @@ describe('ProductTrustDetailView Component Tests', () => {
     expect(screen.queryByText(/Verified shop|सत्यापित दुकान/i)).toBeNull();
     expect(screen.queryByText(/Stock quantity provided|स्टॉक की मात्रा दी गई है/i)).toBeNull();
   });
+
+  it('displays complete specifications and details even when price is hidden (is_price_public: false)', () => {
+    renderWithProviders(
+      <ProductTrustDetailView
+        product={{
+          ...mockProduct,
+          is_price_public: false,
+          brand: 'Tata Consumer',
+          unit: '1 kg packet',
+          attributes: {
+            shelf_life: '24 Months',
+            origin: 'Gujarat, India',
+            is_price_public: false,
+          },
+        }}
+        shop={mockShop}
+      />
+    );
+
+    // Price is masked with Ask the shop for price
+    expect(screen.getByText(/Ask the shop for price|दुकान से दाम पूछें/i)).toBeDefined();
+    // Specifications table still shows brand, unit, category, and custom attributes
+    expect(screen.getAllByText('Tata Consumer').length).toBeGreaterThan(0);
+    expect(screen.getByText('1 kg packet')).toBeDefined();
+    expect(screen.getByText('24 Months')).toBeDefined();
+    expect(screen.getByText('Gujarat, India')).toBeDefined();
+    // Internal flag should NOT leak into the table
+    expect(screen.queryByText(/is price public/i)).toBeNull();
+  });
 });

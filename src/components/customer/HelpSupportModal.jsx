@@ -23,10 +23,6 @@ export const HelpSupportModal = ({ isOpen, onClose }) => {
         : 'A real-time, transparent ledger of credit balances with neighborhood merchants. View receipts, raise disputes, or settle balances via UPI.'
     },
     {
-      q: t('help_support.q_bargain'),
-      a: t('help_support.a_bargain')
-    },
-    {
       q: t('help_support.q_wrong_bill'),
       a: t('help_support.a_wrong_bill')
     }

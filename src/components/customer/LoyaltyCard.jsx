@@ -57,7 +57,7 @@ export const LoyaltyCard = () => {
         </div>
 
         <Badge
-          variant={isGold ? 'warning' : isSilver ? 'neutral' : 'bargain'}
+          variant={isGold ? 'warning' : isSilver ? 'neutral' : 'primary'}
           size="md"
           icon={Award}
         >

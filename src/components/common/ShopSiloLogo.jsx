@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
  */
 export const ShopSiloLogo = ({
   size = 36,
-  showText = true,
+  showText = false,
   subtitle,
   textColor,
   variant = 'gradient', // 'gradient' | 'tint' | 'white'
@@ -64,7 +64,7 @@ export const ShopSiloLogo = ({
       aria-hidden="true"
     >
       <img
-        src="/logo.png"
+        src="/mark.png"
         alt="ShopSilo"
         style={{
           width: '100%',

@@ -15,7 +15,7 @@ describe('Catalog Feature Service & Filtering Tests', () => {
     { id: '1', name: 'Matchbox', price: 10, mrp: 10, category: 'General', is_price_public: true },
     { id: '2', name: 'Premium Biscuits', price: 80, mrp: 100, category: 'Bakery', is_price_public: true }, // 20% off
     { id: '3', name: 'Olive Oil 1L', price: 650, mrp: 900, category: 'Grocery', is_price_public: true }, // >20% off, > 499
-    { id: '4', name: 'Handcrafted Vase', price: 1200, mrp: 1500, category: 'Decor', is_price_public: false, allow_bargain: true }, // Bargain / hidden
+    { id: '4', name: 'Handcrafted Vase', price: 1200, mrp: 1500, category: 'Decor', is_price_public: false }, // Price on Request / hidden
   ];
 
   it('correctly filters products Under ₹99', () => {
@@ -37,9 +37,9 @@ describe('Catalog Feature Service & Filtering Tests', () => {
     expect(deals20.map((p) => p.id)).toEqual(['2', '3']);
   });
 
-  it('correctly filters products with Price on Request / Bargain', () => {
-    const bargain = mockCatalog.filter((p) => !p.is_price_public || p.allow_bargain);
-    expect(bargain.map((p) => p.id)).toEqual(['4']);
+  it('correctly filters products with Price on Request', () => {
+    const hidden = mockCatalog.filter((p) => !p.is_price_public);
+    expect(hidden.map((p) => p.id)).toEqual(['4']);
   });
 
   it('integrates WhatsApp product sharing text with store slug', () => {
