@@ -27,7 +27,9 @@ export const HomeHeader = ({
 
   const displayLocation = isDetecting
     ? (isHindi ? 'लोकेशन...' : 'Detecting...')
-    : (locationName || (isHindi ? 'लोकल एरिया' : 'Civil Lines, Prayagraj'));
+    : (!locationName || locationName === 'Local Area' || locationName === 'लोकल एरिया' || locationName === 'Current GPS Location'
+        ? (isHindi ? 'लोकेशन चुनें' : 'Select Location')
+        : locationName);
 
   return (
     <>
@@ -44,16 +46,13 @@ export const HomeHeader = ({
               type="button"
               onClick={onOpenLocationModal}
               className="home-location-pill"
-              title={isHindi ? 'GPS लोकेशन बदलें' : 'Change Delivery Location'}
-              aria-label={isHindi ? 'GPS लोकेशन बदलें' : 'Change Delivery Location'}
+              title={isHindi ? 'लोकेशन चुनें' : 'Select Location'}
+              aria-label={isHindi ? 'लोकेशन चुनें' : 'Select Location'}
             >
               <div className="location-pin-circle">
                 <MapPin size={13} className="location-pin-icon" />
               </div>
               <div className="location-info">
-                <span className="location-label">
-                  {isHindi ? 'लोकेशन' : 'Location'}
-                </span>
                 <span className="location-text">
                   {displayLocation}
                 </span>
