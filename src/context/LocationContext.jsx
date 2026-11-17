@@ -16,7 +16,9 @@ export const LocationProvider = ({ children }) => {
   });
 
   const [locationName, setLocationName] = useState(() => {
-    return localStorage.getItem('shopsilo_customer_loc_name') || 'Local Area';
+    const saved = localStorage.getItem('shopsilo_customer_loc_name');
+    if (!saved || saved === 'Local Area') return '';
+    return saved;
   });
 
   const [radiusKm, setRadiusKm] = useState(() => {

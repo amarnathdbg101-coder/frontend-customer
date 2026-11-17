@@ -50,6 +50,7 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
+import { VoiceSearchModal } from '../../components/common/VoiceSearchModal';
 import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
 import { CategoryBar } from '../../components/customer/CategoryBar';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
@@ -151,6 +152,7 @@ export const ExploreShopsScreen = () => {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   // Dynamic SEO & OpenGraph Head Management
   usePageSeo({
@@ -165,43 +167,18 @@ export const ExploreShopsScreen = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 
-  // 1-Tap Voice Search for Explore Screen
+  // 1-Tap Voice Search Modal for Explore Screen
   const handleVoiceSearch = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert(isHindi ? 'इस ब्राउज़र में वॉइस इनपुट समर्थित नहीं है। कृपया टाइप करके खोजें।' : 'Voice input is not supported in this browser. Please type to search.');
-      return;
+    setIsVoiceModalOpen(true);
+  }, []);
+
+  const handleVoiceSearchResult = useCallback((cleanTranscript) => {
+    if (cleanTranscript) {
+      setSearchTerm(cleanTranscript);
+      setIsSuggestionsOpen(false);
+      setRecentSearches(persistRecentSearch(cleanTranscript));
     }
-
-    if (isVoiceListening) {
-      setIsVoiceListening(false);
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => setIsVoiceListening(true);
-      recognition.onend = () => setIsVoiceListening(false);
-      recognition.onerror = () => setIsVoiceListening(false);
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript || '';
-        if (transcript) {
-          setSearchTerm(transcript);
-          setIsSuggestionsOpen(false);
-        }
-      };
-
-      recognition.start();
-    } catch (e) {
-      console.warn('Explore voice search error:', e);
-      setIsVoiceListening(false);
-    }
-  }, [isHindi, isVoiceListening]);
+  }, []);
 
   // Fast Autocomplete Suggestions (150ms debounce - supports single-character queries)
   useEffect(() => {
@@ -911,8 +888,8 @@ export const ExploreShopsScreen = () => {
         isHindi={isHindi}
       />
 
-      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE (Hidden when searching) */}
-      {!searchTerm && <HowShopSiloWorksSection />}
+      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE (Shown on home & when no search results) */}
+      {(!searchTerm || filteredProducts.length === 0) && <HowShopSiloWorksSection />}
 
       {/* 1.8. REDESIGNED SEARCH RESULTS HEADER & FILTER PILLS BAR */}
       <SearchResultHeader
@@ -937,9 +914,9 @@ export const ExploreShopsScreen = () => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             marginBottom: '16px',
-            gap: '8px',
+            gap: '14px',
             flexWrap: 'wrap',
           }}
         >
@@ -1270,6 +1247,14 @@ export const ExploreShopsScreen = () => {
         isOpen={isSmartSearchOpen}
         onClose={() => setIsSmartSearchOpen(false)}
         initialQuery={searchTerm}
+      />
+
+      {/* INDUSTRIAL BILINGUAL VOICE SEARCH MODAL */}
+      <VoiceSearchModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onSearch={handleVoiceSearchResult}
+        isHindi={isHindi}
       />
 
       {/* LOCATION PICKER MODAL */}

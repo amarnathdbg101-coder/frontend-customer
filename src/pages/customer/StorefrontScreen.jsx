@@ -34,6 +34,7 @@ import { ProductCard } from '../../components/cards/ProductCard';
 import { ShopProfileHeader } from '../../components/shop/ShopProfileHeader';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
+import { VoiceSearchModal } from '../../components/common/VoiceSearchModal';
 import { StorefrontReservationSuccessModal } from '../../components/customer/StorefrontReservationSuccessModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
@@ -126,6 +127,7 @@ export const StorefrontScreen = () => {
   const [browseMode, setBrowseMode] = useState('aisles'); // 'aisles' | 'grid'
   const [activeShelf, setActiveShelf] = useState(null); // When user clicks "View All" on any shelf
   const [isListening, setIsListening] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   // Autocomplete Suggestions & Recent Searches States (Storefront Scoped)
   const [searchSuggestions, setSearchSuggestions] = useState([]);
@@ -194,39 +196,15 @@ export const StorefrontScreen = () => {
 
   // 1-Tap Voice Search for Storefront
   const handleVoiceSearch = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert(isHindi ? 'इस ब्राउज़र में वॉइस सर्च समर्थित नहीं है। कृपया टाइप करके खोजें।' : 'Voice search is not supported in this browser. Please type.');
-      return;
-    }
-    if (isListening) {
-      setIsListening(false);
-      return;
-    }
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+    setIsVoiceModalOpen(true);
+  }, []);
 
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript || '';
-        if (transcript) {
-          setSearchTerm(transcript);
-          setBrowseMode('grid');
-        }
-      };
-
-      recognition.start();
-    } catch (e) {
-      console.warn('Voice search error:', e);
-      setIsListening(false);
+  const handleVoiceSearchResult = useCallback((transcript) => {
+    if (transcript) {
+      setSearchTerm(transcript);
+      setBrowseMode('grid');
     }
-  }, [isHindi, isListening]);
+  }, []);
 
   // 1-Tap In-Store Barcode / SKU Scan Prompt
   const handleBarcodePrompt = useCallback(() => {
@@ -2022,6 +2000,14 @@ export const StorefrontScreen = () => {
           onClose={() => setShowShopDetailModal(false)}
         />
       )}
+
+      {/* 10. Voice Search Modal */}
+      <VoiceSearchModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onSearch={handleVoiceSearchResult}
+        isHindi={isHindi}
+      />
     </AppLayout>
   );
 };

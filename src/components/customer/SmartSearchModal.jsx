@@ -38,6 +38,7 @@ import { reservationApi } from '../../api/reservation.api';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
 import { useLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { VoiceSearchModal } from '../common/VoiceSearchModal';
 import { useCart } from '../../context/CartContext';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { formatCurrency } from '../../utils/format';
@@ -62,6 +63,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
   const [isListening, setIsListening] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState([]);
   const [searchedOnce, setSearchedOnce] = useState(false);
@@ -122,39 +124,13 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   }, [isOpen, initialQuery]);
 
   const handleSpeech = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert(isHindi ? 'इस ब्राउज़र में वॉइस इनपुट समर्थित नहीं है। कृपया टाइप करके खोजें।' : 'Voice input is not supported in this browser. Please type to search.');
-      return;
-    }
+    setIsVoiceModalOpen(true);
+  };
 
-    if (isListening) {
-      setIsListening(false);
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0]?.[0]?.transcript || '';
-        if (transcript) {
-          setQuery(transcript);
-          performSearch(transcript);
-        }
-      };
-
-      recognition.start();
-    } catch (e) {
-      console.warn('Speech recognition error:', e);
-      setIsListening(false);
+  const handleVoiceSearchResult = (transcript) => {
+    if (transcript) {
+      setQuery(transcript);
+      performSearch(transcript);
     }
   };
 
@@ -683,6 +659,14 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
           )}
         </div>
       </ModalBody>
+
+      {/* INDUSTRIAL BILINGUAL VOICE SEARCH MODAL */}
+      <VoiceSearchModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onSearch={handleVoiceSearchResult}
+        isHindi={isHindi}
+      />
     </BaseModal>
   );
 };

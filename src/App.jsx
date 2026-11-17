@@ -162,6 +162,7 @@ function App() {
                       <Routes>
                         {/* Public Store Discovery, Deals & Shopping */}
                         <Route path="/" element={<ExploreShopsScreen />} />
+                        <Route path="/explore" element={<ExploreShopsScreen />} />
                         <Route path="/deals" element={<DealsScreen />} />
                         <Route path="/saved" element={<SavedScreen />} />
                         <Route path="/shop/:slug" element={<StorefrontScreen />} />

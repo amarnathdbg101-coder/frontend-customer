@@ -30,6 +30,7 @@ import { usePageSeo } from '../../hooks/usePageSeo';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
 import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
+import { VoiceSearchModal } from '../../components/common/VoiceSearchModal';
 import { sessionState } from '../../utils/sessionState';
 import {
   getStoredRecentSearches,
@@ -85,6 +86,7 @@ export const ProductDetailScreen = () => {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
@@ -231,35 +233,14 @@ export const ProductDetailScreen = () => {
   };
 
   const toggleVoiceSearch = () => {
-    if (isVoiceListening) {
-      setIsVoiceListening(false);
-      return;
-    }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert(isHindi ? 'आपका ब्राउज़र वॉयस सर्च सपोर्ट नहीं करता' : 'Voice search is not supported in this browser.');
-      return;
-    }
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+    setIsVoiceModalOpen(true);
+  };
 
-      recognition.onstart = () => setIsVoiceListening(true);
-      recognition.onend = () => setIsVoiceListening(false);
-      recognition.onerror = () => setIsVoiceListening(false);
-      recognition.onresult = (event) => {
-        const transcript = event.results?.[0]?.[0]?.transcript;
-        if (transcript?.trim()) {
-          const cleanTranscript = transcript.trim();
-          setSearchQuery(cleanTranscript);
-          handleSearchSubmit(cleanTranscript);
-        }
-      };
-      recognition.start();
-    } catch {
-      setIsVoiceListening(false);
+  const handleVoiceSearchResult = (transcript) => {
+    if (transcript?.trim()) {
+      const cleanTranscript = transcript.trim();
+      setSearchQuery(cleanTranscript);
+      handleSearchSubmit(cleanTranscript);
     }
   };
 
@@ -769,6 +750,14 @@ export const ProductDetailScreen = () => {
           </div>
         )}
       </div>
+
+      {/* INDUSTRIAL BILINGUAL VOICE SEARCH MODAL */}
+      <VoiceSearchModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onSearch={handleVoiceSearchResult}
+        isHindi={isHindi}
+      />
     </AppLayout>
   );
 };
