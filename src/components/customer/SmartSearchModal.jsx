@@ -527,8 +527,8 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                 </div>
               </div>
 
-              {/* Multi-Shop Result Cards List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Multi-Shop Result Cards List (Compact Space-Saving Layout) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {processedResults.map((item) => {
                   const isLowest = minPrice > 0 && item.price === minPrice;
                   const isNearest = nearestDist != null && item.distance_km === nearestDist;
@@ -539,93 +539,71 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                       key={`${item.id}_${item.shop_slug}`}
                       onClick={() => handleProductClick(item)}
                       style={{
-                        padding: '12px 14px',
-                        borderRadius: '12px',
+                        padding: '8px 10px',
+                        borderRadius: '10px',
                         border: isLowest ? '1.5px solid #16a34a' : '1px solid var(--border-subtle, #e2e8f0)',
                         backgroundColor: 'var(--bg-surface, #ffffff)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        gap: '12px',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
+                        gap: '10px',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)',
                         cursor: 'pointer',
-                        transition: 'all 0.15s ease-in-out',
+                        transition: 'all 0.12s ease-in-out',
                       }}
                     >
                       {/* Left Details */}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
                         {extractFirstImage(item.images || item.image_url || item.image) ? (
                           <img
                             src={getImageUrl(extractFirstImage(item.images || item.image_url || item.image))}
                             alt={item.name}
-                            style={{ width: '58px', height: '58px', flex: '0 0 58px', objectFit: 'contain', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)' }}
+                            style={{ width: '42px', height: '42px', flex: '0 0 42px', objectFit: 'contain', borderRadius: '8px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)' }}
                           />
                         ) : (
-                          <div style={{ width: '58px', height: '58px', flex: '0 0 58px', display: 'grid', placeItems: 'center', borderRadius: '9px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', color: 'var(--text-muted, #94a3b8)' }}>
-                            <Package size={22} />
+                          <div style={{ width: '42px', height: '42px', flex: '0 0 42px', display: 'grid', placeItems: 'center', borderRadius: '8px', backgroundColor: 'var(--bg-surface-subtle, #f8fafc)', color: 'var(--text-muted, #94a3b8)' }}>
+                            <Package size={18} />
                           </div>
                         )}
 
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                            <span style={{ fontWeight: 800, fontSize: '0.96rem', lineHeight: 1.3, color: 'var(--text-primary, #0f172a)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'nowrap', overflow: 'hidden' }}>
+                            <span style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {item.name}
                             </span>
 
                             {isLowest && (
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>
-                                ✓ {isHindi ? 'सबसे सस्ता' : 'Cheapest'}
+                              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#15803d', backgroundColor: '#dcfce7', padding: '1px 5px', borderRadius: '4px', flexShrink: 0 }}>
+                                ✓ {isHindi ? 'सस्ता' : 'Lowest'}
                               </span>
                             )}
 
                             {isNearest && (
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>
-                                📍 {isHindi ? 'सबसे पास' : 'Nearest'}
+                              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '1px 5px', borderRadius: '4px', flexShrink: 0 }}>
+                                📍 {isHindi ? 'पास' : 'Nearest'}
                               </span>
                             )}
                           </div>
 
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', fontWeight: 700 }}>
-                            {item.shop_name}
-                          </div>
-
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                            {travel && <span>{travel.full}</span>}
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #475569)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>{item.shop_name}</span>
                             {travel && <span>•</span>}
+                            {travel && <span>{travel.full}</span>}
+                            <span>•</span>
                             <span style={{ color: item.inStock ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
-                              {item.inStock ? (isHindi ? 'स्टॉक में उपलब्ध' : 'In Stock') : (isHindi ? 'आउट ऑफ स्टॉक' : 'Out of Stock')}
+                              {item.inStock ? (isHindi ? 'स्टॉक है' : 'In Stock') : (isHindi ? 'स्टॉक नहीं' : 'Out')}
                             </span>
                           </div>
                         </div>
                       </div>
 
                       {/* Right Price & Actions */}
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary, #0f172a)' }}>
+                      <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap' }}>
                           {formatCurrency(item.price)}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleProductClick(item);
-                            }}
-                            style={{
-                              padding: '6px 10px',
-                              borderRadius: '8px',
-                              backgroundColor: 'var(--bg-surface-subtle, #f8fafc)',
-                              color: 'var(--color-primary, #4f46e5)',
-                              border: '1px solid var(--border-subtle, #e2e8f0)',
-                              fontSize: '0.74rem',
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {isHindi ? 'विवरण' : 'Details'}
-                          </button>
-
+                        <div style={{ display: 'flex', gap: '4px' }}>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -637,17 +615,18 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                             }}
                             disabled={!item.inStock}
                             style={{
-                              padding: '6px 12px',
-                              borderRadius: '8px',
+                              padding: '5px 9px',
+                              borderRadius: '7px',
                               backgroundColor: item.inStock ? '#0f172a' : '#f1f5f9',
                               color: item.inStock ? '#ffffff' : '#94a3b8',
                               border: 'none',
-                              fontSize: '0.76rem',
+                              fontSize: '0.72rem',
                               fontWeight: 800,
                               cursor: item.inStock ? 'pointer' : 'not-allowed',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            {item.inStock ? (isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart') : (isHindi ? 'स्टॉक नहीं' : 'Out of Stock')}
+                            {item.inStock ? (isHindi ? '+ कार्ट' : '+ Cart') : (isHindi ? 'खत्म' : 'Out')}
                           </button>
                         </div>
                       </div>

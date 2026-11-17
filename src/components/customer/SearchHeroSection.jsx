@@ -41,18 +41,43 @@ export const SearchHeroSection = ({
   };
 
   return (
-    <section className="search-hero-section" aria-label={isHindi ? 'सामान खोजें' : 'Product search'} style={{ padding: '6px 0 2px 0', width: '100%', maxWidth: '100vw', boxSizing: 'border-box', overflow: 'hidden' }}>
-      <div className="search-hero-inner">
-        <div className="search-hero-heading" style={{ marginBottom: '12px' }}>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '0 0 4px 0', lineHeight: 1.25 }}>
-            {isHindi ? 'अपने आसपास ज़रूरत का सामान खोजें' : 'Find what you need, close to home'}
-          </h1>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #475569)', margin: 0, lineHeight: 1.4 }}>
-            {isHindi ? 'स्थानीय दुकानों के सामान और उपलब्ध जानकारी देखें।' : 'Browse products and availability shared by local shops.'}
-          </p>
-        </div>
+    <section
+      className="search-hero-section"
+      aria-label={isHindi ? 'सामान खोजें' : 'Product search'}
+      style={{
+        padding: '6px 0 2px 0',
+        width: '100%',
+        maxWidth: '100vw',
+        boxSizing: 'border-box',
+        overflow: 'visible',
+        position: 'relative',
+        zIndex: 60,
+      }}
+    >
+      <div className="search-hero-inner" style={{ position: 'relative', overflow: 'visible' }}>
+        {!searchTerm && (
+          <div className="search-hero-heading" style={{ marginBottom: '10px' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '0 0 3px 0', lineHeight: 1.25 }}>
+              {isHindi ? 'अपने आसपास ज़रूरत का सामान खोजें' : 'Find what you need, close to home'}
+            </h1>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #475569)', margin: 0, lineHeight: 1.4 }}>
+              {isHindi ? 'स्थानीय दुकानों के सामान और उपलब्ध जानकारी देखें।' : 'Browse products and availability shared by local shops.'}
+            </p>
+          </div>
+        )}
 
-        <div className="hero-search-wrapper" role="search" style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', position: 'relative' }}>
+        <div
+          className="hero-search-wrapper"
+          role="search"
+          style={{
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
+            boxSizing: 'border-box',
+            position: 'relative',
+            zIndex: 70,
+          }}
+        >
           <div
             className={`hero-search-box ${isSuggestionsOpen ? 'is-focused' : ''}`}
             onClick={() => inputRef.current?.focus()}

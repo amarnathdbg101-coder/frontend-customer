@@ -157,8 +157,8 @@ export const ExploreShopsScreen = () => {
     title: searchTerm
       ? `Results for "${searchTerm}" - Nearby products and shops`
       : selectedCategory && selectedCategory !== 'All'
-      ? `${selectedCategory} products and shops nearby`
-      : 'Explore local products and shops near you',
+        ? `${selectedCategory} products and shops nearby`
+        : 'Explore local products and shops near you',
     description: 'Browse products from local shops, review the details they share, and see which shops offer pickup reservations.',
     url: '/explore',
   });
@@ -285,19 +285,19 @@ export const ExploreShopsScreen = () => {
         shopApi.listPublicShops(params).catch(() => shopApi.listPublicShops({})),
         (coords?.lat && coords?.lng)
           ? productApi.findNearbyProducts({
-              lat: coords.lat,
-              lng: coords.lng,
-              radius_km: radiusKm === 999 ? 20 : radiusKm,
-              category: categoryParam,
-              search: cleanSearch,
-              q: cleanSearch,
-              sort_by: sortParam,
-        open_now: openNow,
-        min_price: minPrice,
-        max_price: maxPrice,
-              page: 1,
-              limit: PAGE_LIMIT,
-            }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam, search: cleanSearch, q: cleanSearch, sort_by: sortParam }))
+            lat: coords.lat,
+            lng: coords.lng,
+            radius_km: radiusKm === 999 ? 20 : radiusKm,
+            category: categoryParam,
+            search: cleanSearch,
+            q: cleanSearch,
+            sort_by: sortParam,
+            open_now: openNow,
+            min_price: minPrice,
+            max_price: maxPrice,
+            page: 1,
+            limit: PAGE_LIMIT,
+          }).catch(() => productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam, search: cleanSearch, q: cleanSearch, sort_by: sortParam }))
           : productApi.listProducts({ page: 1, limit: PAGE_LIMIT, category: categoryParam, search: cleanSearch, q: cleanSearch, sort_by: sortParam }),
       ]);
 
@@ -422,9 +422,9 @@ export const ExploreShopsScreen = () => {
         const [prodRes, shopRes] = await Promise.allSettled([
           (coords?.lat && coords?.lng)
             ? productApi.findNearbyProducts({
-                ...searchParams,
-                radius_km: radiusKm === 999 ? 20 : radiusKm,
-              }).catch(() => productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 }))
+              ...searchParams,
+              radius_km: radiusKm === 999 ? 20 : radiusKm,
+            }).catch(() => productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 }))
             : productApi.listProducts({ search: clean, q: clean, category: categoryParam, page: 1, limit: 50 }),
           shopApi.listPublicShops(searchParams).catch(() => shopApi.listPublicShops({ search: clean, q: clean, page: 1, limit: 30 })),
         ]);
@@ -529,9 +529,9 @@ export const ExploreShopsScreen = () => {
           search: cleanSearch,
           q: cleanSearch,
           sort_by: sortParam,
-        open_now: openNow,
-        min_price: minPrice,
-        max_price: maxPrice,
+          open_now: openNow,
+          min_price: minPrice,
+          max_price: maxPrice,
           page: nextPage,
           limit: PAGE_LIMIT,
         });
@@ -546,9 +546,9 @@ export const ExploreShopsScreen = () => {
           search: cleanSearch,
           q: cleanSearch,
           sort_by: sortParam,
-        open_now: openNow,
-        min_price: minPrice,
-        max_price: maxPrice,
+          open_now: openNow,
+          min_price: minPrice,
+          max_price: maxPrice,
         });
         rawProdList = extractArray(res, 'products');
         totalPages = res?.total_pages || res?.data?.total_pages || 1;
@@ -917,8 +917,8 @@ export const ExploreShopsScreen = () => {
         isHindi={isHindi}
       />
 
-      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE */}
-      <HowShopSiloWorksSection />
+      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE (Hidden when searching) */}
+      {!searchTerm && <HowShopSiloWorksSection />}
 
       {/* 1.8. REDESIGNED SEARCH RESULTS HEADER & FILTER PILLS BAR */}
       <SearchResultHeader
@@ -1004,182 +1004,243 @@ export const ExploreShopsScreen = () => {
           </div>
         </div>
 
-        {/* If user searched and shops were found, show shop matches cleanly */}
+        {/* If user searched and shops were found, show compact 1-row shop pills */}
         {searchTerm && filteredShops.length > 0 && (
-          <div style={{ marginBottom: '22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-              <Store size={16} color="var(--color-primary, #4f46e5)" />
-              <h3 style={{ fontSize: '0.92rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
-                {isHindi ? 'मिलती-जुलती दुकानें' : 'Matching Stores'} ({filteredShops.length})
-              </h3>
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Store size={14} color="var(--color-primary, #4f46e5)" />
+              <span style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-secondary, #475569)' }}>
+                {isHindi ? 'उपलब्ध दुकानें' : 'Available Stores'} ({filteredShops.length}):
+              </span>
             </div>
-            <div className="customer-shop-grid">
-              {filteredShops.slice(0, 4).map((s) => (
-                <ShopCard
-                  key={s.id}
-                  shop={s}
-                  coords={coords}
-                  isSaved={isShopSaved(s.id)}
-                  onToggleSave={toggleSaveShop}
-                  onClick={() => setInspectedShop(s)}
-                  onNavigate={navigate}
-                />
-              ))}
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                paddingBottom: '2px',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              {filteredShops.slice(0, 8).map((s) => {
+                const dist = s.distance_km != null ? `${Number(s.distance_km).toFixed(1)} km` : null;
+                const rating = Number(s.rating || s.avg_rating || 0);
+
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setInspectedShop(s)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '5px 10px',
+                      borderRadius: '20px',
+                      backgroundColor: 'var(--bg-surface, #ffffff)',
+                      border: '1px solid var(--border-subtle, #e2e8f0)',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      transition: 'all 0.15s ease',
+                      maxWidth: '220px',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-primary-light, #eff6ff)',
+                        color: 'var(--color-primary, #2563eb)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Store size={12} />
+                    </div>
+
+                    <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          fontSize: '0.78rem',
+                          fontWeight: 800,
+                          color: 'var(--text-primary, #0f172a)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {s.name}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #64748b)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {dist && <span>📍 {dist}</span>}
+                        {rating > 0 && <span>★ {rating.toFixed(1)}</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-      {/* 7. RESPONSIVE FEED CONTENT */}
-      <div style={{ marginBottom: '40px' }}>
-        {loading ? (
-          activeTab === 'shops' ? <SkeletonShopGrid count={4} /> : <SkeletonProductGrid count={6} />
-        ) : activeTab === 'shops' ? (
-          (isSearchingServer && filteredShops.length === 0) ? (
+        {/* 7. RESPONSIVE FEED CONTENT */}
+        <div style={{ marginBottom: '40px' }}>
+          {loading ? (
+            activeTab === 'shops' ? <SkeletonShopGrid count={4} /> : <SkeletonProductGrid count={6} />
+          ) : activeTab === 'shops' ? (
+            (isSearchingServer && filteredShops.length === 0) ? (
+              <div style={{ padding: '40px 0', textAlign: 'center' }}>
+                <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में दुकानें खोजी जा रही हैं...' : 'Searching database for shops...'} />
+              </div>
+            ) : filteredShops.length === 0 ? (
+              <EmptyState
+                icon={Store}
+                title={isHindi ? 'कोई दुकान नहीं मिली' : 'No Shops Found'}
+                description={isHindi ? 'कृपया सर्च या रेडियस फ़िल्टर बदलें' : 'Try adjusting your search or radius'}
+              />
+            ) : (
+              <div className="customer-shop-grid">
+                {filteredShops.map((s) => (
+                  <ShopCard
+                    key={s.id}
+                    shop={s}
+                    coords={coords}
+                    isSaved={isShopSaved(s.id)}
+                    onToggleSave={toggleSaveShop}
+                    onClick={() => setInspectedShop(s)}
+                    onNavigate={navigate}
+                  />
+                ))}
+              </div>
+            )
+          ) : (isSearchingServer && filteredProducts.length === 0) ? (
             <div style={{ padding: '40px 0', textAlign: 'center' }}>
-              <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में दुकानें खोजी जा रही हैं...' : 'Searching database for shops...'} />
+              <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में सामान खोजा जा रहा है...' : 'Searching database for products...'} />
             </div>
-          ) : filteredShops.length === 0 ? (
-            <EmptyState
-              icon={Store}
-              title={isHindi ? 'कोई दुकान नहीं मिली' : 'No Shops Found'}
-              description={isHindi ? 'कृपया सर्च या रेडियस फ़िल्टर बदलें' : 'Try adjusting your search or radius'}
-            />
-          ) : (
-            <div className="customer-shop-grid">
-              {filteredShops.map((s) => (
-                <ShopCard
-                  key={s.id}
-                  shop={s}
-                  coords={coords}
-                  isSaved={isShopSaved(s.id)}
-                  onToggleSave={toggleSaveShop}
-                  onClick={() => setInspectedShop(s)}
-                  onNavigate={navigate}
-                />
-              ))}
-            </div>
-          )
-        ) : (isSearchingServer && filteredProducts.length === 0) ? (
-          <div style={{ padding: '40px 0', textAlign: 'center' }}>
-            <LoadingSpinner fullScreen={false} message={isHindi ? 'डेटाबेस में सामान खोजा जा रहा है...' : 'Searching database for products...'} />
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          searchTerm.trim() ? (
-            <ZeroDeadEndSearchState
-              query={searchTerm}
-              onSelectPopular={(term) => {
-                setSearchTerm(term);
-                setRecentSearches(persistRecentSearch(term));
-              }}
-              onResetFilters={() => {
-                setSearchTerm('');
-                setSelectedCategory('All');
-              }}
-              isHindi={isHindi}
-            />
-          ) : (
-            <EmptyState
-              icon={Package}
-              title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
-              description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
-            />
-          )
-        ) : (
-          <>
-            {/* 1. DID YOU MEAN SPELL CORRECTION BANNER */}
-            <DidYouMeanBanner
-              originalQuery={searchTerm}
-              suggestedQuery={spellCorrection}
-              onApplySuggestion={(term) => {
-                setSearchTerm(term);
-                setRecentSearches(persistRecentSearch(term));
-              }}
-              isHindi={isHindi}
-            />
-
-            {activeShelf ? (
-              <CuratedShelfDetailView
-                shelf={activeShelf}
-                onBack={() => setActiveShelf(null)}
-                onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
-                isProductSaved={isProductSaved}
-                onToggleSave={toggleSaveProduct}
+          ) : filteredProducts.length === 0 ? (
+            searchTerm.trim() ? (
+              <ZeroDeadEndSearchState
+                query={searchTerm}
+                onSelectPopular={(term) => {
+                  setSearchTerm(term);
+                  setRecentSearches(persistRecentSearch(term));
+                }}
+                onResetFilters={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('All');
+                }}
                 isHindi={isHindi}
               />
             ) : (
-              <>
-                <div className="customer-product-grid">
-              {filteredProducts.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  highlightQuery={searchTerm}
-                  isSaved={isProductSaved(p.id)}
+              <EmptyState
+                icon={Package}
+                title={isHindi ? 'कोई सामान नहीं मिला' : 'No Products Found'}
+                description={isHindi ? 'कृपया दूसरा नाम या कैटेगोरी चुनें' : 'Try picking another category or search'}
+              />
+            )
+          ) : (
+            <>
+              {/* 1. DID YOU MEAN SPELL CORRECTION BANNER */}
+              <DidYouMeanBanner
+                originalQuery={searchTerm}
+                suggestedQuery={spellCorrection}
+                onApplySuggestion={(term) => {
+                  setSearchTerm(term);
+                  setRecentSearches(persistRecentSearch(term));
+                }}
+                isHindi={isHindi}
+              />
+
+              {activeShelf ? (
+                <CuratedShelfDetailView
+                  shelf={activeShelf}
+                  onBack={() => setActiveShelf(null)}
+                  onProductClick={(p) => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                  isProductSaved={isProductSaved}
                   onToggleSave={toggleSaveProduct}
-                  onClick={() => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                  isHindi={isHindi}
                 />
-              ))}
-            </div>
+              ) : (
+                <>
+                  <div className="customer-product-grid">
+                    {filteredProducts.map((p) => (
+                      <ProductCard
+                        key={p.id}
+                        product={p}
+                        highlightQuery={searchTerm}
+                        isSaved={isProductSaved(p.id)}
+                        onToggleSave={toggleSaveProduct}
+                        onClick={() => navigate(`/shop/${p.shop_slug || 'store'}/product/${p.id}`, { state: { product: p } })}
+                      />
+                    ))}
+                  </div>
 
-            {/* Seamless Infinite Scroll Loading Animation */}
-            {loadingMore && (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '30px 0',
-                  color: 'var(--color-primary, #2563eb)',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                }}
-              >
-                <LoadingSpinner size="sm" />
-                <span>{isHindi ? 'और सामान लोड हो रहा है...' : 'Loading more products...'}</span>
-              </div>
-            )}
+                  {/* Seamless Infinite Scroll Loading Animation */}
+                  {loadingMore && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '30px 0',
+                        color: 'var(--color-primary, #2563eb)',
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      <LoadingSpinner size="sm" />
+                      <span>{isHindi ? 'और सामान लोड हो रहा है...' : 'Loading more products...'}</span>
+                    </div>
+                  )}
 
-            {/* Manual fallback load more button */}
-            {!loadingMore && hasMore && filteredProducts.length >= PAGE_LIMIT && (
-              <div style={{ textAlign: 'center', margin: '28px 0 12px' }}>
-                <Button
-                  variant="outline"
-                  onClick={loadMoreProducts}
-                  style={{
-                    borderRadius: '24px',
-                    padding: '10px 32px',
-                    fontSize: '0.9rem',
-                    fontWeight: 700,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  {isHindi ? 'और सामान देखें ⬇' : 'Load More Products ⬇'}
-                </Button>
-              </div>
-            )}
+                  {/* Manual fallback load more button */}
+                  {!loadingMore && hasMore && filteredProducts.length >= PAGE_LIMIT && (
+                    <div style={{ textAlign: 'center', margin: '28px 0 12px' }}>
+                      <Button
+                        variant="outline"
+                        onClick={loadMoreProducts}
+                        style={{
+                          borderRadius: '24px',
+                          padding: '10px 32px',
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        }}
+                      >
+                        {isHindi ? 'और सामान देखें ⬇' : 'Load More Products ⬇'}
+                      </Button>
+                    </div>
+                  )}
 
-            {/* End of results indication */}
-            {!hasMore && filteredProducts.length > 0 && (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '28px 0 12px',
-                  color: 'var(--text-tertiary, #94a3b8)',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.02em',
-                }}
-              >
-                {isHindi ? '✓ सभी नजदीकी उपलब्ध सामान देख लिए गए हैं' : "✓ All available products nearby loaded"}
-              </div>
-            )}
-          </>
-        )}
-      </>
-    )}
-  </div>
-</div>
+                  {/* End of results indication */}
+                  {!hasMore && filteredProducts.length > 0 && (
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        padding: '28px 0 12px',
+                        color: 'var(--text-tertiary, #94a3b8)',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {isHindi ? '✓ सभी नजदीकी उपलब्ध सामान देख लिए गए हैं' : "✓ All available products nearby loaded"}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {/* PRODUCT DETAIL MODAL */}
       {inspectedProduct && (
