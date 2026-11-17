@@ -166,8 +166,9 @@ body.lang-hi {
 .how-works-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
 }
 

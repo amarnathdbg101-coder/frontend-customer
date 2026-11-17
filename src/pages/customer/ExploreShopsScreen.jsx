@@ -911,8 +911,8 @@ export const ExploreShopsScreen = () => {
         isHindi={isHindi}
       />
 
-      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE (Hidden when searching) */}
-      {!searchTerm && <HowShopSiloWorksSection />}
+      {/* 1.5. COMPACT "HOW SHOPSILO WORKS" 3-STEP FLOW GUIDE (Shown on home & when no search results) */}
+      {(!searchTerm || filteredProducts.length === 0) && <HowShopSiloWorksSection />}
 
       {/* 1.8. REDESIGNED SEARCH RESULTS HEADER & FILTER PILLS BAR */}
       <SearchResultHeader

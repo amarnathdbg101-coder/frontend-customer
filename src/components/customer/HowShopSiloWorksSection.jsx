@@ -49,10 +49,8 @@ export const HowShopSiloWorksSection = () => {
         <X size={14} />
       </button>
 
-      <div className="how-works-heading" style={{ paddingRight: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <h2>{isHindi ? 'ShopSilo कैसे काम करता है' : 'How ShopSilo Works'}</h2>
-        </div>
+      <div className="how-works-heading" style={{ paddingRight: '24px' }}>
+        <h2>{isHindi ? 'ShopSilo कैसे काम करता है' : 'How ShopSilo Works'}</h2>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
           <ShieldCheck size={12} />
           {isHindi ? '0% अग्रिम भुगतान' : 'Pay at pickup'}
