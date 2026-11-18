@@ -50,7 +50,7 @@ import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
 import { CategoryExplorerModal } from '../../components/customer/CategoryExplorerModal';
 import { SmartSearchModal } from '../../components/customer/SmartSearchModal';
-import { VoiceSearchModal } from '../../components/common/VoiceSearchModal';
+import { useInlineVoiceSearch } from '../../hooks/useInlineVoiceSearch';
 import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
 import { CategoryBar } from '../../components/customer/CategoryBar';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
@@ -151,8 +151,6 @@ export const ExploreShopsScreen = () => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
-  const [isVoiceListening, setIsVoiceListening] = useState(false);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   // Dynamic SEO & OpenGraph Head Management
   usePageSeo({
@@ -167,18 +165,27 @@ export const ExploreShopsScreen = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 
-  // 1-Tap Voice Search Modal for Explore Screen
-  const handleVoiceSearch = useCallback(() => {
-    setIsVoiceModalOpen(true);
-  }, []);
-
-  const handleVoiceSearchResult = useCallback((cleanTranscript) => {
-    if (cleanTranscript) {
-      setSearchTerm(cleanTranscript);
+  // Seamless Inline Speech-to-Text Voice Search (Zero Popup, Instant Auto-Search)
+  const handleVoiceSearchSubmit = useCallback((finalQuery) => {
+    if (finalQuery?.trim()) {
+      const q = finalQuery.trim();
+      setSearchTerm(q);
       setIsSuggestionsOpen(false);
-      setRecentSearches(persistRecentSearch(cleanTranscript));
+      setRecentSearches(persistRecentSearch(q));
     }
   }, []);
+
+  const {
+    isListening: isVoiceListening,
+    toggleListening: handleVoiceSearch,
+  } = useInlineVoiceSearch({
+    onTranscript: (liveText) => {
+      setSearchTerm(liveText);
+      setIsSuggestionsOpen(false);
+    },
+    onSearch: handleVoiceSearchSubmit,
+    isHindi,
+  });
 
   // Fast Autocomplete Suggestions (150ms debounce - supports single-character queries)
   useEffect(() => {
@@ -1247,14 +1254,6 @@ export const ExploreShopsScreen = () => {
         isOpen={isSmartSearchOpen}
         onClose={() => setIsSmartSearchOpen(false)}
         initialQuery={searchTerm}
-      />
-
-      {/* INDUSTRIAL BILINGUAL VOICE SEARCH MODAL */}
-      <VoiceSearchModal
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        onSearch={handleVoiceSearchResult}
-        isHindi={isHindi}
       />
 
       {/* LOCATION PICKER MODAL */}

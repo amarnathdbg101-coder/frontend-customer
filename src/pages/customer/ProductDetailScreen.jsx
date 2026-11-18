@@ -30,7 +30,7 @@ import { usePageSeo } from '../../hooks/usePageSeo';
 import { LoadingSpinner, Button } from '../../components/ui';
 import { ProductTrustDetailView } from '../../components/product/ProductTrustDetailView';
 import { SearchSuggestionsDropdown } from '../../components/customer/SearchSuggestionsDropdown';
-import { VoiceSearchModal } from '../../components/common/VoiceSearchModal';
+import { useInlineVoiceSearch } from '../../hooks/useInlineVoiceSearch';
 import { sessionState } from '../../utils/sessionState';
 import {
   getStoredRecentSearches,
@@ -85,8 +85,6 @@ export const ProductDetailScreen = () => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
-  const [isVoiceListening, setIsVoiceListening] = useState(false);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
@@ -232,17 +230,24 @@ export const ProductDetailScreen = () => {
     navigate('/explore?q=' + encodeURIComponent(clean));
   };
 
-  const toggleVoiceSearch = () => {
-    setIsVoiceModalOpen(true);
-  };
-
-  const handleVoiceSearchResult = (transcript) => {
-    if (transcript?.trim()) {
-      const cleanTranscript = transcript.trim();
-      setSearchQuery(cleanTranscript);
-      handleSearchSubmit(cleanTranscript);
-    }
-  };
+  // Seamless Inline Speech-to-Text Voice Search (Zero Popup, Instant Auto-Search)
+  const {
+    isListening: isVoiceListening,
+    toggleListening: toggleVoiceSearch,
+  } = useInlineVoiceSearch({
+    onTranscript: (liveText) => {
+      setSearchQuery(liveText);
+      setIsSuggestionsOpen(false);
+    },
+    onSearch: (finalQuery) => {
+      if (finalQuery?.trim()) {
+        const clean = finalQuery.trim();
+        setSearchQuery(clean);
+        handleSearchSubmit(clean);
+      }
+    },
+    isHindi,
+  });
 
   // Always fetch fresh product & shop details from API (SWR pattern)
   useEffect(() => {
@@ -478,9 +483,14 @@ export const ProductDetailScreen = () => {
                     setIsSuggestionsOpen(true);
                   }}
                   onFocus={() => setIsSuggestionsOpen(true)}
-                  placeholder={isHindi ? 'सामान या दुकानें खोजें...' : 'Search for products'}
+                  placeholder={
+                    isVoiceListening
+                      ? (isHindi ? 'सुन रहे हैं... बोलिए (जैसे: अमूल दूध)' : 'Listening... Speak now (e.g. Amul Milk)')
+                      : (isHindi ? 'सामान या दुकानें खोजें...' : 'Search for products')
+                  }
                   className="product-detail-search-input"
                   aria-label={isHindi ? 'सामान या दुकानें खोजें' : 'Search for products'}
+                  style={isVoiceListening ? { color: '#dc2626' } : {}}
                 />
                 {searchQuery && (
                   <button
@@ -500,9 +510,13 @@ export const ProductDetailScreen = () => {
                   type="button"
                   onClick={toggleVoiceSearch}
                   className="product-detail-search-mic-btn"
-                  title={isHindi ? 'बोलकर खोजें' : 'Voice search'}
-                  aria-label={isHindi ? 'बोलकर खोजें' : 'Voice search'}
-                  style={isVoiceListening ? { color: '#dc2626', backgroundColor: '#fee2e2' } : {}}
+                  title={isVoiceListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice search')}
+                  aria-label={isVoiceListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice search')}
+                  style={
+                    isVoiceListening
+                      ? { color: '#dc2626', backgroundColor: '#fee2e2', border: '1.5px solid #ef4444', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)' }
+                      : {}
+                  }
                 >
                   {isVoiceListening ? <MicOff size={15} /> : <Mic size={15} />}
                 </button>
@@ -750,14 +764,6 @@ export const ProductDetailScreen = () => {
           </div>
         )}
       </div>
-
-      {/* INDUSTRIAL BILINGUAL VOICE SEARCH MODAL */}
-      <VoiceSearchModal
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        onSearch={handleVoiceSearchResult}
-        isHindi={isHindi}
-      />
     </AppLayout>
   );
 };

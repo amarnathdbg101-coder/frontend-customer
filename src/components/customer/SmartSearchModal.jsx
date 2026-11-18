@@ -38,7 +38,7 @@ import { reservationApi } from '../../api/reservation.api';
 import { cacheEvents, CACHE_EVENTS } from '../../utils/cacheEvents.js';
 import { useLocation } from '../../context/LocationContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { VoiceSearchModal } from '../common/VoiceSearchModal';
+import { useInlineVoiceSearch } from '../../hooks/useInlineVoiceSearch';
 import { useCart } from '../../context/CartContext';
 import { calculateDistanceKm, formatDistance, formatTravelTime, getDirectionsUrl } from '../../utils/distance';
 import { formatCurrency } from '../../utils/format';
@@ -62,8 +62,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [recentSearches, setRecentSearches] = useState(getStoredRecentSearches);
-  const [isListening, setIsListening] = useState(false);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState([]);
   const [searchedOnce, setSearchedOnce] = useState(false);
@@ -103,36 +101,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
     }, 280);
     return () => clearTimeout(timer);
   }, [query, coords?.lat, coords?.lng]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setRecentSearches(getStoredRecentSearches());
-      if (initialQuery) {
-        setQuery(initialQuery);
-        performSearch(initialQuery);
-      }
-    } else {
-      setQuery('');
-      setSuggestions([]);
-      setResults([]);
-      setSearchedOnce(false);
-      setErrorMsg('');
-      setIsListening(false);
-      setReservedProduct(null);
-      setReservingId(null);
-    }
-  }, [isOpen, initialQuery]);
-
-  const handleSpeech = () => {
-    setIsVoiceModalOpen(true);
-  };
-
-  const handleVoiceSearchResult = (transcript) => {
-    if (transcript) {
-      setQuery(transcript);
-      performSearch(transcript);
-    }
-  };
 
   const performSearch = async (searchQuery, persistToRecent = true) => {
     const text = (searchQuery ?? query).trim();
@@ -199,6 +167,44 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
       setIsSearching(false);
     }
   };
+
+  // Seamless Inline Speech-to-Text Voice Search (Zero Popup, Instant Auto-Search)
+  const {
+    isListening,
+    toggleListening: handleSpeech,
+    stopListening,
+  } = useInlineVoiceSearch({
+    onTranscript: (liveText) => {
+      setQuery(liveText);
+    },
+    onSearch: (finalQuery) => {
+      if (finalQuery?.trim()) {
+        const clean = finalQuery.trim();
+        setQuery(clean);
+        performSearch(clean, true);
+      }
+    },
+    isHindi,
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      setRecentSearches(getStoredRecentSearches());
+      if (initialQuery) {
+        setQuery(initialQuery);
+        performSearch(initialQuery);
+      }
+    } else {
+      setQuery('');
+      setSuggestions([]);
+      setResults([]);
+      setSearchedOnce(false);
+      setErrorMsg('');
+      stopListening();
+      setReservedProduct(null);
+      setReservingId(null);
+    }
+  }, [isOpen, initialQuery, stopListening]);
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
@@ -333,7 +339,11 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
               <input
                 type="text"
                 autoFocus
-                placeholder={isHindi ? 'सामान का नाम लिखें (उदा. फॉर्च्यून तेल 1L, अमूल दूध)...' : 'Type product name (e.g. Fortune Oil 1L, Amul Milk)...'}
+                placeholder={
+                  isListening
+                    ? (isHindi ? 'सुन रहे हैं... बोलिए (जैसे: अमूल दूध)' : 'Listening... Speak now (e.g. Amul Milk)')
+                    : (isHindi ? 'सामान का नाम लिखें (उदा. फॉर्च्यून तेल 1L, अमूल दूध)...' : 'Type product name (e.g. Fortune Oil 1L, Amul Milk)...')
+                }
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 style={{
@@ -343,7 +353,7 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                   width: '100%',
                   fontSize: '0.9rem',
                   fontWeight: 600,
-                  color: 'var(--text-primary, #0f172a)',
+                  color: isListening ? '#dc2626' : 'var(--text-primary, #0f172a)',
                 }}
               />
 
@@ -361,9 +371,9 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                 type="button"
                 onClick={handleSpeech}
                 style={{
-                  background: isListening ? '#dc2626' : '#f1f5f9',
-                  color: isListening ? '#ffffff' : '#0f172a',
-                  border: 'none',
+                  background: isListening ? '#fee2e2' : '#f1f5f9',
+                  color: isListening ? '#dc2626' : '#0f172a',
+                  border: isListening ? '1.5px solid #ef4444' : 'none',
                   borderRadius: '50%',
                   width: '32px',
                   height: '32px',
@@ -373,8 +383,10 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
                   cursor: 'pointer',
                   flexShrink: 0,
                   transition: 'all 0.15s ease',
+                  boxShadow: isListening ? '0 0 10px rgba(239, 68, 68, 0.45)' : 'none',
                 }}
-                title={isListening ? 'Listening...' : 'Voice Search'}
+                title={isListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice Search')}
+                aria-label={isListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice Search')}
               >
                 {isListening ? <MicOff size={16} /> : <Mic size={16} />}
               </button>
@@ -659,14 +671,6 @@ export const SmartSearchModal = ({ isOpen, onClose, initialQuery = '' }) => {
           )}
         </div>
       </ModalBody>
-
-      {/* INDUSTRIAL BILINGUAL VOICE SEARCH MODAL */}
-      <VoiceSearchModal
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        onSearch={handleVoiceSearchResult}
-        isHindi={isHindi}
-      />
     </BaseModal>
   );
 };
