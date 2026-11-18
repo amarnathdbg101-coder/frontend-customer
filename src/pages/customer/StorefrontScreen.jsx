@@ -34,7 +34,7 @@ import { ProductCard } from '../../components/cards/ProductCard';
 import { ShopProfileHeader } from '../../components/shop/ShopProfileHeader';
 import { ProductDetailModal } from '../../components/common/ProductDetailModal';
 import { ShopDetailModal } from '../../components/common/ShopDetailModal';
-import { VoiceSearchModal } from '../../components/common/VoiceSearchModal';
+import { useInlineVoiceSearch } from '../../hooks/useInlineVoiceSearch';
 import { StorefrontReservationSuccessModal } from '../../components/customer/StorefrontReservationSuccessModal';
 import { ShopReviewsSection } from '../../components/customer/ShopReviewsSection';
 import { CuratedStoreAisles } from '../../components/customer/CuratedStoreAisles';
@@ -126,8 +126,6 @@ export const StorefrontScreen = () => {
   // Curated Aisles Discovery Mode vs All Products Grid Mode
   const [browseMode, setBrowseMode] = useState('aisles'); // 'aisles' | 'grid'
   const [activeShelf, setActiveShelf] = useState(null); // When user clicks "View All" on any shelf
-  const [isListening, setIsListening] = useState(false);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   // Autocomplete Suggestions & Recent Searches States (Storefront Scoped)
   const [searchSuggestions, setSearchSuggestions] = useState([]);
@@ -194,17 +192,27 @@ export const StorefrontScreen = () => {
     };
   }, [searchTerm, shop?.id]);
 
-  // 1-Tap Voice Search for Storefront
-  const handleVoiceSearch = useCallback(() => {
-    setIsVoiceModalOpen(true);
-  }, []);
-
-  const handleVoiceSearchResult = useCallback((transcript) => {
-    if (transcript) {
-      setSearchTerm(transcript);
+  // Seamless Inline Speech-to-Text Voice Search (Zero Popup, Instant Auto-Search)
+  const {
+    isListening,
+    toggleListening: handleVoiceSearch,
+  } = useInlineVoiceSearch({
+    onTranscript: (liveText) => {
+      setSearchTerm(liveText);
+      setIsSuggestionsOpen(false);
       setBrowseMode('grid');
-    }
-  }, []);
+    },
+    onSearch: (finalQuery) => {
+      if (finalQuery?.trim()) {
+        const clean = finalQuery.trim();
+        setSearchTerm(clean);
+        setIsSuggestionsOpen(false);
+        setBrowseMode('grid');
+        setRecentSearches(persistRecentSearch(clean));
+      }
+    },
+    isHindi,
+  });
 
   // 1-Tap In-Store Barcode / SKU Scan Prompt
   const handleBarcodePrompt = useCallback(() => {
@@ -1269,7 +1277,11 @@ export const StorefrontScreen = () => {
           <div id="shop-products-section" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <SearchInput
-            placeholder={isHindi ? `${shop?.name || 'दुकान'} में सामान खोजें...` : `Search inside ${shop?.name || 'store'}...`}
+            placeholder={
+              isListening
+                ? (isHindi ? 'सुन रहे हैं... बोलिए (जैसे: अमूल दूध)' : 'Listening... Speak now (e.g. Amul Milk)')
+                : (isHindi ? `${shop?.name || 'दुकान'} में सामान खोजें...` : `Search inside ${shop?.name || 'store'}...`)
+            }
             value={searchTerm}
             onFocus={() => setIsSuggestionsOpen(true)}
             onChange={(e) => {
@@ -2000,14 +2012,6 @@ export const StorefrontScreen = () => {
           onClose={() => setShowShopDetailModal(false)}
         />
       )}
-
-      {/* 10. Voice Search Modal */}
-      <VoiceSearchModal
-        isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        onSearch={handleVoiceSearchResult}
-        isHindi={isHindi}
-      />
     </AppLayout>
   );
 };

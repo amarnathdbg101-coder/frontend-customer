@@ -109,9 +109,9 @@ export const SearchHeroSection = ({
               type="search"
               aria-label={isHindi ? 'दुकानों या सामान में खोजें' : 'Search for products or nearby shops'}
               placeholder={
-                isHindi
-                  ? 'सामान, दुकान या ब्रांड खोजें...'
-                  : 'Search products, brands, shops...'
+                isVoiceListening
+                  ? (isHindi ? 'सुन रहे हैं... बोलिए (जैसे: अमूल दूध)' : 'Listening... Speak now (e.g. Amul Milk)')
+                  : (isHindi ? 'सामान, दुकान या ब्रांड खोजें...' : 'Search products, brands, shops...')
               }
               value={searchTerm}
               onFocus={() => onOpenSuggestions?.()}
@@ -128,7 +128,7 @@ export const SearchHeroSection = ({
                 backgroundColor: 'transparent',
                 fontSize: '0.86rem',
                 fontWeight: 600,
-                color: 'var(--text-primary, #0f172a)',
+                color: isVoiceListening ? '#dc2626' : 'var(--text-primary, #0f172a)',
               }}
             />
 
@@ -165,7 +165,7 @@ export const SearchHeroSection = ({
               }}
               style={{
                 background: isVoiceListening ? '#fee2e2' : 'var(--bg-surface-subtle, #f8fafc)',
-                border: '1px solid var(--border-subtle, #e2e8f0)',
+                border: isVoiceListening ? '1.5px solid #ef4444' : '1px solid var(--border-subtle, #e2e8f0)',
                 borderRadius: '10px',
                 padding: '6px',
                 cursor: 'pointer',
@@ -174,8 +174,12 @@ export const SearchHeroSection = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                boxShadow: isVoiceListening ? '0 0 10px rgba(239, 68, 68, 0.45)' : 'none',
+                animation: isVoiceListening ? 'voiceInlinePulse 1.2s infinite ease-in-out' : 'none',
+                transition: 'all 0.15s ease',
               }}
-              title={isHindi ? 'बोलकर खोजें' : 'Voice search'}
+              title={isVoiceListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice search')}
+              aria-label={isVoiceListening ? (isHindi ? 'सुन रहे हैं... रोकें' : 'Listening... click to stop') : (isHindi ? 'बोलकर खोजें' : 'Voice search')}
             >
               {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
@@ -252,6 +256,22 @@ export const SearchHeroSection = ({
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes voiceInlinePulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+          }
+          50% {
+            transform: scale(1.08);
+            box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+          }
+        }
+      `}</style>
     </section>
   );
 };
